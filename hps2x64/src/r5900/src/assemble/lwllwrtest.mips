@@ -1,0 +1,59 @@
+
+LWLLWRtest:
+
+	addiu %r1, %r0, $0
+	addiu %r2, %r0, $1
+	addiu %r3, %r0, $2
+	addiu %r4, %r0, $3
+	addiu %r5, %r0, $4
+	addiu %r6, %r0, $5
+	addiu %r7, %r0, $6
+	addiu %r8, %r0, $7
+	
+	sb %r1, $0(%r0)
+	sb %r2, $1(%r0)
+	sb %r3, $2(%r0)
+	sb %r4, $3(%r0)
+	sb %r5, $4(%r0)
+	sb %r6, $5(%r0)
+	sb %r7, $6(%r0)
+	sb %r8, $7(%r0)
+
+	addiu %r1, %r0, $4
+	lwl %r1, $0(%r0)
+	lwl %r2, $1(%r0)
+	lwl %r3, $2(%r0)
+	lwl %r4, $3(%r0)
+	lwl %r5, $4(%r0)
+	lwl %r6, $5(%r0)
+	lwl %r7, $6(%r0)
+	lwl %r8, $7(%r0)
+	
+	lwr %r9, $0(%r0)
+	lwr %r10, $1(%r0)
+	lwr %r11, $2(%r0)
+	lwr %r12, $3(%r0)
+	lwr %r13, $4(%r0)
+	lwr %r14, $5(%r0)
+	lwr %r15, $6(%r0)
+	lwr %r16, $7(%r0)
+	
+	sll %r0, %r0, $0
+	sll %r0, %r0, $0
+	sll %r0, %r0, $0
+	sll %r0, %r0, $0
+
+	break
+
+; expected results:
+; r1 = 0x00000004
+; r2 = 0x01000001
+; r3 = 0x02010002
+; r4 = 0x03020100
+; r5 = 0x04000004
+; r6 = 0x05040005
+; r7 = 0x06050406
+; r8 = 0x07060504
+
+
+

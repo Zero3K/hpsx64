@@ -1,0 +1,10 @@
+NAMEOFTEST = R5900Assembler
+PATHOFSRC = src
+LIBS = 
+CFLAGS = -w -fpermissive -static-libgcc -static-libstdc++
+INC = -I$(PATHOFSRC) -I../../../../../common -I../../../../../common/StringUtilities -I../lookup -I../encode # -I../../../../../common/debug/src
+SRC = $(NAMEOFTEST).cpp $(wildcard $(PATHOFSRC)/*.cpp) $(wildcard ../lookup/*.cpp) $(wildcard ../encode/*.cpp) $(wildcard ../../../../../common/StringUtilities/*.cpp) # $(wildcard ../../../../../common/debug/src/*.cpp)
+OBJ = $(NAMEOFTEST)
+
+$(OBJ): $(SRC) 
+	g++ $(CFLAGS) $(INC) -o $@ $^ $(LIBS)

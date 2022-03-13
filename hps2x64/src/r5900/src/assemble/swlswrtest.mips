@@ -1,0 +1,59 @@
+
+SWLSWRtest:
+
+	addiu %r1, %r0, $0
+	addiu %r2, %r0, $1
+	addiu %r3, %r0, $2
+	addiu %r4, %r0, $3
+	addiu %r5, %r0, $4
+	addiu %r6, %r0, $5
+	addiu %r7, %r0, $6
+	addiu %r8, %r0, $7
+	
+	sb %r1, $0(%r0)
+	sb %r2, $1(%r0)
+	sb %r3, $2(%r0)
+	sb %r4, $3(%r0)
+	sb %r5, $4(%r0)
+	sb %r6, $5(%r0)
+	sb %r7, $6(%r0)
+	sb %r8, $7(%r0)
+
+	lw %r1, $0(%r0)
+	lw %r2, $4(%r0)
+	
+	swl %r1, $8(%r0)
+	swl %r1, $13(%r0)
+	swl %r1, $18(%r0)
+	swl %r1, $23(%r0)
+	
+; expected results (at this line):
+; $0 = 00 01 02 03
+; $4 = 04 05 06 07
+; $8 = 03 00 00 00
+; $12 = 02 03 00 00
+; $16 = 01 02 03 00
+; $20 = 00 01 02 03
+
+	swr %r2, $8(%r0)
+	swr %r2, $13(%r0)
+	swr %r2, $18(%r0)
+	swr %r2, $23(%r0)
+	
+	sll %r0, %r0, $0
+	sll %r0, %r0, $0
+	sll %r0, %r0, $0
+	sll %r0, %r0, $0
+
+	break
+
+; expected results (at end):
+; $0 = 00 01 02 03
+; $4 = 04 05 06 07
+; $8 = 04 05 06 07
+; $12 = 02 04 05 06
+; $16 = 01 02 04 05
+; $20 = 00 01 02 04
+
+
+

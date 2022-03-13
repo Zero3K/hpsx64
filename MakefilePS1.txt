@@ -1,0 +1,68 @@
+
+DIR_COMMON = ./common
+DIR_PLATFORM = $(DIR_COMMON)/WindowsAPI
+DIR_HPS1X64 = ./hps1x64/src
+
+INC_COMMON = -I$(DIR_COMMON) -I$(DIR_COMMON)/StringUtilities -I$(DIR_COMMON)/breakpoint/src -I$(DIR_COMMON)/debug/src -I$(DIR_COMMON)/DiskImage/cd/src -I$(DIR_COMMON)/x64Encoder/src -I$(DIR_COMMON)/config/src
+INC_PS1_PLATFORM = -I$(DIR_HPS1X64)/hps1x64/src/ -I$(DIR_PLATFORM)/GUIHandler/src/ -I$(DIR_PLATFORM)/WinFile/src/ -I$(DIR_PLATFORM)/DebugValueList/src/ -I$(DIR_PLATFORM)/DisassemblyViewer/src/ -I$(DIR_PLATFORM)/InputBox/src/ -I$(DIR_PLATFORM)/DebugMemoryViewer/src/ -I$(DIR_PLATFORM)/BreakpointWindow/src/ -I$(DIR_PLATFORM)/Joystick/src/
+
+DIR_PS1 = $(DIR_HPS1X64)
+DIR_PS1_R3000A = $(DIR_PS1)/r3000a/src
+DIR_PS1_CD = $(DIR_PS1)/cd/src
+DIR_PS1_GPU = $(DIR_PS1)/gpu/src
+DIR_PS1_DMA = $(DIR_PS1)/dma/src
+DIR_PS1_INTC = $(DIR_PS1)/intc/src
+DIR_PS1_MDEC = $(DIR_PS1)/mdec/src
+DIR_PS1_SPU = $(DIR_PS1)/spu/src
+DIR_PS1_SIO = $(DIR_PS1)/sio/src
+DIR_PS1_PIO = $(DIR_PS1)/pio/src
+DIR_PS1_TIMER = $(DIR_PS1)/timer/src
+DIR_PS1_BUS = $(DIR_PS1)/databus/src
+DIR_PS1_SYSTEM = $(DIR_PS1)/system/src
+
+INC_PS1_R3000A = -I$(DIR_PS1_R3000A) -I$(DIR_PS1_R3000A)/execute -I$(DIR_PS1_R3000A)/lookup -I$(DIR_PS1_R3000A)/print -I$(DIR_PS1_R3000A)/COP2 -I$(DIR_PS1_R3000A)/recompile -I$(DIR_PS1_R3000A)/cache
+INC_PS1_CD = -I$(DIR_PS1_CD)
+INC_PS1_GPU = -I$(DIR_PS1_GPU)
+INC_PS1_DMA = -I$(DIR_PS1_DMA)
+INC_PS1_INTC = -I$(DIR_PS1_INTC)
+INC_PS1_MDEC = -I$(DIR_PS1_MDEC)
+INC_PS1_SPU = -I$(DIR_PS1_SPU)
+INC_PS1_SIO = -I$(DIR_PS1_SIO)
+INC_PS1_PIO = -I$(DIR_PS1_PIO)
+INC_PS1_TIMER = -I$(DIR_PS1_TIMER)
+INC_PS1_BUS = -I$(DIR_PS1_BUS)
+INC_PS1_SYSTEM = -I$(DIR_PS1_SYSTEM)
+INC_PS1 = $(INC_PS1_R3000A) $(INC_PS1_CD) $(INC_PS1_GPU) $(INC_PS1_DMA) $(INC_PS1_INTC) $(INC_PS1_MDEC) $(INC_PS1_SPU) $(INC_PS1_SIO) $(INC_PS1_PIO) $(INC_PS1_TIMER) $(INC_PS1_BUS) $(INC_PS1_SYSTEM)
+
+
+
+SRC_PS1_PLATFORM = $(wildcard $(DIR_HPS1X64)/hps1x64/src/*.cpp) $(wildcard $(DIR_PLATFORM)/GUIHandler/src/*.cpp) $(wildcard $(DIR_PLATFORM)/WinFile/src/*.cpp) $(wildcard $(DIR_PLATFORM)/DisassemblyViewer/src/*.cpp) $(wildcard $(DIR_PLATFORM)/InputBox/src/*.cpp) $(wildcard $(DIR_PLATFORM)/DebugMemoryViewer/src/*.cpp) $(wildcard $(DIR_PLATFORM)/BreakpointWindow/src/*.cpp) $(wildcard $(DIR_PLATFORM)/Joystick/src/*.cpp)
+SRC_COMMON = $(wildcard $(DIR_COMMON)/StringUtilities/*.cpp) $(wildcard $(DIR_COMMON)/breakpoint/src/*.cpp) $(wildcard $(DIR_COMMON)/debug/src/*.cpp) $(wildcard $(DIR_COMMON)/DiskImage/cd/src/*.cpp) $(wildcard $(DIR_COMMON)/x64Encoder/src/*.cpp) $(wildcard $(DIR_COMMON)/config/src/*.cpp)
+
+SRC_PS1_R3000A = $(wildcard $(DIR_PS1_R3000A)/*.cpp) $(wildcard $(DIR_PS1_R3000A)/execute/*.cpp) $(wildcard $(DIR_PS1_R3000A)/lookup/*.cpp) $(wildcard $(DIR_PS1_R3000A)/print/*.cpp) $(wildcard $(DIR_PS1_R3000A)/COP2/*.cpp) $(wildcard $(DIR_PS1_R3000A)/recompile/*.cpp)
+SRC_PS1_CD = $(wildcard $(DIR_PS1_CD)/*.cpp)
+SRC_PS1_GPU = $(wildcard $(DIR_PS1_GPU)/*.cpp)
+SRC_PS1_DMA = $(wildcard $(DIR_PS1_DMA)/*.cpp)
+SRC_PS1_INTC = $(wildcard $(DIR_PS1_INTC)/*.cpp)
+SRC_PS1_MDEC = $(wildcard $(DIR_PS1_MDEC)/*.cpp)
+SRC_PS1_SPU = $(wildcard $(DIR_PS1_SPU)/*.cpp)
+SRC_PS1_SIO = $(wildcard $(DIR_PS1_SIO)/*.cpp)
+SRC_PS1_PIO = $(wildcard $(DIR_PS1_PIO)/*.cpp)
+SRC_PS1_TIMER = $(wildcard $(DIR_PS1_TIMER)/*.cpp)
+SRC_PS1_BUS = $(wildcard $(DIR_PS1_BUS)/*.cpp)
+SRC_PS1_SYSTEM = $(wildcard $(DIR_PS1_SYSTEM)/*.cpp)
+SRC_PS1 = $(SRC_PS1_R3000A) $(SRC_PS1_CD) $(SRC_PS1_GPU) $(SRC_PS1_DMA) $(SRC_PS1_INTC) $(SRC_PS1_MDEC) $(SRC_PS1_SPU) $(SRC_PS1_SIO) $(SRC_PS1_PIO) $(SRC_PS1_TIMER) $(SRC_PS1_BUS) $(SRC_PS1_SYSTEM)
+
+
+
+INC = $(INC_PS1) $(INC_COMMON) $(INC_PS1_PLATFORM)
+SRC = $(SRC_PS1) $(SRC_COMMON) $(SRC_PS1_PLATFORM)
+LIBS = -lglew32 -lopengl32 -lglu32 -lgdi32 -lComctl32 -lkernel32 -lwinmm -ldinput8 -ldxguid
+CFLAGS = -w -Wl,-subsystem,console -mwindows -static -static-libgcc -static-libstdc++ -DGLEW_STATIC -O3 -DUSE_PS1_GPU_TEMPLATES
+#-Wl,--stack,134217728
+#-Wl,--stack,16777216
+OBJ = hps1x64
+
+
+$(OBJ): $(SRC)
+	g++ $(CFLAGS) $(INC) -o $@ $^ $(LIBS)

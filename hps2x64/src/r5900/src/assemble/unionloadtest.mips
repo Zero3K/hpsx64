@@ -1,0 +1,48 @@
+
+Load128Test:
+
+	lui %r1, $0x0123
+	ori %r1, %r1, $0x4567
+	lui %r2, $0x89ab
+	ori %r2, %r2, $0xcdef
+	lui %r3, $0xfedc
+	ori %r3, %r3, $0xba98
+	lui %r4, $0x7654
+	ori %r4, %r4, $0x3210
+	addiu %r5, %r0, $0
+	addiu %r6, %r0, $0
+	addiu %r7, %r0, $0
+	addiu %r8, %r0, $0
+	
+	; r1 = 0x01234567
+	
+	sw %r1, $0(%r6)
+	;sw %r2, $4(%r6)
+	;sw %r3, $8(%r6)
+	;sw %r4, $12(%r6)
+	
+	; *0x0 = 0x67 0x45 0x23 0x01
+	
+	lbu %r2, $0(%r6)
+	lbu %r3, $1(%r6)
+	lbu %r4, $2(%r6)
+	lbu %r5, $3(%r6)
+	
+	; r2 should be 0x67
+	; r3 should be 0x45
+	; r4 should be 0x23
+	; r5 should be 0x01
+	
+	;lq %r5, $0(%r6)
+	;sq %r5, $32(%r6)
+	;lq %r5, $32(%r6)
+
+	break;
+
+; result should be:
+; r1 = 1
+; r2 = 1
+; r3 = 0
+; r4 = 5
+; r5 = 2
+; r6 = 7

@@ -1,0 +1,26 @@
+
+SimpleXorTest:
+
+	addiu %r1, %r0, $0
+	addiu %r2, %r0, $0
+	addiu %r3, %r0, $0
+	addiu %r4, %r0, $0
+	addiu %r5, %r0, $0
+	addiu %r6, %r0, $0
+	
+	xori %r1, %r1, $1
+	xor %r2, %r2, %r1
+	xor %r3, %r2, %r1
+	xori %r4, %r4, $5
+	xori %r5, %r5, $2
+	xor %r6, %r4, %r5
+
+	break;
+
+; result should be:
+; r1 = 1
+; r2 = 1
+; r3 = 0
+; r4 = 5
+; r5 = 2
+; r6 = 7

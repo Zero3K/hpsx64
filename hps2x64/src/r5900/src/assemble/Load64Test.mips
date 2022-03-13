@@ -1,0 +1,27 @@
+
+Load64Test:
+
+	lui %r1, $0x0123
+	ori %r1, %r1, $0x4567
+	lui %r2, $0x89ab
+	ori %r2, %r2, $0xcdef
+	addiu %r3, %r0, $0
+	addiu %r4, %r0, $0
+	addiu %r5, %r0, $0
+	addiu %r6, %r0, $0
+	
+	sw %r1, $0(%r6)
+	sw %r2, $4(%r6)
+	
+	ld %r3, $0(%r6)
+	sd %r3, $8(%r6)
+
+	break;
+
+; result should be:
+; r1 = 1
+; r2 = 1
+; r3 = 0
+; r4 = 5
+; r5 = 2
+; r6 = 7

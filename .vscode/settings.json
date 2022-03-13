@@ -1,0 +1,8 @@
+{
+    "files.associations": {
+        "*.comp": "cpp",
+        "iostream": "cpp",
+        "new": "cpp",
+        "iomanip": "cpp"
+    }
+}

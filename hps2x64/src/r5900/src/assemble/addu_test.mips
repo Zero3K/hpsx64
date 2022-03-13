@@ -1,0 +1,14 @@
+
+AddTest:
+
+	addiu %r1, %r0, $1
+	addiu %r2, %r0, $2
+	
+	addu %r3, %r2, %r1
+	
+	break;
+
+; result should be:
+; r1 = 1
+; r2 = 2
+; r3 = 3
