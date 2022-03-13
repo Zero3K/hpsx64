@@ -1,2 +1,2 @@
-mingw32-make -f MakefilePS1_Debug.txt
-pause
+@echo off
+mingw32-make -B -f MakefilePS1_Debug.txt

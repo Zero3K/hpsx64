@@ -1,2 +1,2 @@
-mingw32-make -f Makefile_assemble.txt
-pause
+@echo off
+mingw32-make -B -f Makefile_assemble.txt
