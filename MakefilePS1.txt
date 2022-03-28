@@ -57,7 +57,7 @@ SRC_PS1 = $(SRC_PS1_R3000A) $(SRC_PS1_CD) $(SRC_PS1_GPU) $(SRC_PS1_DMA) $(SRC_PS
 
 INC = $(INC_PS1) $(INC_COMMON) $(INC_PS1_PLATFORM)
 SRC = $(SRC_PS1) $(SRC_COMMON) $(SRC_PS1_PLATFORM)
-LIBS = -lglew32 -lopengl32 -lglu32 -lgdi32 -lComctl32 -lkernel32 -lwinmm -ldinput8 -ldxguid
+LIBS = -lglew32 -lopengl32 -lglu32 -lgdi32 -lComctl32 -lkernel32 -lwinmm -ldinput8 -ldxguid -lshlwapi
 CFLAGS = -w -Wl,-subsystem,console -mwindows -static -static-libgcc -static-libstdc++ -DGLEW_STATIC -O3 -DUSE_PS1_GPU_TEMPLATES
 #-Wl,--stack,134217728
 #-Wl,--stack,16777216

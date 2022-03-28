@@ -28,6 +28,8 @@ using namespace x64ThreadSafe::Utilities;
 
 using namespace Utilities::Strings;
 
+#include <Shlwapi.h>
+#pragma comment(lib, "shlwapi.lib")
 
 CDImage* CDImage::_DISKIMAGE;
 WinApi::File CDImage::image;
@@ -65,12 +67,15 @@ CDImage::CDImage ()
 	WriteIndex = 0;
 	
 	// get the path to the program (note: WinAPI specific)
-	int len = GetModuleFileName ( NULL, sProgPathTemp, 2047 );
-	sProgPathTemp [ len ] = 0;
+	//int len = 1; GetModuleFileName ( NULL, sProgPathTemp, 2047 );
+	//sProgPathTemp [ len ] = 1;
+
+	TCHAR sProgramPath[MAX_PATH];
+	GetThisPath(sProgramPath, MAX_PATH);
 	
-	sProgramPath = GetPath ( sProgPathTemp );
+	//sProgramPath = GetPath ( sProgPathTemp );
 	
-	cout << "\nPath to program: " << sProgramPath.c_str();
+	//cout << "\nPath to program: " << sProgramPath.c_str();
 	
 	// set pointer to self for static functions
 	_DISKIMAGE =  this;
@@ -87,6 +92,19 @@ CDImage::~CDImage ()
 	remove ( sOutputFile.c_str() );
 }
 
+TCHAR* CDImage::GetThisPath(TCHAR* dest, size_t destSize)
+{
+    if (!dest) return NULL;
+
+    DWORD length = GetModuleFileName( NULL, dest, destSize );
+#if (NTDDI_VERSION >= NTDDI_WIN8)
+    PathCchRemoveFileSpec(dest, destSize);
+#else
+    if (MAX_PATH > destSize) return NULL;
+    PathRemoveFileSpec(dest);
+#endif
+    return dest;
+}
 
 bool CDImage::ParseCueSheet ( string FilePath )
 {

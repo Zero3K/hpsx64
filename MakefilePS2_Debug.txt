@@ -110,7 +110,7 @@ SRC_MPEGLIB2 = $(wildcard $(DIR_PS2_IPU)/mpeg2lib/Mpeg.cpp)
 
 INC = $(INC_PS2) $(INC_COMMON) $(INC_PLATFORM) $(INC_PS1)
 SRC = $(SRC_PS2) $(SRC_COMMON) $(SRC_PLATFORM) $(SRC_PS1)
-LIBS = -Wl,-subsystem,console -lglew32 -lopengl32 -lglu32 -lgdi32 -lComctl32 -lwinmm -ldinput8 -ldxguid
+LIBS = -Wl,-subsystem,console -lglew32 -lopengl32 -lglu32 -lgdi32 -lComctl32 -lwinmm -ldinput8 -ldxguid -lshlwapi
 #CFLAGS = -w -Wreturn-type -mwindows -msse4.2 -static -static-libgcc -static-libstdc++ -DGLEW_STATIC -O3 -DENABLE_GUI_DEBUGGER -DPS2_COMPILE -DUSE_PS2_GPU_TEMPLATES
 #CFLAGS = -w -mwindows -mavx2 -fpermissive -static-libgcc -static-libstdc++ -O3 -DENABLE_GUI_DEBUGGER -DPS2_COMPILE -DUSE_PS2_GPU_TEMPLATES
 CFLAGS = -w -Wreturn-type -g -mwindows -msse4.2 -static -static-libgcc -static-libstdc++ -DGLEW_STATIC -O3 -DENABLE_GUI_DEBUGGER -DPS2_COMPILE -DUSE_PS2_GPU_TEMPLATES
