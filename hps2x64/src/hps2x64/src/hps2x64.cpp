@@ -944,8 +944,8 @@ void hps2x64::InitializeProgram ()
 	
 	cout << "\nLoading memory cards if available...";
 	
-	//_SYSTEM._SIO.Load_MemoryCardFile ( ExecutablePath + "card0", 0 );
-	//_SYSTEM._SIO.Load_MemoryCardFile ( ExecutablePath + "card1", 1 );
+	//_HPS2X64._SYSTEM._PS1SYSTEM._SIO.Load_MemoryCardFile ( ExecutablePath + "card0", 0 );
+	//_HPS2X64._SYSTEM._PS1SYSTEM._SIO.Load_MemoryCardFile ( ExecutablePath + "card1", 1 );
 	_SYSTEM._PS1SYSTEM._SIO.Load_PS2MemoryCardFile ( ExecutablePath + "ps2card0", 0 );
 	_SYSTEM._PS1SYSTEM._SIO.Load_PS2MemoryCardFile ( ExecutablePath + "ps2card1", 1 );
 	
@@ -1343,8 +1343,8 @@ void hps2x64::RunProgram ()
 	// Closing Program //
 	
 	// write back memory cards
-	//_SYSTEM._SIO.Store_MemoryCardFile ( ExecutablePath + "card0", 0 );
-	//_SYSTEM._SIO.Store_MemoryCardFile ( ExecutablePath + "card1", 1 );
+	//_HPS2X64._SYSTEM._PS1SYSTEM._SIO.Store_MemoryCardFile ( ExecutablePath + "card0", 0 );
+	//_HPS2X64._SYSTEM._PS1SYSTEM._SIO.Store_MemoryCardFile ( ExecutablePath + "card1", 1 );
 	_SYSTEM._PS1SYSTEM._SIO.Store_PS2MemoryCardFile ( ExecutablePath + "ps2card0", 0 );
 	_SYSTEM._PS1SYSTEM._SIO.Store_PS2MemoryCardFile ( ExecutablePath + "ps2card1", 1 );
 	
@@ -3582,37 +3582,37 @@ void hps2x64::LoadConfig ( string ConfigFileName )
 	cfg.Load ( ConfigFileName );
 	
 	// load the variables from the configuration file
-	/*
-	cfg.Get_Value32 ( "Pad1_DigitalAnalog", _SYSTEM._SIO.ControlPad_Type [ 0 ] );
-	cfg.Get_Value32 ( "Pad2_DigitalAnalog", _SYSTEM._SIO.ControlPad_Type [ 1 ] );
-	cfg.Get_Value32 ( "MemoryCard1_Disconnected", _SYSTEM._SIO.MemoryCard_ConnectionState [ 0 ] );
-	cfg.Get_Value32 ( "MemoryCard2_Disconnected", _SYSTEM._SIO.MemoryCard_ConnectionState [ 1 ] );
 	
-	cfg.Get_Value32 ( "CD_Region", _SYSTEM._CD.Region );
+	cfg.Get_Value32 ( "Pad1_DigitalAnalog", _HPS2X64._SYSTEM._PS1SYSTEM._SIO.ControlPad_Type [ 0 ] );
+	cfg.Get_Value32 ( "Pad2_DigitalAnalog", _HPS2X64._SYSTEM._PS1SYSTEM._SIO.ControlPad_Type [ 1 ] );
+	cfg.Get_Value32 ( "MemoryCard1_Disconnected", _HPS2X64._SYSTEM._PS1SYSTEM._SIO.MemoryCard_ConnectionState [ 0 ] );
+	cfg.Get_Value32 ( "MemoryCard2_Disconnected", _HPS2X64._SYSTEM._PS1SYSTEM._SIO.MemoryCard_ConnectionState [ 1 ] );
 	
-	cfg.Get_Value32 ( "SPU_Enable_AudioOutput", _SYSTEM._SPU.AudioOutput_Enabled );
-	cfg.Get_Value32 ( "SPU_Enable_Filter", _SYSTEM._SPU.AudioFilter_Enabled );
-	cfg.Get_Value32 ( "SPU_BufferSize", _SYSTEM._SPU.NextPlayBuffer_Size );
-	cfg.Get_Value32 ( "SPU_GlobalVolume", _SYSTEM._SPU.GlobalVolume );
+	cfg.Get_Value32 ( "CD_Region", _HPS2X64._SYSTEM._PS1SYSTEM._CD.Region );
+	
+	cfg.Get_Value32 ( "SPU_Enable_AudioOutput", _HPS2X64._SYSTEM._PS1SYSTEM._SPU.AudioOutput_Enabled );
+	cfg.Get_Value32 ( "SPU_Enable_Filter", _HPS2X64._SYSTEM._PS1SYSTEM._SPU.AudioFilter_Enabled );
+	cfg.Get_Value32 ( "SPU_BufferSize", _HPS2X64._SYSTEM._PS1SYSTEM._SPU.NextPlayBuffer_Size );
+	cfg.Get_Value32 ( "SPU_GlobalVolume", _HPS2X64._SYSTEM._PS1SYSTEM._SPU.GlobalVolume );
 	
 	// load the key configurations too
-	cfg.Get_Value32 ( "Pad1_KeyX", _SYSTEM._SIO.Key_X [ 0 ] );
-	cfg.Get_Value32 ( "Pad1_KeyO", _SYSTEM._SIO.Key_O [ 0 ] );
-	cfg.Get_Value32 ( "Pad1_KeyTriangle", _SYSTEM._SIO.Key_Triangle [ 0 ] );
-	cfg.Get_Value32 ( "Pad1_KeySquare", _SYSTEM._SIO.Key_Square [ 0 ] );
-	cfg.Get_Value32 ( "Pad1_KeyR1", _SYSTEM._SIO.Key_R1 [ 0 ] );
-	cfg.Get_Value32 ( "Pad1_KeyR2", _SYSTEM._SIO.Key_R2 [ 0 ] );
-	cfg.Get_Value32 ( "Pad1_KeyR3", _SYSTEM._SIO.Key_R3 [ 0 ] );
-	cfg.Get_Value32 ( "Pad1_KeyL1", _SYSTEM._SIO.Key_L1 [ 0 ] );
-	cfg.Get_Value32 ( "Pad1_KeyL2", _SYSTEM._SIO.Key_L2 [ 0 ] );
-	cfg.Get_Value32 ( "Pad1_KeyL3", _SYSTEM._SIO.Key_L3 [ 0 ] );
-	cfg.Get_Value32 ( "Pad1_KeyStart", _SYSTEM._SIO.Key_Start [ 0 ] );
-	cfg.Get_Value32 ( "Pad1_KeySelect", _SYSTEM._SIO.Key_Select [ 0 ] );
-	cfg.Get_Value32 ( "Pad1_KeyLeftAnalogX", _SYSTEM._SIO.LeftAnalog_X [ 0 ] );
-	cfg.Get_Value32 ( "Pad1_KeyLeftAnalogY", _SYSTEM._SIO.LeftAnalog_Y [ 0 ] );
-	cfg.Get_Value32 ( "Pad1_KeyRightAnalogX", _SYSTEM._SIO.RightAnalog_X [ 0 ] );
-	cfg.Get_Value32 ( "Pad1_KeyRightAnalogY", _SYSTEM._SIO.RightAnalog_Y [ 0 ] );
-	*/
+	cfg.Get_Value32 ( "Pad1_KeyX", _HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_X [ 0 ] );
+	cfg.Get_Value32 ( "Pad1_KeyO", _HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_O [ 0 ] );
+	cfg.Get_Value32 ( "Pad1_KeyTriangle", _HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_Triangle [ 0 ] );
+	cfg.Get_Value32 ( "Pad1_KeySquare", _HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_Square [ 0 ] );
+	cfg.Get_Value32 ( "Pad1_KeyR1", _HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_R1 [ 0 ] );
+	cfg.Get_Value32 ( "Pad1_KeyR2", _HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_R2 [ 0 ] );
+	cfg.Get_Value32 ( "Pad1_KeyR3", _HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_R3 [ 0 ] );
+	cfg.Get_Value32 ( "Pad1_KeyL1", _HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_L1 [ 0 ] );
+	cfg.Get_Value32 ( "Pad1_KeyL2", _HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_L2 [ 0 ] );
+	cfg.Get_Value32 ( "Pad1_KeyL3", _HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_L3 [ 0 ] );
+	cfg.Get_Value32 ( "Pad1_KeyStart", _HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_Start [ 0 ] );
+	cfg.Get_Value32 ( "Pad1_KeySelect", _HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_Select [ 0 ] );
+	cfg.Get_Value32 ( "Pad1_KeyLeftAnalogX", _HPS2X64._SYSTEM._PS1SYSTEM._SIO.LeftAnalog_X [ 0 ] );
+	cfg.Get_Value32 ( "Pad1_KeyLeftAnalogY", _HPS2X64._SYSTEM._PS1SYSTEM._SIO.LeftAnalog_Y [ 0 ] );
+	cfg.Get_Value32 ( "Pad1_KeyRightAnalogX", _HPS2X64._SYSTEM._PS1SYSTEM._SIO.RightAnalog_X [ 0 ] );
+	cfg.Get_Value32 ( "Pad1_KeyRightAnalogY", _HPS2X64._SYSTEM._PS1SYSTEM._SIO.RightAnalog_Y [ 0 ] );
+	
 }
 
 
@@ -3626,47 +3626,46 @@ void hps2x64::SaveConfig ( string ConfigFileName )
 	cout << "\nSaving pad config";
 	
 	// load the variables from the configuration file
-	/*
-	cfg.Set_Value32 ( "Pad1_DigitalAnalog", _SYSTEM._SIO.ControlPad_Type [ 0 ] );
-	cfg.Set_Value32 ( "Pad2_DigitalAnalog", _SYSTEM._SIO.ControlPad_Type [ 1 ] );
+	
+	cfg.Set_Value32 ( "Pad1_DigitalAnalog", _HPS2X64._SYSTEM._PS1SYSTEM._SIO.ControlPad_Type [ 0 ] );
+	cfg.Set_Value32 ( "Pad2_DigitalAnalog", _HPS2X64._SYSTEM._PS1SYSTEM._SIO.ControlPad_Type [ 1 ] );
 	
 	cout << "\nSaving card config";
 	
-	cfg.Set_Value32 ( "MemoryCard1_Disconnected", _SYSTEM._SIO.MemoryCard_ConnectionState [ 0 ] );
-	cfg.Set_Value32 ( "MemoryCard2_Disconnected", _SYSTEM._SIO.MemoryCard_ConnectionState [ 1 ] );
+	cfg.Set_Value32 ( "MemoryCard1_Disconnected", _HPS2X64._SYSTEM._PS1SYSTEM._SIO.MemoryCard_ConnectionState [ 0 ] );
+	cfg.Set_Value32 ( "MemoryCard2_Disconnected", _HPS2X64._SYSTEM._PS1SYSTEM._SIO.MemoryCard_ConnectionState [ 1 ] );
 	
 	cout << "\nSaving cd config";
 	
-	cfg.Set_Value32 ( "CD_Region", _SYSTEM._CD.Region );
+	cfg.Set_Value32 ( "CD_Region", _HPS2X64._SYSTEM._PS1SYSTEM._CD.Region );
 	
 	cout << "\nSaving spu config";
 	
-	cfg.Set_Value32 ( "SPU_Enable_AudioOutput", _SYSTEM._SPU.AudioOutput_Enabled );
-	cfg.Set_Value32 ( "SPU_Enable_Filter", _SYSTEM._SPU.AudioFilter_Enabled );
-	cfg.Set_Value32 ( "SPU_BufferSize", _SYSTEM._SPU.NextPlayBuffer_Size );
-	cfg.Set_Value32 ( "SPU_GlobalVolume", _SYSTEM._SPU.GlobalVolume );
+	cfg.Set_Value32 ( "SPU_Enable_AudioOutput", _HPS2X64._SYSTEM._PS1SYSTEM._SPU.AudioOutput_Enabled );
+	cfg.Set_Value32 ( "SPU_Enable_Filter", _HPS2X64._SYSTEM._PS1SYSTEM._SPU.AudioFilter_Enabled );
+	cfg.Set_Value32 ( "SPU_BufferSize", _HPS2X64._SYSTEM._PS1SYSTEM._SPU.NextPlayBuffer_Size );
+	cfg.Set_Value32 ( "SPU_GlobalVolume", _HPS2X64._SYSTEM._PS1SYSTEM._SPU.GlobalVolume );
 	
 	cout << "\nSaving pad config";
 	
 	// load the key configurations too
-	cfg.Set_Value32 ( "Pad1_KeyX", _SYSTEM._SIO.Key_X [ 0 ] );
-	cfg.Set_Value32 ( "Pad1_KeyO", _SYSTEM._SIO.Key_O [ 0 ] );
-	cfg.Set_Value32 ( "Pad1_KeyTriangle", _SYSTEM._SIO.Key_Triangle [ 0 ] );
-	cfg.Set_Value32 ( "Pad1_KeySquare", _SYSTEM._SIO.Key_Square [ 0 ] );
-	cfg.Set_Value32 ( "Pad1_KeyR1", _SYSTEM._SIO.Key_R1 [ 0 ] );
-	cfg.Set_Value32 ( "Pad1_KeyR2", _SYSTEM._SIO.Key_R2 [ 0 ] );
-	cfg.Set_Value32 ( "Pad1_KeyR3", _SYSTEM._SIO.Key_R3 [ 0 ] );
-	cfg.Set_Value32 ( "Pad1_KeyL1", _SYSTEM._SIO.Key_L1 [ 0 ] );
-	cfg.Set_Value32 ( "Pad1_KeyL2", _SYSTEM._SIO.Key_L2 [ 0 ] );
-	cfg.Set_Value32 ( "Pad1_KeyL3", _SYSTEM._SIO.Key_L3 [ 0 ] );
-	cfg.Set_Value32 ( "Pad1_KeyStart", _SYSTEM._SIO.Key_Start [ 0 ] );
-	cfg.Set_Value32 ( "Pad1_KeySelect", _SYSTEM._SIO.Key_Select [ 0 ] );
-	cfg.Set_Value32 ( "Pad1_KeyLeftAnalogX", _SYSTEM._SIO.LeftAnalog_X [ 0 ] );
-	cfg.Set_Value32 ( "Pad1_KeyLeftAnalogY", _SYSTEM._SIO.LeftAnalog_Y [ 0 ] );
-	cfg.Set_Value32 ( "Pad1_KeyRightAnalogX", _SYSTEM._SIO.RightAnalog_X [ 0 ] );
-	cfg.Set_Value32 ( "Pad1_KeyRightAnalogY", _SYSTEM._SIO.RightAnalog_Y [ 0 ] );
-	*/
-	
+	cfg.Set_Value32 ( "Pad1_KeyX", _HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_X [ 0 ] );
+	cfg.Set_Value32 ( "Pad1_KeyO", _HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_O [ 0 ] );
+	cfg.Set_Value32 ( "Pad1_KeyTriangle", _HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_Triangle [ 0 ] );
+	cfg.Set_Value32 ( "Pad1_KeySquare", _HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_Square [ 0 ] );
+	cfg.Set_Value32 ( "Pad1_KeyR1", _HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_R1 [ 0 ] );
+	cfg.Set_Value32 ( "Pad1_KeyR2", _HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_R2 [ 0 ] );
+	cfg.Set_Value32 ( "Pad1_KeyR3", _HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_R3 [ 0 ] );
+	cfg.Set_Value32 ( "Pad1_KeyL1", _HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_L1 [ 0 ] );
+	cfg.Set_Value32 ( "Pad1_KeyL2", _HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_L2 [ 0 ] );
+	cfg.Set_Value32 ( "Pad1_KeyL3", _HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_L3 [ 0 ] );
+	cfg.Set_Value32 ( "Pad1_KeyStart", _HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_Start [ 0 ] );
+	cfg.Set_Value32 ( "Pad1_KeySelect", _HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_Select [ 0 ] );
+	cfg.Set_Value32 ( "Pad1_KeyLeftAnalogX", _HPS2X64._SYSTEM._PS1SYSTEM._SIO.LeftAnalog_X [ 0 ] );
+	cfg.Set_Value32 ( "Pad1_KeyLeftAnalogY", _HPS2X64._SYSTEM._PS1SYSTEM._SIO.LeftAnalog_Y [ 0 ] );
+	cfg.Set_Value32 ( "Pad1_KeyRightAnalogX", _HPS2X64._SYSTEM._PS1SYSTEM._SIO.RightAnalog_X [ 0 ] );
+	cfg.Set_Value32 ( "Pad1_KeyRightAnalogY", _HPS2X64._SYSTEM._PS1SYSTEM._SIO.RightAnalog_Y [ 0 ] );
+		
 	// save the configuration file
 	cfg.Save ( ConfigFileName );
 }
@@ -3809,22 +3808,22 @@ bool Dialog_KeyConfigure::Show_ConfigureKeysDialog ( int iPadNum )
 	Joysticks j;
 	
 	/*
-	Key_Pointers [ 0 ] = &_SYSTEM._SIO.Key_X;
-	Key_Pointers [ 1 ] = &_SYSTEM._SIO.Key_O;
-	Key_Pointers [ 2 ] = &_SYSTEM._SIO.Key_Triangle;
-	Key_Pointers [ 3 ] = &_SYSTEM._SIO.Key_Square;
-	Key_Pointers [ 4 ] = &_SYSTEM._SIO.Key_R1;
-	Key_Pointers [ 5 ] = &_SYSTEM._SIO.Key_R2;
-	Key_Pointers [ 6 ] = &_SYSTEM._SIO.Key_R3;
-	Key_Pointers [ 7 ] = &_SYSTEM._SIO.Key_L1;
-	Key_Pointers [ 8 ] = &_SYSTEM._SIO.Key_L2;
-	Key_Pointers [ 9 ] = &_SYSTEM._SIO.Key_L3;
-	Key_Pointers [ 10 ] = &_SYSTEM._SIO.Key_Triangle;
-	Key_Pointers [ 11 ] = &_SYSTEM._SIO.Key_Square;
-	Key_Pointers [ 12 ] = &_SYSTEM._SIO.LeftAnalog_X;
-	Key_Pointers [ 13 ] = &_SYSTEM._SIO.LeftAnalog_Y;
-	Key_Pointers [ 14 ] = &_SYSTEM._SIO.RightAnalog_X;
-	Key_Pointers [ 15 ] = &_SYSTEM._SIO.RightAnalog_Y;
+	Key_Pointers [ 0 ] = &_HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_X;
+	Key_Pointers [ 1 ] = &_HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_O;
+	Key_Pointers [ 2 ] = &_HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_Triangle;
+	Key_Pointers [ 3 ] = &_HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_Square;
+	Key_Pointers [ 4 ] = &_HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_R1;
+	Key_Pointers [ 5 ] = &_HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_R2;
+	Key_Pointers [ 6 ] = &_HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_R3;
+	Key_Pointers [ 7 ] = &_HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_L1;
+	Key_Pointers [ 8 ] = &_HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_L2;
+	Key_Pointers [ 9 ] = &_HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_L3;
+	Key_Pointers [ 10 ] = &_HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_Triangle;
+	Key_Pointers [ 11 ] = &_HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_Square;
+	Key_Pointers [ 12 ] = &_HPS2X64._SYSTEM._PS1SYSTEM._SIO.LeftAnalog_X;
+	Key_Pointers [ 13 ] = &_HPS2X64._SYSTEM._PS1SYSTEM._SIO.LeftAnalog_Y;
+	Key_Pointers [ 14 ] = &_HPS2X64._SYSTEM._PS1SYSTEM._SIO.RightAnalog_X;
+	Key_Pointers [ 15 ] = &_HPS2X64._SYSTEM._PS1SYSTEM._SIO.RightAnalog_Y;
 	*/
 
 	//if ( !isDialogShowing )
