@@ -944,8 +944,8 @@ void hps2x64::InitializeProgram ()
 	
 	cout << "\nLoading memory cards if available...";
 	
-	//_HPS2X64._SYSTEM._PS1SYSTEM._SIO.Load_MemoryCardFile ( ExecutablePath + "card0", 0 );
-	//_HPS2X64._SYSTEM._PS1SYSTEM._SIO.Load_MemoryCardFile ( ExecutablePath + "card1", 1 );
+	//_SYSTEM._SIO.Load_MemoryCardFile ( ExecutablePath + "card0", 0 );
+	//_SYSTEM._SIO.Load_MemoryCardFile ( ExecutablePath + "card1", 1 );
 	_SYSTEM._PS1SYSTEM._SIO.Load_PS2MemoryCardFile ( ExecutablePath + "ps2card0", 0 );
 	_SYSTEM._PS1SYSTEM._SIO.Load_PS2MemoryCardFile ( ExecutablePath + "ps2card1", 1 );
 	
@@ -1343,8 +1343,8 @@ void hps2x64::RunProgram ()
 	// Closing Program //
 	
 	// write back memory cards
-	//_HPS2X64._SYSTEM._PS1SYSTEM._SIO.Store_MemoryCardFile ( ExecutablePath + "card0", 0 );
-	//_HPS2X64._SYSTEM._PS1SYSTEM._SIO.Store_MemoryCardFile ( ExecutablePath + "card1", 1 );
+	//_SYSTEM._SIO.Store_MemoryCardFile ( ExecutablePath + "card0", 0 );
+	//_SYSTEM._SIO.Store_MemoryCardFile ( ExecutablePath + "card1", 1 );
 	_SYSTEM._PS1SYSTEM._SIO.Store_PS2MemoryCardFile ( ExecutablePath + "ps2card0", 0 );
 	_SYSTEM._PS1SYSTEM._SIO.Store_PS2MemoryCardFile ( ExecutablePath + "ps2card1", 1 );
 	
