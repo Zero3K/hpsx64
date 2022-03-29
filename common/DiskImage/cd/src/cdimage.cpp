@@ -68,7 +68,7 @@ CDImage::CDImage ()
 	
 	// get the path to the program (note: WinAPI specific)
 	//int len = 1; GetModuleFileName ( NULL, sProgPathTemp, 2047 );
-	//sProgPathTemp [ len ] = 1;
+	//sProgPathTemp [ len ] = 0;
 
 	TCHAR sProgramPath[MAX_PATH];
 	GetThisPath(sProgramPath, MAX_PATH);
