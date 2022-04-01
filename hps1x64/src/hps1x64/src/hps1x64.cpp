@@ -584,12 +584,12 @@ int hps1x64::InitializeProgram ()
 	m->AddMainMenuItem ( "File" );
 	m->AddMainMenuItem ( "Debug" );
 	m->AddMenu ( "File", "Load" );
-	m->AddItem ( "Load", "Bios", OnClick_File_Load_BIOS );
-	m->AddItem ( "Load", "State", OnClick_File_Load_State );
-	m->AddItem ( "Load", "Insert/Remove Game Disk", OnClick_File_Load_GameDisk );
+	m->AddItem ( "Load", "Bios\tb", OnClick_File_Load_BIOS );
+	m->AddItem ( "Load", "State\tF4", OnClick_File_Load_State );
+	m->AddItem ( "Load", "Insert/Remove Game Disk\tg", OnClick_File_Load_GameDisk );
 	m->AddItem ( "Load", "Insert/Remove Audio Disk", OnClick_File_Load_AudioDisk );
 	m->AddMenu ( "File", "Save" );
-	m->AddItem ( "Save", "State", OnClick_File_Save_State );
+	m->AddItem ( "Save", "State\ts", OnClick_File_Save_State );
 	m->AddItem ( "File", "Reset", OnClick_File_Reset );
 	//m->AddItem ( "Save", "Bios Debug Info", SaveBIOSClick );
 	//m->AddItem ( "Save", "RAM Debug Info", SaveRAMClick );
@@ -624,7 +624,7 @@ int hps1x64::InitializeProgram ()
 	m->AddMainMenuItem ( "Peripherals" );
 	//m->AddItem ( "Peripherals", "Configure Joypad...", OnClick_Controllers_Configure );
 	m->AddMenu ( "Peripherals", "Pad 1" );
-	m->AddItem ( "Pad 1", "Configure Joypad1...", OnClick_Controllers0_Configure );
+	m->AddItem ( "Pad 1", "Configure Joypad1...\tj", OnClick_Controllers0_Configure );
 	m->AddMenu ( "Pad 1", "Pad 1 Type" );
 	m->AddItem ( "Pad 1 Type", "Pad 1 Digital", OnClick_Pad1Type_Digital );
 	m->AddItem ( "Pad 1 Type", "Pad 1 Analog", OnClick_Pad1Type_Analog );
@@ -719,7 +719,22 @@ int hps1x64::InitializeProgram ()
 	
 	// need a shortcut key for "run"
 	ProgramWindow->AddShortcutKey ( OnClick_File_Run, 0x52 );
-	
+
+	// need a shortcut key for "load bios"
+	ProgramWindow->AddShortcutKey ( OnClick_File_Load_BIOS, 0x42 );
+
+	// need a shortcut key for "insert/remove game disk"
+	ProgramWindow->AddShortcutKey ( OnClick_File_Load_GameDisk, 0x47 );
+
+	// need a shortcut key for "save state"
+	ProgramWindow->AddShortcutKey ( OnClick_File_Save_State, 0x53 );
+
+	// need a shortcut key for "load state"
+	ProgramWindow->AddShortcutKey ( OnClick_File_Save_State, 0x73 );
+
+	// need a shortcut key for "configure joypad1"
+	ProgramWindow->AddShortcutKey ( OnClick_Controllers0_Configure, 0x4A );
+
 	// need a shortcut key to toggle full screen
 	ProgramWindow->AddShortcutKey ( OnClick_Video_FullScreen, 0x46 );
 	ProgramWindow->AddShortcutKey ( OnClick_Video_FullScreen, 0x1b );

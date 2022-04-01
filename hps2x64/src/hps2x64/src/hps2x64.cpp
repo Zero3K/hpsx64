@@ -696,15 +696,15 @@ void hps2x64::InitializeProgram ()
 	m->AddMainMenuItem ( "File" );
 	m->AddMainMenuItem ( "Debug" );
 	m->AddMenu ( "File", "Load" );
-	m->AddItem ( "Load", "Bios", OnClick_File_Load_BIOS );
-	m->AddItem ( "Load", "State", OnClick_File_Load_State );
+	m->AddItem ( "Load", "Bios\tb", OnClick_File_Load_BIOS );
+	m->AddItem ( "Load", "State\tF4", OnClick_File_Load_State );
 	//m->AddItem ( "Load", "Insert/Remove PS2 CD Game Disk", OnClick_File_Load_GameDisk_PS2CD );
 	//m->AddItem ( "Load", "Insert/Remove PS2 DVD Game Disk", OnClick_File_Load_GameDisk_PS2DVD );
-	m->AddItem ( "Load", "Insert/Remove PS2 Game Disk", OnClick_File_Load_GameDisk_PS2 );
+	m->AddItem ( "Load", "Insert/Remove PS2 Game Disk\tg", OnClick_File_Load_GameDisk_PS2 );
 	m->AddItem ( "Load", "Insert/Remove PS1 Game Disk", OnClick_File_Load_GameDisk_PS1 );
 	m->AddItem ( "Load", "Insert/Remove Audio Disk", OnClick_File_Load_AudioDisk );
 	m->AddMenu ( "File", "Save" );
-	m->AddItem ( "Save", "State", OnClick_File_Save_State );
+	m->AddItem ( "Save", "State\ts", OnClick_File_Save_State );
 	m->AddItem ( "File", "Reset", OnClick_File_Reset );
 	//m->AddItem ( "Save", "Bios Debug Info", SaveBIOSClick );
 	//m->AddItem ( "Save", "RAM Debug Info", SaveRAMClick );
@@ -764,7 +764,7 @@ void hps2x64::InitializeProgram ()
 	m->AddMainMenuItem ( "Peripherals" );
 	//m->AddItem ( "Peripherals", "Configure Joypad...", OnClick_Controllers_Configure );
 	m->AddMenu ( "Peripherals", "Pad 1" );
-	m->AddItem ( "Pad 1", "Configure Joypad1...", OnClick_Controllers0_Configure );
+	m->AddItem ( "Pad 1", "Configure Joypad1...\tj", OnClick_Controllers0_Configure );
 	m->AddMenu ( "Pad 1", "Pad 1 Type" );
 	m->AddItem ( "Pad 1 Type", "Pad 1 Digital", OnClick_Pad1Type_Digital );
 	m->AddItem ( "Pad 1 Type", "Pad 1 Analog", OnClick_Pad1Type_Analog );
@@ -876,7 +876,22 @@ void hps2x64::InitializeProgram ()
 	
 	// need a shortcut key for "run"
 	ProgramWindow->AddShortcutKey ( OnClick_File_Run, 0x52 );
-	
+
+	// need a shortcut key for "load bios"
+	ProgramWindow->AddShortcutKey ( OnClick_File_Load_BIOS, 0x42 );
+
+	// need a shortcut key for "insert/remove PS2 game disk"
+	ProgramWindow->AddShortcutKey ( OnClick_File_Load_GameDisk_PS2, 0x47 );
+
+	// need a shortcut key for "save state"
+	ProgramWindow->AddShortcutKey ( OnClick_File_Save_State, 0x53 );
+
+	// need a shortcut key for "load state"
+	ProgramWindow->AddShortcutKey ( OnClick_File_Save_State, 0x73 );
+
+	// need a shortcut key for "configure joypad1"
+	ProgramWindow->AddShortcutKey ( OnClick_Controllers0_Configure, 0x4A );
+
 	// need a shortcut key to toggle full screen
 	ProgramWindow->AddShortcutKey ( OnClick_Video_FullScreen, 0x46 );
 	ProgramWindow->AddShortcutKey ( OnClick_Video_FullScreen, 0x1b );
@@ -944,8 +959,8 @@ void hps2x64::InitializeProgram ()
 	
 	cout << "\nLoading memory cards if available...";
 	
-	//_SYSTEM._SIO.Load_MemoryCardFile ( ExecutablePath + "card0", 0 );
-	//_SYSTEM._SIO.Load_MemoryCardFile ( ExecutablePath + "card1", 1 );
+	//_HPS2X64._SYSTEM._PS1SYSTEM._SIO.Load_MemoryCardFile ( ExecutablePath + "card0", 0 );
+	//_HPS2X64._SYSTEM._PS1SYSTEM._SIO.Load_MemoryCardFile ( ExecutablePath + "card1", 1 );
 	_SYSTEM._PS1SYSTEM._SIO.Load_PS2MemoryCardFile ( ExecutablePath + "ps2card0", 0 );
 	_SYSTEM._PS1SYSTEM._SIO.Load_PS2MemoryCardFile ( ExecutablePath + "ps2card1", 1 );
 	
@@ -1343,8 +1358,8 @@ void hps2x64::RunProgram ()
 	// Closing Program //
 	
 	// write back memory cards
-	//_SYSTEM._SIO.Store_MemoryCardFile ( ExecutablePath + "card0", 0 );
-	//_SYSTEM._SIO.Store_MemoryCardFile ( ExecutablePath + "card1", 1 );
+	//_HPS2X64._SYSTEM._PS1SYSTEM._SIO.Store_MemoryCardFile ( ExecutablePath + "card0", 0 );
+	//_HPS2X64._SYSTEM._PS1SYSTEM._SIO.Store_MemoryCardFile ( ExecutablePath + "card1", 1 );
 	_SYSTEM._PS1SYSTEM._SIO.Store_PS2MemoryCardFile ( ExecutablePath + "ps2card0", 0 );
 	_SYSTEM._PS1SYSTEM._SIO.Store_PS2MemoryCardFile ( ExecutablePath + "ps2card1", 1 );
 	
@@ -3495,8 +3510,7 @@ void hps2x64::LoadBIOS ( string FilePath )
 {
 	bool bRet;
 	string NVMPath;
-	
-	cout << "Loading BIOS.\n";
+	 cout << "Loading BIOS.\n";
 	
 	////////////////////////////////////////////////////////
 	// We need to prompt for the TEST program to run
@@ -3612,7 +3626,6 @@ void hps2x64::LoadConfig ( string ConfigFileName )
 	cfg.Get_Value32 ( "Pad1_KeyLeftAnalogY", _HPS2X64._SYSTEM._PS1SYSTEM._SIO.LeftAnalog_Y [ 0 ] );
 	cfg.Get_Value32 ( "Pad1_KeyRightAnalogX", _HPS2X64._SYSTEM._PS1SYSTEM._SIO.RightAnalog_X [ 0 ] );
 	cfg.Get_Value32 ( "Pad1_KeyRightAnalogY", _HPS2X64._SYSTEM._PS1SYSTEM._SIO.RightAnalog_Y [ 0 ] );
-	
 }
 
 
