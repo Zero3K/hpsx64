@@ -329,9 +329,11 @@ using namespace std;
 
 
 		// *** Dialog Boxes *** //
-		string ShowFileOpenDialog ();
+		string ShowFileOpenDialog_BIOS ();
+		string ShowFileOpenDialog_Image ();
+		string ShowFileOpenDialog_Savestate ();
 		vector<string> ShowFileOpenDialogMultiSelect ();
-		string ShowFileSaveDialog ();
+		string ShowFileSaveDialog_Savestate ();
 
 
 
