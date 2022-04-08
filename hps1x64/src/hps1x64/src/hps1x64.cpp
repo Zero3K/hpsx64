@@ -730,7 +730,7 @@ int hps1x64::InitializeProgram ()
 	ProgramWindow->AddShortcutKey ( OnClick_File_Save_State, 0x53 );
 
 	// need a shortcut key for "load state"
-	ProgramWindow->AddShortcutKey ( OnClick_File_Save_State, 0x73 );
+	ProgramWindow->AddShortcutKey ( OnClick_File_Load_State, 0x73 );
 
 	// need a shortcut key for "configure joypad1"
 	ProgramWindow->AddShortcutKey ( OnClick_Controllers0_Configure, 0x4A );
