@@ -2397,6 +2397,9 @@ void hps1x64::LoadConfig ( string ConfigFileName )
 	cfg.Get_Value32 ( "Pad1_KeyLeftAnalogY", _SYSTEM._SIO.LeftAnalog_Y [ 0 ] );
 	cfg.Get_Value32 ( "Pad1_KeyRightAnalogX", _SYSTEM._SIO.RightAnalog_X [ 0 ] );
 	cfg.Get_Value32 ( "Pad1_KeyRightAnalogY", _SYSTEM._SIO.RightAnalog_Y [ 0 ] );
+	cfg.Get_String("BIOS", BiosPath);
+
+
 	
 	cfg.Get_Value32 ( "Scanline_Enable", lTemp );
 	_SYSTEM._GPU.Set_Scanline ( lTemp );
@@ -2457,7 +2460,9 @@ void hps1x64::SaveConfig ( string ConfigFileName )
 	cfg.Set_Value32 ( "Pad1_KeyLeftAnalogY", _SYSTEM._SIO.LeftAnalog_Y [ 0 ] );
 	cfg.Set_Value32 ( "Pad1_KeyRightAnalogX", _SYSTEM._SIO.RightAnalog_X [ 0 ] );
 	cfg.Set_Value32 ( "Pad1_KeyRightAnalogY", _SYSTEM._SIO.RightAnalog_Y [ 0 ] );
-	
+	cfg.Set_String("BIOS", BiosPath);
+
+
 	cfg.Set_Value32 ( "Scanline_Enable", _SYSTEM._GPU.Get_Scanline () );
 	
 	cfg.Set_Value32 ( "R3000A_Recompiler", _SYSTEM._CPU.bEnableRecompiler );
