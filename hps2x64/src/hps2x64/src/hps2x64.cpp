@@ -3630,6 +3630,7 @@ void hps2x64::LoadConfig ( string ConfigFileName )
 	cfg.Get_Value32 ( "Pad1_KeyLeftAnalogY", _HPS2X64._SYSTEM._PS1SYSTEM._SIO.LeftAnalog_Y [ 0 ] );
 	cfg.Get_Value32 ( "Pad1_KeyRightAnalogX", _HPS2X64._SYSTEM._PS1SYSTEM._SIO.RightAnalog_X [ 0 ] );
 	cfg.Get_Value32 ( "Pad1_KeyRightAnalogY", _HPS2X64._SYSTEM._PS1SYSTEM._SIO.RightAnalog_Y [ 0 ] );
+	cfg.Get_String("BIOS", BiosPath);
 }
 
 
@@ -3682,7 +3683,8 @@ void hps2x64::SaveConfig ( string ConfigFileName )
 	cfg.Set_Value32 ( "Pad1_KeyLeftAnalogY", _HPS2X64._SYSTEM._PS1SYSTEM._SIO.LeftAnalog_Y [ 0 ] );
 	cfg.Set_Value32 ( "Pad1_KeyRightAnalogX", _HPS2X64._SYSTEM._PS1SYSTEM._SIO.RightAnalog_X [ 0 ] );
 	cfg.Set_Value32 ( "Pad1_KeyRightAnalogY", _HPS2X64._SYSTEM._PS1SYSTEM._SIO.RightAnalog_Y [ 0 ] );
-		
+	cfg.Set_String("BIOS", BiosPath);
+
 	// save the configuration file
 	cfg.Save ( ConfigFileName );
 }

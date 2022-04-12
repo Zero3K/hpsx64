@@ -2397,7 +2397,7 @@ void hps1x64::LoadConfig ( string ConfigFileName )
 	cfg.Get_Value32 ( "Pad1_KeyLeftAnalogY", _SYSTEM._SIO.LeftAnalog_Y [ 0 ] );
 	cfg.Get_Value32 ( "Pad1_KeyRightAnalogX", _SYSTEM._SIO.RightAnalog_X [ 0 ] );
 	cfg.Get_Value32 ( "Pad1_KeyRightAnalogY", _SYSTEM._SIO.RightAnalog_Y [ 0 ] );
-	cfg.Get_String("BIOS", BiosPath);
+	
 
 
 	
@@ -2409,6 +2409,7 @@ void hps1x64::LoadConfig ( string ConfigFileName )
 	
 	cfg.Get_Value32 ( "GPU_Threads", lTemp );
 	_SYSTEM._GPU.ulNumberOfThreads = lTemp;
+	cfg.Get_String("BIOS", BiosPath);
 }
 
 
@@ -2460,7 +2461,7 @@ void hps1x64::SaveConfig ( string ConfigFileName )
 	cfg.Set_Value32 ( "Pad1_KeyLeftAnalogY", _SYSTEM._SIO.LeftAnalog_Y [ 0 ] );
 	cfg.Set_Value32 ( "Pad1_KeyRightAnalogX", _SYSTEM._SIO.RightAnalog_X [ 0 ] );
 	cfg.Set_Value32 ( "Pad1_KeyRightAnalogY", _SYSTEM._SIO.RightAnalog_Y [ 0 ] );
-	cfg.Set_String("BIOS", BiosPath);
+	
 
 
 	cfg.Set_Value32 ( "Scanline_Enable", _SYSTEM._GPU.Get_Scanline () );
@@ -2468,6 +2469,7 @@ void hps1x64::SaveConfig ( string ConfigFileName )
 	cfg.Set_Value32 ( "R3000A_Recompiler", _SYSTEM._CPU.bEnableRecompiler );
 	
 	cfg.Set_Value32 ( "GPU_Threads", _SYSTEM._GPU.ulNumberOfThreads );
+	cfg.Set_String("BIOS", BiosPath);
 
 	
 	// save the configuration file
