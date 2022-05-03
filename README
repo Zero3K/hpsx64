@@ -179,19 +179,15 @@ Currently only the IPU backend is currently adapted from pcsx2 and is not curren
 Build/Debug instructions:
 
 For hps1x64.exe (PS1 simulator) -
-1. download msys2.
-2. run msys2 and install mingw64 via the command "pacman -S mingw-w64-x86_64-toolchain". You will also need to install "pacman -S mingw-w64-x86_64-glew".
-3. Add "C:\msys64\mingw64\bin" to PATH variable.
-4. Run MakefilePS1.bat.
-5: There is also a vscode project for build/debug included (cd to hpsx64 folder and run "code ." to open project in vscode if installed, then Terminal | Run Task | Build hps1x64).
+1. Run install-toolkit.bat.
+2. Run MakefilePS1.bat.
+3: There is also a vscode project for build/debug included (cd to hpsx64 folder and run "code ." to open project in vscode if installed, then Terminal | Run Task | Build hps1x64).
 Note: If using the vscode project, you must have the "C++ extension for VS Code" installed. It should already be configured for build/debug.
 
 For hps2x64.exe (PS2 simulator) -
-1. download msys2.
-2. run msys2 and install mingw64 via the command "pacman -S mingw-w64-x86_64-toolchain". You will also need to install "pacman -S mingw-w64-x86_64-glew".
-3. Add "C:\msys64\mingw64\bin" to PATH variable.
-4. Run MakefilePS2.bat.
-5: There is also a vscode project for build/debug included (cd to hpsx64 folder and run "code ." to open project in vscode if installed, then Terminal | Run Task | Build hps2x64).
+1. Run install-toolkit.bat.
+2. Run MakefilePS2.bat.
+3: There is also a vscode project for build/debug included (cd to hpsx64 folder and run "code ." to open project in vscode if installed, then Terminal | Run Task | Build hps2x64).
 Note: If using the vscode project, you must have the "C++ extension for VS Code" installed. It should already be configured for build/debug.
 
 Note: A version of hps1x64.exe and hps2x64.exe should have been built for you already and should be in the same folder as this README file. For test/evaluate ONLY.
