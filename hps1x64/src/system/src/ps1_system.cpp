@@ -828,6 +828,9 @@ bool Playstation1::System::LoadTestProgramIntoBios ( const char* FilePath )
 	// write entire program into memory
 	//InputFile.read ( (char*) ( _BUS.BIOS.b32 ), BIOS_SIZE_IN_BYTES );
 	InputFile.read ( (char*) ( _BUS.BIOS.b32 ), _BUS.BIOS_Size );
+	InputFile.seekg ( 0, InputFile.end );
+	int length = InputFile.tellg ();
+	cout << "Size of the read data: " << std::dec << length << flush;
 	
 	InputFile.close();
 	
