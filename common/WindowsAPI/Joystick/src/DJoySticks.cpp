@@ -1,6 +1,8 @@
 
 #include "DJoySticks.h"
 
+#pragma comment(lib, "dinput8")
+#pragma comment(lib, "dxguid")
 
 IDirectInput8* DJoySticks::dev;									// the main DirectInput device
 

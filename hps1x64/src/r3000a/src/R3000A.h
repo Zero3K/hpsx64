@@ -633,19 +633,19 @@ namespace R3000A
 						u16 ComponentsBusy;
 					};
 					
-					u16 isPipelineStall : 1;				// bit 16
-					u16 isSynchronousInterrupt : 1;			// bit 17
-					u16 isMultiplyDivideBusy : 1;			// bit 18
+					//u16 isPipelineStall : 1;				// bit 16
+					//u16 isSynchronousInterrupt : 1;			// bit 17
+					//u16 isMultiplyDivideBusy : 1;			// bit 18
 					
 					// might want to run this on a separate thread, or might not
-					u16 isCOP2Busy : 1;						// bit 19
+					//u16 isCOP2Busy : 1;						// bit 19
 
-					u16 isExternalInterrupt : 1;
+					u16 isExternalInterrupt;	// : 1;
 					
 					// need to know when processor is waiting for next instruction and/or reloading cache from memory
-					u16 isICacheMiss : 1;
-					u16 isRequestingInstructionLoad : 1;
-					u16 isRequestedInstructionLoaded : 1;
+					//u16 isICacheMiss : 1;
+					//u16 isRequestingInstructionLoad : 1;
+					//u16 isRequestedInstructionLoaded : 1;
 					
 				};	// end struct
 				

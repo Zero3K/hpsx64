@@ -94,7 +94,7 @@ namespace R3000A
 			
 			// this actually has to be a 4D array, but I'll make it one array			
 			// use Opcode, Rs, Rt, and Funct to lookup value
-			static u8 LookupTable [ c_iLookupTable_Size ] __attribute__ ((aligned (32)));
+			alignas(32) static u8 LookupTable [ c_iLookupTable_Size ];
 			
 		public:
 			// call this before doing anything

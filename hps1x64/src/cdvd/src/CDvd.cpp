@@ -1419,6 +1419,7 @@ bool CDVD::Store_NVMFile ( string FilePath )
 
 void CDVD::Process_MechaConCommand ( u8 Command )
 {
+
 	//switch ( _CDVD->ucSArgBuffer [ 0 ] )
 	switch ( Command )
 	{
@@ -1489,6 +1490,10 @@ void CDVD::Process_MechaConCommand ( u8 Command )
 
 void CDVD::Process_SCommand ( u8 Command )
 {
+	static const u64 ullCyclesPerSecond = 36864000ULL;
+	static const u64 ullCyclesPerMinute = 36864000ULL * 60ULL;
+	static const u64 ullCyclesPerHour = 36864000ULL * 60ULL * 60ULL;
+
 	//switch ( Data & 0xff )
 	switch ( Command )
 	{
@@ -1534,9 +1539,6 @@ void CDVD::Process_SCommand ( u8 Command )
 	debug << "; READ RTC";
 #endif
 
-			static const u64 ullCyclesPerSecond = 36864000ULL;
-			static const u64 ullCyclesPerMinute = 36864000ULL * 60ULL;
-			static const u64 ullCyclesPerHour = 36864000ULL * 60ULL * 60ULL;
 
 			//SetResultSize(8);
 			_CDVD->EnqueueResult ( 8 );
@@ -2738,7 +2740,7 @@ cout << "\n->SEEK->";
 			//0x83 for cd should be x24??
 			//0x83 for dvd should be x4??
 			// 0x2 for dvd should be x2??
-			DiskSpeed = ( DiskSpeedType & 0x3 ) + 1;
+			DiskSpeed = (float)(( DiskSpeedType & 0xf ) - 1);
 			/*
 			switch ( DiskSpeedType & 0xf )
 			{

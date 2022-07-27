@@ -167,8 +167,8 @@ namespace Playstation1
 			u32 Dummy;
 		};
 
-		static DataBusEntry LUT_DataBus_Read [ c_LUT_Bus_Size ] __attribute__ ((aligned (16)));
-		static DataBusEntry LUT_DataBus_Write [ c_LUT_Bus_Size ] __attribute__ ((aligned (16)));
+		alignas(16) static DataBusEntry LUT_DataBus_Read [ c_LUT_Bus_Size ];
+		alignas(16) static DataBusEntry LUT_DataBus_Write [ c_LUT_Bus_Size ];
 		
 		
 		
@@ -443,6 +443,7 @@ static u32 Memory_Read_t ( u32 Address )
 			break;
 	}
 
+	return 0;
 }
 
 
@@ -546,6 +547,8 @@ static u32 BIOS_Read_t ( u32 Address )
 			cout << "\nhps1x64: DataBus: Unsupported memory read. MASK=" << hex << MASK << "\n";
 			break;
 	}
+
+	return 0;
 }
 
 
@@ -574,6 +577,8 @@ static inline u32 Read_t ( u32 Address )
 			cout << "\nhps1x64: DataBus: Unsupported READ. MASK=" << hex << MASK << "\n";
 			break;
 	}
+
+	return 0;
 }
 
 

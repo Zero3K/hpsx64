@@ -36,8 +36,8 @@ using namespace DiskImage;
 
 //#define INLINE_DEBUG_SPLIT
 
-#define INLINE_DEBUG_DMA_READ
-#define INLINE_DEBUG_DMA_READ_DATA
+//#define INLINE_DEBUG_DMA_READ
+//#define INLINE_DEBUG_DMA_READ_DATA
 
 /*
 #define INLINE_DEBUG_TESTING
@@ -1250,27 +1250,29 @@ void CD::Run ()
 			case CDREG1_CMD_ID_2:
 			
 #ifdef INLINE_DEBUG_RUN
-	debug << "; ID2";
+				debug << "; ID2";
 #endif
 
+				// encapsulating this so that static constants lose scope afterwards
+				{
 				// read result { 2, 0, 0x20, 0, S, C, E, I }
 				// do this for now, but this command REALLY identifies whether it is audio cd or game cd or not
 				// will fix later
 				// goto menu for now
 				// last letter in "SCE" string actually depends on the region
 				// North America = "SCEA"; Japan = "SCEI"; Europe = "SCEE"
-				
+
 				// if the lid/shell is open, it also does interrupt 0x5 instead of interrupt 0x2
-				static const char ID_Results_LidOpen [] = { 0x11, 0x80 };
-				
+				static const unsigned char ID_Results_LidOpen[] = { 0x11, 0x80 };
+
 				// if door/lid/shell closed but no disk then interrupt 0x5 and...
-				static const char ID_Results_LidClosed_NoDisk [] = { 0x08, 0x40, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
-				
+				static const char ID_Results_LidClosed_NoDisk[] = { 0x08, 0x40, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+
 				// if lid closed and audio disk then interrupt 0x5 and...
-				static const char ID_Results_LidClosed_Audio [] = { 0x0a, 0x90, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
-				
+				static const unsigned char ID_Results_LidClosed_Audio[] = { 0x0a, 0x90, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+
 				// if lid closed and game disk then interrupt 0x2 and...
-				static const char ID_Results_LidClosed_Game [] = { 0x02, 0x00, 0x20, 0x00, 'S', 'C', 'E', 'I' };
+				static const char ID_Results_LidClosed_Game[] = { 0x02, 0x00, 0x20, 0x00, 'S', 'C', 'E', 'I' };
 
 
 				// this is the sutff from earlier
@@ -1278,51 +1280,51 @@ void CD::Run ()
 				//static const char ID_Results_Menu [] = { 0x00, 0x80, 0x00, 0x00, 'S', 'C', 'E', 'I' };
 				//static const char ID_Results_Audio [] = { 0x08, 0x90, 0x00, 0x00, 'S', 'C', 'E', 'I' };
 				//static const char ID_Results_Game [] = { 0x08, 0x00, 0x00, 0x00, 'S', 'C', 'E', 'I' };
-				
-				
-				if ( isLidOpen )
+
+
+				if (isLidOpen)
 				{
 					// lid is open //
-					
-					for ( int i = 0; i < sizeof( ID_Results_LidOpen ); i++ ) TempBuffer [ i ] = ID_Results_LidOpen [ i ];
-					
+
+					for (int i = 0; i < sizeof(ID_Results_LidOpen); i++) TempBuffer[i] = ID_Results_LidOpen[i];
+
 					// enqueue secondary interrupt
-					EnqueueInterrupt_Read ( TempBuffer, sizeof( ID_Results_LidOpen ), 0x5 );
+					EnqueueInterrupt_Read(TempBuffer, sizeof(ID_Results_LidOpen), 0x5);
 				}
 				else
 				{
 					// lid is closed //
-					
+
 					// check if there is a disk
-					if ( cd_image.isDiskOpen )
+					if (cd_image.isDiskOpen)
 					{
 						// there is a disk //
-						if ( isGameCD )
+						if (isGameCD)
 						{
 							// is a game disk //
-							
+
 							// copy into temp buffer
-							for ( int i = 0; i < sizeof( ID_Results_LidClosed_Game ); i++ ) TempBuffer [ i ] = ID_Results_LidClosed_Game [ i ];
-							
+							for (int i = 0; i < sizeof(ID_Results_LidClosed_Game); i++) TempBuffer[i] = ID_Results_LidClosed_Game[i];
+
 							// put in the region
-							TempBuffer [ 7 ] = Region;
-							
-							EnqueueInterrupt_Read ( TempBuffer, sizeof( ID_Results_LidClosed_Game ), 0x2 );
+							TempBuffer[7] = Region;
+
+							EnqueueInterrupt_Read(TempBuffer, sizeof(ID_Results_LidClosed_Game), 0x2);
 						}
 						else
 						{
 							// is an audio disk //
-							
-							for ( int i = 0; i < sizeof( ID_Results_LidClosed_Audio ); i++ ) TempBuffer [ i ] = ID_Results_LidClosed_Audio [ i ];
-							EnqueueInterrupt_Read ( TempBuffer, sizeof( ID_Results_LidClosed_Audio ), 0x5 );
+
+							for (int i = 0; i < sizeof(ID_Results_LidClosed_Audio); i++) TempBuffer[i] = ID_Results_LidClosed_Audio[i];
+							EnqueueInterrupt_Read(TempBuffer, sizeof(ID_Results_LidClosed_Audio), 0x5);
 						}
 					}
 					else
 					{
 						// there is no disk //
-						
-						for ( int i = 0; i < sizeof( ID_Results_LidClosed_NoDisk ); i++ ) TempBuffer [ i ] = ID_Results_LidClosed_NoDisk [ i ];
-						EnqueueInterrupt_Read ( TempBuffer, sizeof( ID_Results_LidClosed_NoDisk ), 0x5 );
+
+						for (int i = 0; i < sizeof(ID_Results_LidClosed_NoDisk); i++) TempBuffer[i] = ID_Results_LidClosed_NoDisk[i];
+						EnqueueInterrupt_Read(TempBuffer, sizeof(ID_Results_LidClosed_NoDisk), 0x5);
 					}
 				}
 
@@ -1330,7 +1332,9 @@ void CD::Run ()
 				ReadCommand = -1;
 				//Command = -1;
 				//REG_Command = -1; ArgumentsIndex = 0;
-				
+
+				}	// end scope for static constants for now
+
 #ifdef INLINE_DEBUG_RUN
 	//DebugCount = 80;
 #endif
@@ -2941,6 +2945,8 @@ void CD::Run ()
 	debug << "; TEST; ArgumentsIndex=" << dec << ArgumentsIndex << "; Arguments [ 0 ]=" << hex << (u32)(Get_Parameter ( 0 )) << ";";
 #endif
 
+				// containing scope of the static consts for the vc++ compiler
+				{
 				// these constants are ripped from pcsx
 				static const unsigned char Test04[] = { 0 };
 				static const unsigned char Test05[] = { 0 };
@@ -2999,6 +3005,8 @@ void CD::Run ()
 				// command done
 				Command = -1;
 				//REG_Command = -1; ArgumentsIndex = 0;
+
+				}	// end scope of static constants
 				
 #ifdef INLINE_DEBUG_RUN
 	//DebugCount = 20;

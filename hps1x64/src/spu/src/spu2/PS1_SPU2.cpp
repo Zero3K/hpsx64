@@ -30,6 +30,9 @@
 #include "GeneralUtilities.h"
 
 
+
+
+
 using namespace Playstation1;
 using namespace GeneralUtilities;
 
@@ -48,6 +51,10 @@ using namespace GeneralUtilities;
 //#define CLEAR_VMIX_ON_CHDONE
 
 //#define CLEAR_VMIXE_ON_CHDONE
+
+// only allow reverb interrupt if reverb is enabled
+//#define ENABLE_REVERB_INT_ONLY_WHEN_REVERB_ENABLED
+
 
 #define VERBOSE_KEYONOFF_TEST
 //#define VERBOSE_READ_TEST
@@ -102,7 +109,7 @@ using namespace GeneralUtilities;
 // enable debugging
 #define INLINE_DEBUG_ENABLE
 
-/*
+
 #define INLINE_DEBUG_WRITE
 #define INLINE_DEBUG_READ
 
@@ -115,10 +122,10 @@ using namespace GeneralUtilities;
 #define INLINE_DEBUG_DMA_WRITE_RECORD
 
 #define INLINE_DEBUG_INT
-*/
 
 
-/*
+
+
 //#define INLINE_DEBUG_UPDATEREVERB
 
 
@@ -131,8 +138,10 @@ using namespace GeneralUtilities;
 //#define INLINE_DEBUG
 //#define INLINE_DEBUG_CDSOUND
 //#define INLINE_DEBUG_RUN
-//#define INLINE_DEBUG_RUN_ATTACK
-//#define INLINE_DEBUG_ENVELOPE
+#define INLINE_DEBUG_RUN_ATTACK
+#define INLINE_DEBUG_RUN_DECAY
+#define INLINE_DEBUG_RUN_SUSTAIN
+#define INLINE_DEBUG_ENVELOPE
 //#define INLINE_DEBUG_RUN_VOLUME_ENVELOPE
 //#define INLINE_DEBUG_WRITE_DEFAULT
 //#define INLINE_DEBUG_RUN_CHANNELONOFF
@@ -144,7 +153,7 @@ using namespace GeneralUtilities;
 //#define INLINE_DEBUG_WRITE_DATA
 //#define INLINE_DEBUG_WRITE_SBA
 #define INLINE_DEBUG_WRITE_LSA_X
-*/
+
 
 #endif
 
@@ -763,9 +772,10 @@ void SPUCore::Write ( u32 Offset, u32 Data, u32 Mask )
 			{
 				Channel = Temp & ( -Temp );
 				Temp ^= Channel;
-				//Channel = CountTrailingZeros16 ( Channel );
-				Channel = __builtin_ctz( Channel );
-				
+				//Channel = __builtin_ctz( Channel );
+				Channel = ctz32(Channel);
+
+				// appears to take like 2T before sound actually starts?
 				Start_SampleDecoding ( Channel );
 			}
 #else
@@ -797,9 +807,9 @@ void SPUCore::Write ( u32 Offset, u32 Data, u32 Mask )
 			{
 				Channel = Temp & ( -Temp );
 				Temp ^= Channel;
-				//Channel = 16 + CountTrailingZeros16 ( Channel );
-				Channel = 16 + __builtin_ctz( Channel );
-				
+				//Channel = 16 + __builtin_ctz( Channel );
+				Channel = 16 + ctz32(Channel);
+
 				Start_SampleDecoding ( Channel );
 			}
 #else
@@ -826,9 +836,9 @@ void SPUCore::Write ( u32 Offset, u32 Data, u32 Mask )
 			{
 				Channel = Temp & ( -Temp );
 				Temp ^= Channel;
-				//Channel = CountTrailingZeros16 ( Channel );
-				Channel = __builtin_ctz( Channel );
-				
+				//Channel = __builtin_ctz( Channel );
+				Channel = ctz32(Channel);
+
 #ifdef VERBOSE_KEYONOFF_TEST
 				if ( ( CycleCount - StartCycle_Channel [ Channel ] ) < 4 )
 				{
@@ -905,9 +915,9 @@ void SPUCore::Write ( u32 Offset, u32 Data, u32 Mask )
 			{
 				Channel = Temp & ( -Temp );
 				Temp ^= Channel;
-				//Channel = 16 + CountTrailingZeros16 ( Channel );
-				Channel = 16 + __builtin_ctz( Channel );
-				
+				//Channel = 16 + __builtin_ctz( Channel );
+				Channel = 16 + ctz32(Channel);
+
 #ifdef VERBOSE_KEYONOFF_TEST
 				if ( ( CycleCount - StartCycle_Channel [ Channel ] ) < 4 )
 				{
@@ -1000,7 +1010,6 @@ void SPUCore::Write ( u32 Offset, u32 Data, u32 Mask )
 				//pCoreRegs0->IRQA_0 = 0x500;
 				//pCoreRegs0->IRQA_1 = 0;
 			}
-
 			
 			// check if interrupt transitions from disabled to enabled
 			if ( ~Data & pCoreRegs0->CTRL & 0x40 )
@@ -1781,8 +1790,20 @@ void SPUCore::Run ()
 	int Channel;
 	
 	//s64 SampleL, SampleR;
-	s64 Sample, PreviousSample, ChSampleL, ChSampleR, CD_SampleL, CD_SampleR, ReverbSampleL, ReverbSampleR;
+	s64 Sample;
+
+	// ***todo*** uninitialized variable issue
+	s64 PreviousSample = 0;
+
+	s64 ChSampleL, ChSampleR;
+	
+	// ***todo*** uninitialized variable issues - also was using these on startup ??
+	s64 CD_SampleL = 0;
+	s64 CD_SampleR = 0;
+	
+	s64 ReverbSampleL, ReverbSampleR;
 	s64 FOutputL, FOutputR, ROutputL, ROutputR;
+
 	
 	u32 ChannelOn, ChannelNoise, PitchMod, ReverbOn;
 	
@@ -1932,6 +1953,57 @@ void SPUCore::Run ()
 		{
 			pChRegs0 = (ChRegs0_Layout*) ( & ( pCoreRegs0->ChRegs0 [ Channel ] ) );
 			pChRegs1 = (ChRegs1_Layout*) ( & ( pCoreRegs0->ChRegs1 [ Channel ] ) );
+			
+			// ***TODO*** channel not supposed to start for like 2T probably ??
+			// for now, will just check for spu interrupt at 2T mark
+			if ( ( CycleCount - StartCycle_Channel [ Channel ] ) == 2 )
+			{
+				if ( SPU2::_SPU2->SPU0.pCoreRegs0->CTRL & 0x40 )
+				{
+					if ( ( CurrentBlockAddress [ Channel ] & ( c_iRam_Mask >> 1 ) ) == ( ( SWAPH( SPU2::_SPU2->SPU0.pCoreRegs0->IRQA ) ) & ( c_iRam_Mask >> 1 ) ) )
+					{
+#ifdef INLINE_DEBUG_INT
+	debug << "\r\nSPU:INT:ADDR ch#" << dec << Channel;
+#endif
+						// we have reached irq address - trigger interrupt
+						SetInterrupt ();
+						
+						// do this for ps2
+						//SetInterrupt_Core ( CoreNumber );
+						SetInterrupt_Core ( 0 );
+						
+						// interrupt
+						//pCoreRegs0->STAT |= 0x40;
+						SPU2::_SPU2->SPU0.pCoreRegs0->STAT |= 0x40;
+					}
+
+				}	// end if ( SPU2::_SPU2->SPU0.pCoreRegs0->CTRL & 0x40 )
+
+				if ( SPU2::_SPU2->SPU1.pCoreRegs0->CTRL & 0x40 )
+				{
+					if ( ( CurrentBlockAddress [ Channel ] & ( c_iRam_Mask >> 1 ) ) == ( ( SWAPH( SPU2::_SPU2->SPU1.pCoreRegs0->IRQA ) ) & ( c_iRam_Mask >> 1 ) ) )
+					{
+#ifdef INLINE_DEBUG_INT
+	debug << "\r\nSPU:INT:ADDR ch#" << dec << Channel;
+#endif
+
+						// we have reached irq address - trigger interrupt
+						SetInterrupt ();
+						
+						// do this for ps2
+						//SetInterrupt_Core ( CoreNumber );
+						SetInterrupt_Core ( 1 );
+						
+						// interrupt
+						//pCoreRegs0->STAT |= 0x40;
+						SPU2::_SPU2->SPU1.pCoreRegs0->STAT |= 0x40;
+					}
+
+				}	// end if ( SPU2::_SPU2->SPU1.pCoreRegs0->CTRL & 0x40 )
+				
+			}
+
+			
 	
 		// check if SPU is on
 		//if ( Regs [ ( 0x1f801daa - SPU_X ) >> 1 ] >> 15 )
@@ -2036,7 +2108,7 @@ void SPUCore::Run ()
 					if ( pChRegs0->ENV_X >= 32767 )
 					{
 #ifdef INLINE_DEBUG_RUN_ATTACK
-	debug << "; DECAY_NEXT";
+	debug << "; DECAY_NEXT ENVX=" << hex << pChRegs0->ENV_X;
 #endif
 
 						//VOL_ADSR_Value [ Channel ] = 32767;
@@ -2050,6 +2122,10 @@ void SPUCore::Run ()
 						
 						//Start_VolumeEnvelope ( VOL_ADSR_Value [ Channel ], Cycles [ Channel ], ( ( ModeRate >> 4 ) & 0xf ) << ( 2 ), 0x3 );
 						Start_VolumeEnvelope ( (s16&) pChRegs0->ENV_X, Cycles [ Channel ], ( ( ModeRate >> 4 ) & 0xf ) << ( 2 ), 0x3, true );
+
+#ifdef INLINE_DEBUG_RUN_ATTACK
+						debug << " ->ENVX=" << hex << pChRegs0->ENV_X;
+#endif
 					}
 					else
 					{
@@ -2474,7 +2550,7 @@ void SPUCore::Run ()
 			{
 				// subtract 28
 				CurrentSample_Offset [ Channel ] -= ( 28ULL << 32 );
-				
+
 				
 				// check loop/end flag for current block
 				/////////////////////////////////////////////////////////////////////////////////////////////
@@ -2558,17 +2634,20 @@ void SPUCore::Run ()
 					// but only if LSA was not set manually
 					if ( ! ( bLoopManuallySet & ( 1 << Channel ) ) )
 					{
+						// check set if endpoint reached ??
+						if ( !( ChannelOn & ( 1 << Channel ) ) )
+						{
+							///////////////////////////////////////////////////
+							// we are at loop start address
+							// set loop start address
+							pChRegs1->LSA = SWAPH ( CurrentBlockAddress [ Channel ] & ~7 );
 
-					///////////////////////////////////////////////////
-					// we are at loop start address
-					// set loop start address
-					pChRegs1->LSA = SWAPH ( CurrentBlockAddress [ Channel ] & ~7 );
+							// loop set ?
+							bLoopSet |= ( 1 << Channel );
 
-					// loop set ?
-					bLoopSet |= ( 1 << Channel );
-
-					// clear killing of envelope
-					//KillEnvelope_Bitmap &= ~( 1 << Channel );
+							// clear killing of envelope
+							//KillEnvelope_Bitmap &= ~( 1 << Channel );
+						}
 
 					}	// if ( ! ( bLoopManuallySet & ( 1 << Channel ) ) )
 
@@ -2595,7 +2674,8 @@ void SPUCore::Run ()
 				}
 				*/
 
-				pChRegs1->NEX = SWAPH( ( SWAPH( pChRegs1->NEX ) + 8 ) & ( c_iRam_Mask >> 1 ) );
+				//pChRegs1->NEX = SWAPH( ( SWAPH( pChRegs1->NEX ) + 8 ) & ( c_iRam_Mask >> 1 ) );
+				pChRegs1->NEX = SWAPH ( CurrentBlockAddress [ Channel ] + 1 );
 #endif
 				
 				
@@ -2605,9 +2685,9 @@ void SPUCore::Run ()
 
 				// note: it works by checking only the irq on the cores where interrupts are enabled
 				// then it says that it is the core that triggered the interrupt, even if a different core actually hit the int
-				if ( pCoreRegs0->CTRL & 0x40 )
+				if ( SPU2::_SPU2->SPU0.pCoreRegs0->CTRL & 0x40 )
 				{
-					if ( ( CurrentBlockAddress [ Channel ] & ( c_iRam_Mask >> 1 ) ) == ( ( SWAPH( pCoreRegs0->IRQA ) ) & ( c_iRam_Mask >> 1 ) ) )
+					if ( ( CurrentBlockAddress [ Channel ] & ( c_iRam_Mask >> 1 ) ) == ( ( SWAPH( SPU2::_SPU2->SPU0.pCoreRegs0->IRQA ) ) & ( c_iRam_Mask >> 1 ) ) )
 					{
 #ifdef INLINE_DEBUG_INT
 	debug << "\r\nSPU:INT:ADDR ch#" << dec << Channel;
@@ -2616,13 +2696,37 @@ void SPUCore::Run ()
 						SetInterrupt ();
 						
 						// do this for ps2
-						SetInterrupt_Core ( CoreNumber );
+						//SetInterrupt_Core ( CoreNumber );
+						SetInterrupt_Core ( 0 );
 						
 						// interrupt
-						pCoreRegs0->STAT |= 0x40;
+						//pCoreRegs0->STAT |= 0x40;
+						SPU2::_SPU2->SPU0.pCoreRegs0->STAT |= 0x40;
 					}
 
-				}	// end if ( pCoreRegs0->CTRL & 0x40 )
+				}	// end if ( SPU2::_SPU2->SPU0.pCoreRegs0->CTRL & 0x40 )
+
+				if ( SPU2::_SPU2->SPU1.pCoreRegs0->CTRL & 0x40 )
+				{
+					if ( ( CurrentBlockAddress [ Channel ] & ( c_iRam_Mask >> 1 ) ) == ( ( SWAPH( SPU2::_SPU2->SPU1.pCoreRegs0->IRQA ) ) & ( c_iRam_Mask >> 1 ) ) )
+					{
+#ifdef INLINE_DEBUG_INT
+	debug << "\r\nSPU:INT:ADDR ch#" << dec << Channel;
+#endif
+
+						// we have reached irq address - trigger interrupt
+						SetInterrupt ();
+						
+						// do this for ps2
+						//SetInterrupt_Core ( CoreNumber );
+						SetInterrupt_Core ( 1 );
+						
+						// interrupt
+						//pCoreRegs0->STAT |= 0x40;
+						SPU2::_SPU2->SPU1.pCoreRegs0->STAT |= 0x40;
+					}
+
+				}	// end if ( SPU2::_SPU2->SPU1.pCoreRegs0->CTRL & 0x40 )
 
 				
 				// decode the new block
@@ -2744,16 +2848,14 @@ void SPUCore::Run ()
 				// spu2 core 0 //
 
 				// first check against the irq address in core0 against core0 buffers
-				if ( 
-					( ( ulIrqAddr0 >= 0x2000 ) && ( ulIrqAddr0 < 0x2400 ) )
-				)
+				if ( ( ulIrqAddr0 >= 0x2000 ) && ( ulIrqAddr0 < 0x2400 ) )
 				{
 					// check if decode buffer address is a match
 					if ( ( ulDecodeAddr & 0x1ff ) == ( ulIrqAddr0 & 0x1ff ) )
 					{
 						// trigger interrupt for core0 //
 						SetInterrupt ();
-						SetInterrupt_Core ( 0 );
+						SetInterrupt_Core ( CoreNumber );
 						pCoreRegs0->STAT |= 0x40;
 					}
 				}
@@ -2763,16 +2865,14 @@ void SPUCore::Run ()
 			{
 				// spu2 core 1 //
 
-				if ( 
-					( ( ulIrqAddr0 >= 0x2400 ) && ( ulIrqAddr0 < 0x2800 ) )
-				)
+				if ( ( ulIrqAddr0 >= 0x2400 ) && ( ulIrqAddr0 < 0x2800 ) )
 				{
 					// check if decode buffer address is a match
 					if ( ( ulDecodeAddr & 0x1ff ) == ( ulIrqAddr0 & 0x1ff ) )
 					{
 						// trigger interrupt for core0 //
 						SetInterrupt ();
-						SetInterrupt_Core ( 1 );
+						SetInterrupt_Core ( CoreNumber );
 						pCoreRegs0->STAT |= 0x40;
 					}
 				}
@@ -5492,9 +5592,9 @@ void SPUCore::DMA_Read_Block ( u32* Data, u32 BS )
 	// or should it be + 0x20? or + 0x10?
 	// *** todo*** update pointer + 0x10 or + 0x20 at end of transfer
 	// ***todo*** only check for interrupt at end of transfer
-	if ( pCoreRegs0->CTRL & 0x40 )
+	if ( SPU2::_SPU2->SPU0.pCoreRegs0->CTRL & 0x40 )
 	{
-		if ( ( NextSoundBufferAddress + 0x19 ) == ( ( SWAPH ( pCoreRegs0->IRQA ) ) & ( c_iRam_Mask >> 1 ) ) )
+		if ( ( NextSoundBufferAddress + 0x19 ) == ( ( SWAPH ( SPU2::_SPU2->SPU0.pCoreRegs0->IRQA ) ) & ( c_iRam_Mask >> 1 ) ) )
 		{
 #ifdef INLINE_DEBUG_INT
 	debug << "\r\nSPU:INT:DMAREAD";
@@ -5504,13 +5604,35 @@ void SPUCore::DMA_Read_Block ( u32* Data, u32 BS )
 			SetInterrupt ();
 			
 			// do this for ps2
-			SetInterrupt_Core ( CoreNumber );
+			SetInterrupt_Core ( 0 );
 			
 			// interrupt
-			pCoreRegs0->STAT |= 0x40;
+			//pCoreRegs0->STAT |= 0x40;
+			SPU2::_SPU2->SPU0.pCoreRegs0->STAT |= 0x40;
 		}
 
-	}	// end if ( pCoreRegs0->CTRL & 0x40 )
+	}	// end if ( SPU2::_SPU2->SPU0.pCoreRegs0->CTRL & 0x40 )
+
+	if ( SPU2::_SPU2->SPU1.pCoreRegs0->CTRL & 0x40 )
+	{
+		if ( ( NextSoundBufferAddress + 0x19 ) == ( ( SWAPH ( SPU2::_SPU2->SPU1.pCoreRegs0->IRQA ) ) & ( c_iRam_Mask >> 1 ) ) )
+		{
+#ifdef INLINE_DEBUG_INT
+	debug << "\r\nSPU:INT:DMAREAD";
+#endif
+
+			// we have reached irq address - trigger interrupt
+			SetInterrupt ();
+			
+			// do this for ps2
+			SetInterrupt_Core ( 1 );
+			
+			// interrupt
+			//pCoreRegs0->STAT |= 0x40;
+			SPU2::_SPU2->SPU1.pCoreRegs0->STAT |= 0x40;
+		}
+
+	}	// end if ( SPU2::_SPU2->SPU1.pCoreRegs0->CTRL & 0x40 )
 
 }
 
@@ -5860,10 +5982,10 @@ u32 SPUCore::DMA_Write_Block ( u32* Data, u32 BS )
 	// check for interrupt
 	// check if address is set to trigger interrupt
 	// ***todo*** only check for interrupt at end of transfer
-	if ( pCoreRegs0->CTRL & 0x40 )
+	if ( SPU2::_SPU2->SPU0.pCoreRegs0->CTRL & 0x40 )
 	{
 
-		if ( NextSoundBufferAddress == ( ( SWAPH ( pCoreRegs0->IRQA ) ) & ( c_iRam_Mask >> 1 ) ) )
+		if ( NextSoundBufferAddress == ( ( SWAPH ( SPU2::_SPU2->SPU0.pCoreRegs0->IRQA ) ) & ( c_iRam_Mask >> 1 ) ) )
 		{
 #ifdef INLINE_DEBUG_INT
 	debug << "\r\nSPU:INT:DMAWRITE";
@@ -5873,13 +5995,37 @@ u32 SPUCore::DMA_Write_Block ( u32* Data, u32 BS )
 			SetInterrupt ();
 			
 			// do this for ps2
-			SetInterrupt_Core ( CoreNumber );
+			//SetInterrupt_Core ( CoreNumber );
+			SetInterrupt_Core ( 0 );
 			
 			// interrupt
-			pCoreRegs0->STAT |= 0x40;
+			//pCoreRegs0->STAT |= 0x40;
+			SPU2::_SPU2->SPU0.pCoreRegs0->CTRL |= 0x40;
 		}
 
-	}	// end if ( pCoreRegs0->CTRL & 0x40 )
+	}	// end if ( SPU2::_SPU2->SPU0.pCoreRegs0->CTRL & 0x40 )
+
+	if ( SPU2::_SPU2->SPU1.pCoreRegs0->CTRL & 0x40 )
+	{
+		if ( NextSoundBufferAddress == ( ( SWAPH ( SPU2::_SPU2->SPU1.pCoreRegs0->IRQA ) ) & ( c_iRam_Mask >> 1 ) ) )
+		{
+#ifdef INLINE_DEBUG_INT
+	debug << "\r\nSPU1:INT:DMAWRITE";
+#endif
+
+			// we have reached irq address - trigger interrupt
+			SetInterrupt ();
+			
+			// do this for ps2
+			//SetInterrupt_Core ( CoreNumber );
+			SetInterrupt_Core ( 1 );
+			
+			// interrupt
+			//pCoreRegs0->STAT |= 0x40;
+			SPU2::_SPU2->SPU1.pCoreRegs0->CTRL |= 0x40;
+		}
+
+	}	// end if ( SPU2::_SPU2->SPU1.pCoreRegs0->CTRL & 0x40 )
 
 
 
@@ -6092,13 +6238,14 @@ void SPUCore::Start_VolumeEnvelope ( s16& Level, u32& Cycles, u32 Value, u32 fla
 	//static const s32 StepValues_Dec [] = { -8, -7, -6, -5 };
 	
 	s32 ShiftValue, StepValue;
-	s64 Step;
+	s32 Step;
 	
 	//ShiftValue = ( Value >> 2 ) & 0xf;
 	ShiftValue = ( Value >> 2 ) & 0x1f;
 	StepValue = Value & 0x3;
 
 #ifdef INLINE_DEBUG_ENVELOPE
+	debug << "\nStart_VolumeEnvelope";
 	debug << "; ShiftValue=" << hex << ShiftValue << "; StepValue=" << StepValue;
 #endif
 
@@ -6145,7 +6292,7 @@ void SPUCore::Start_VolumeEnvelope ( s16& Level, u32& Cycles, u32 Value, u32 fla
 	// check if exponential AND decrease
 	if ( ( flags & 0x3 ) == 3 )
 	{
-		Step = ( Step * Level ) >> 15;
+		Step = ( Step * ( (s32) Level ) ) >> 15;
 	}
 	
 	if ( InitLevel )
@@ -6184,6 +6331,7 @@ void SPUCore::VolumeEnvelope ( s16& Level, u32& Cycles, u32 Value, u32 flags, bo
 	
 
 #ifdef INLINE_DEBUG_ENVELOPE
+	debug << "\nVolumeEnvelope";
 	debug << "; ShiftValue=" << hex << ShiftValue << "; StepValue=" << StepValue;
 #endif
 
@@ -6636,18 +6784,20 @@ void SPUCore::UpdateReverbBuffer ()
 	
 	//if ( Reverb_BufferAddress >= ReverbWork_End ) Reverb_BufferAddress = ReverbWork_Start;
 	if ( Reverb_BufferAddress >= ReverbWork_Size ) Reverb_BufferAddress = 0;
-	
 
-	if ( pCoreRegs0->CTRL & 0x40 )
+
+#ifdef ENABLE_REVERB_INT_ONLY_WHEN_REVERB_ENABLED
+	// only if reverb is enabled ??
+	if ( pCoreRegs0->CTRL & 0x80 )
+#endif
+	{
+
+	if ( SPU2::_SPU2->SPU0.pCoreRegs0->CTRL & 0x40 )
 	{
 		// interrupts are enabled for the current spu2 core //
 
-		// only if reverb is enabled ??
-		if ( pCoreRegs0->CTRL & 0x80 )
-		{
-
 		// check reverb address against irq address for core#0
-		if ( ( Reverb_BufferAddress + ReverbWork_Start ) == ( SWAPH ( pCoreRegs0->IRQA ) ) )
+		if ( ( Reverb_BufferAddress + ReverbWork_Start ) == ( SWAPH ( SPU2::_SPU2->SPU0.pCoreRegs0->IRQA ) ) )
 		{
 #ifdef INLINE_DEBUG_INT
 		debug << "\r\nSPU:INT:REVERB";
@@ -6657,16 +6807,39 @@ void SPUCore::UpdateReverbBuffer ()
 			SetInterrupt ();
 			
 			// do this for ps2
-			SetInterrupt_Core ( CoreNumber );
+			//SetInterrupt_Core ( CoreNumber );
+			SetInterrupt_Core ( 0 );
 			
 			// interrupt
-			pCoreRegs0->STAT |= 0x40;
+			//pCoreRegs0->STAT |= 0x40;
+			SPU2::_SPU2->SPU0.pCoreRegs0->STAT |= 0x40;
 		}
 
-		}	// end if ( pCoreRegs0->CTRL & 0x80 )
+	}	// end if ( SPU2::_SPU2->SPU0.pCoreRegs0->CTRL & 0x40 )
 
-	}	// end if ( pCoreRegs0->CTRL & 0x40 )
+	if ( SPU2::_SPU2->SPU1.pCoreRegs0->CTRL & 0x40 )
+	{
+		// check reverb address against irq address for core#1
+		if ( ( Reverb_BufferAddress + ReverbWork_Start ) == ( SWAPH ( SPU2::_SPU2->SPU1.pCoreRegs0->IRQA ) ) )
+		{
+#ifdef INLINE_DEBUG_INT
+		debug << "\r\nSPU:INT:REVERB";
+#endif
+			// we have reached irq address - trigger interrupt
+			SetInterrupt ();
+			
+			// do this for ps2
+			//SetInterrupt_Core ( CoreNumber );
+			SetInterrupt_Core ( 1 );
+			
+			// interrupt
+			//pCoreRegs0->STAT |= 0x40;
+			SPU2::_SPU2->SPU1.pCoreRegs0->STAT |= 0x40;
+		}
 
+	}	// end if ( SPU2::_SPU2->SPU1.pCoreRegs0->CTRL & 0x40 )
+	
+	}	// end if ( pCoreRegs0->CTRL & 0x80 )
 
 
 #ifdef INLINE_DEBUG_UPDATEREVERB
@@ -6863,32 +7036,60 @@ void SPUCore::Start_SampleDecoding ( u32 Channel )
 	////////////////////////////////////////////////////////
 	// check if the IRQ address is in this block
 	// and check if interrupts are enabled
-	if ( pCoreRegs0->CTRL & 0x40 )
+	// TODO: this actually doesn't happen until after 2T. Sound probably doesn't start until after 2T?
+	/*
+	if ( SPU2::_SPU2->SPU0.pCoreRegs0->CTRL & 0x40 )
 	{
-		if ( ( CurrentBlockAddress [ Channel ] & ( c_iRam_Mask >> 1 ) ) == ( ( SWAPH( pCoreRegs0->IRQA ) ) & ( c_iRam_Mask >> 1 ) ) )
+		
+		if ( ( CurrentBlockAddress [ Channel ] & ( c_iRam_Mask >> 1 ) ) == ( ( SWAPH( SPU2::_SPU2->SPU0.pCoreRegs0->IRQA ) ) & ( c_iRam_Mask >> 1 ) ) )
 		{
 #ifdef INLINE_DEBUG_INT
 	debug << "\r\nSPU:INT:ADDR ch#" << dec << Channel;
 #endif
+
+			cout << "\nInterrupt at sample decomding start addr: " << hex << CurrentBlockAddress [ Channel ] << " IRQA: " << SWAPH( SPU2::_SPU2->SPU0.pCoreRegs0->IRQA );
+
 			// we have reached irq address - trigger interrupt
 			SetInterrupt ();
 			
 			// do this for ps2
-			SetInterrupt_Core ( CoreNumber );
+			//SetInterrupt_Core ( CoreNumber );
+			SetInterrupt_Core ( 0 );
 			
 			// interrupt
-			pCoreRegs0->STAT |= 0x40;
+			//pCoreRegs0->STAT |= 0x40;
+			SPU2::_SPU2->SPU0.pCoreRegs0->STAT |= 0x40;
 		}
 
-	}	// end if ( pCoreRegs0->CTRL & 0x40 )
+	}	// end if ( SPU2::_SPU2->SPU0.pCoreRegs0->CTRL & 0x40 )
 
+	if ( SPU2::_SPU2->SPU1.pCoreRegs0->CTRL & 0x40 )
+	{
+		if ( ( CurrentBlockAddress [ Channel ] & ( c_iRam_Mask >> 1 ) ) == ( ( SWAPH( SPU2::_SPU2->SPU1.pCoreRegs0->IRQA ) ) & ( c_iRam_Mask >> 1 ) ) )
+		{
+#ifdef INLINE_DEBUG_INT
+	debug << "\r\nSPU:INT:ADDR ch#" << dec << Channel;
+#endif
 
+			// we have reached irq address - trigger interrupt
+			SetInterrupt ();
+			
+			// do this for ps2
+			//SetInterrupt_Core ( CoreNumber );
+			SetInterrupt_Core ( 1 );
+			
+			// interrupt
+			//pCoreRegs0->STAT |= 0x40;
+			SPU2::_SPU2->SPU1.pCoreRegs0->STAT |= 0x40;
+		}
+
+	}	// end if ( SPU2::_SPU2->SPU1.pCoreRegs0->CTRL & 0x40 )
+	*/
 
 	//////////////////////////////////////////////////////////////////////////////
 	// Check loop start flag and set loop address if needed
 	// LOOP_START is bit 3 actually
 	// note: LOOP_START is actually bit 2
-	// ***TODO*** comment out the "LSA_Manual_Bitmap" portion?? (check ps1 spu too)
 	//if ( ( RAM [ CurrentBlockAddress [ Channel ] & ( c_iRam_Mask >> 1 ) ] & ( 0x4 << 8 ) ) && ( ! ( LSA_Manual_Bitmap & ( 1 << Channel ) ) ) )
 	if ( ( RAM [ CurrentBlockAddress [ Channel ] & ( c_iRam_Mask >> 1 ) ] & ( 0x4 << 8 ) ) )
 	{
@@ -6904,6 +7105,7 @@ void SPUCore::Start_SampleDecoding ( u32 Channel )
 		// assume loop is set for now for channel
 		bLoopSet |= ( 1 << Channel );
 	}
+	
 
 	// clear loop set if loop bit not set
 	if ( ! ( RAM [ CurrentBlockAddress [ Channel ] & ( c_iRam_Mask >> 1 ) ] & ( 0x2 << 8 ) ) )

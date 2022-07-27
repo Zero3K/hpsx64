@@ -42,6 +42,8 @@ using namespace R5900;
 
 
 
+
+
 #define ENABLE_ICACHE
 
 // enables d-cache on R5900
@@ -860,7 +862,7 @@ const int Recompiler::iRegStackSave [ 13 ] = { 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 
 
 
 
-static const u8 recompiler_qfsrv_shift_table [ 16 * 16 ] __attribute__ ((aligned (16))) = {
+alignas(16) static const u8 recompiler_qfsrv_shift_table [ 16 * 16 ] = {
 	0xf, 0xe, 0xd, 0xc, 0xb, 0xa, 0x9, 0x8, 0x7, 0x6, 0x5, 0x4, 0x3, 0x2, 0x1, 0x0,
 	0x0, 0xf, 0xe, 0xd, 0xc, 0xb, 0xa, 0x9, 0x8, 0x7, 0x6, 0x5, 0x4, 0x3, 0x2, 0x1,
 	0x1, 0x0, 0xf, 0xe, 0xd, 0xc, 0xb, 0xa, 0x9, 0x8, 0x7, 0x6, 0x5, 0x4, 0x3, 0x2,
@@ -880,7 +882,7 @@ static const u8 recompiler_qfsrv_shift_table [ 16 * 16 ] __attribute__ ((aligned
 };
 
 // with the right as dest and left as src
-static const u8 recompiler_qfsrv_blend_table [ 16 * 16 ] __attribute__ ((aligned (16))) = {
+alignas(16) static const u8 recompiler_qfsrv_blend_table [ 16 * 16 ] = {
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 	0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 	0x80, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -900,7 +902,7 @@ static const u8 recompiler_qfsrv_blend_table [ 16 * 16 ] __attribute__ ((aligned
 };
 
 
-static const u8 recompiler_qfsrv_shift_table_rev [ 16 * 16 ] __attribute__ ((aligned (16))) = {
+alignas(16) static const u8 recompiler_qfsrv_shift_table_rev [ 16 * 16 ] = {
 	0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9, 0xa, 0xb, 0xc, 0xd, 0xe, 0xf,
 	0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9, 0xa, 0xb, 0xc, 0xd, 0xe, 0xf, 0x0,
 	0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9, 0xa, 0xb, 0xc, 0xd, 0xe, 0xf, 0x0, 0x1,
@@ -920,7 +922,7 @@ static const u8 recompiler_qfsrv_shift_table_rev [ 16 * 16 ] __attribute__ ((ali
 };
 
 // with the right as dest and left as src
-static const u8 recompiler_qfsrv_blend_table_rev [ 16 * 16 ] __attribute__ ((aligned (16))) = {
+alignas(16) static const u8 recompiler_qfsrv_blend_table_rev [ 16 * 16 ] = {
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80,
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0x80,
@@ -941,7 +943,7 @@ static const u8 recompiler_qfsrv_blend_table_rev [ 16 * 16 ] __attribute__ ((ali
 
 
 //static u64 recompiler_qfsrv_temp [ 4 ] __attribute__ ((aligned (16)));
-static u64 recompiler_r5900_temp [ 4 ] __attribute__ ((aligned (16)));
+alignas(16) static u64 recompiler_r5900_temp [ 4 ];
 
 
 // lookup table for op shuffles
@@ -1222,8 +1224,9 @@ cout << " iRet=" << dec << iRet;
 			ullBitmap &= -ullBitmap;
 			
 			// get its index
-			iRegIdx = __builtin_ctz( ullBitmap );
-			
+			//iRegIdx = __builtin_ctz( ullBitmap );
+			iRegIdx = ctz64(ullBitmap);
+
 			// remove it and remove from bitmap
 			DisposeReg( iRegIdx );
 			ullCurAlloc &= ~( 1ull << iRegIdx );
@@ -2137,7 +2140,8 @@ int Recompiler::SelectAlloc ( int iSrcRegIdx1, int iSrcRegIdx2 )
 	ullBitmap = ( 1ull << iSrcRegIdx1 ) | ( 1ull << iSrcRegIdx2 );
 	ullBitmap &= ( ullSrcRegAlloc | ullSrcConstAlloc );
 	ullBitmap &= -ullBitmap;
-	return __builtin_ctz( ullBitmap );
+	//return __builtin_ctz( ullBitmap );
+	return ctz64(ullBitmap);
 }
 
 int Recompiler::SelectConst ( int iSrcRegIdx1, int iSrcRegIdx2 )
@@ -2146,7 +2150,8 @@ int Recompiler::SelectConst ( int iSrcRegIdx1, int iSrcRegIdx2 )
 	ullBitmap = ( 1ull << iSrcRegIdx1 ) | ( 1ull << iSrcRegIdx2 );
 	ullBitmap &= ullSrcConstAlloc;
 	ullBitmap &= -ullBitmap;
-	return __builtin_ctz( ullBitmap );
+	//return __builtin_ctz( ullBitmap );
+	return ctz64(ullBitmap);
 }
 
 int Recompiler::SelectReg ( int iSrcRegIdx1, int iSrcRegIdx2 )
@@ -2155,7 +2160,8 @@ int Recompiler::SelectReg ( int iSrcRegIdx1, int iSrcRegIdx2 )
 	ullBitmap = ( 1ull << iSrcRegIdx1 ) | ( 1ull << iSrcRegIdx2 );
 	ullBitmap &= ullSrcRegAlloc;
 	ullBitmap &= -ullBitmap;
-	return __builtin_ctz( ullBitmap );
+	//return __builtin_ctz( ullBitmap );
+	return ctz64(ullBitmap);
 }
 
 int Recompiler::SelectDisposable( int iSrcRegIdx1, int iSrcRegIdx2 )
@@ -2164,7 +2170,8 @@ int Recompiler::SelectDisposable( int iSrcRegIdx1, int iSrcRegIdx2 )
 	ullBitmap = ( 1ull << iSrcRegIdx1 ) | ( 1ull << iSrcRegIdx2 );
 	ullBitmap &= ~ullNeededLater;
 	ullBitmap &= -ullBitmap;
-	return __builtin_ctz( ullBitmap );
+	//return __builtin_ctz( ullBitmap );
+	return ctz64(ullBitmap);
 }
 
 
@@ -2174,7 +2181,8 @@ int Recompiler::SelectNotAlloc ( int iSrcRegIdx1, int iSrcRegIdx2 )
 	ullBitmap = ( 1ull << iSrcRegIdx1 ) | ( 1ull << iSrcRegIdx2 );
 	ullBitmap &= ~( ullSrcRegAlloc | ullSrcConstAlloc );
 	ullBitmap &= -ullBitmap;
-	return __builtin_ctz( ullBitmap );
+	//return __builtin_ctz( ullBitmap );
+	return ctz64(ullBitmap);
 }
 
 int Recompiler::SelectNotDisposable( int iSrcRegIdx1, int iSrcRegIdx2 )
@@ -2183,7 +2191,8 @@ int Recompiler::SelectNotDisposable( int iSrcRegIdx1, int iSrcRegIdx2 )
 	ullBitmap = ( 1ull << iSrcRegIdx1 ) | ( 1ull << iSrcRegIdx2 );
 	ullBitmap &= ullNeededLater;
 	ullBitmap &= -ullBitmap;
-	return __builtin_ctz( ullBitmap );
+	//return __builtin_ctz( ullBitmap );
+	return ctz64(ullBitmap);
 }
 
 
@@ -2236,8 +2245,9 @@ int Recompiler::Alloc_SrcReg ( int iSrcRegIdx )
 	
 	// get the index it is allocated to on target
 	// *** gcc specific code *** //
-	iIdx = __builtin_ctz( ullBitmap );
-	
+	//iIdx = __builtin_ctz( ullBitmap );
+	iIdx = ctz64(ullBitmap);
+
 
 	
 	// get the actual register to use from the index
@@ -2357,8 +2367,9 @@ int Recompiler::Alloc_DstReg ( int iSrcRegIdx )
 	
 	// get the index it is allocated to on target
 	// *** gcc specific code *** //
-	iIdx = __builtin_ctz( ullBitmap );
-	
+	//iIdx = __builtin_ctz( ullBitmap );
+	iIdx = ctz64(ullBitmap);
+
 	// set the register as modified, since it is a destination register
 	ullSrcRegsModified |= ( 1ull << iSrcRegIdx );
 	
@@ -2495,7 +2506,8 @@ void Recompiler::WriteBackModifiedRegs ()
 		ullBitmap = ullSrcRegsModified2 & -ullSrcRegsModified2;
 		
 		// get the next register on source device
-		iSrcRegIdx = __builtin_ctz( ullBitmap );
+		//iSrcRegIdx = __builtin_ctz( ullBitmap );
+		iSrcRegIdx = ctz64(ullBitmap);
 
 #ifdef INLINE_DEBUG_RECOMPILE2
 	debug << " iSrcRegIdx=" << dec << iSrcRegIdx;
@@ -2577,7 +2589,8 @@ void Recompiler::RestoreRegsFromStack ()
 		
 		// get it's target device index
 		//iRegIdx = __builtin_ctz( ullBitmap );
-		iRegIdx = __builtin_clz( ullRegsOnStack2 );
+		//iRegIdx = __builtin_clz( ullRegsOnStack2 );
+		iRegIdx = clz64(ullRegsOnStack2);
 		iRegIdx = 31 - iRegIdx;
 
 		iIdx = iRegPriority [ iRegIdx ];
@@ -3583,10 +3596,68 @@ cout << " CycleDiff=" << dec << LocalCycleCount;
 		//inst.Value = *((u32*) SrcCode);
 		inst.Value = *pSrcCodePtr;
 		
-		
 		// get the next instruction
 		// note: this does not work if the next address is in a new cache block and the region is cached
 		NextInst.Value = *(pSrcCodePtr + 1);
+
+
+		// temporary alerts //
+		
+		if ( inst.Opcode == 0x12 )
+		{
+			// alert on vdiv
+			if ( ( inst.Imm11 == 0x3bc ) && ( NextInst.Imm11 != 0x3bf ) )
+			{
+#ifdef VERBOSE_VDIV_WO_WAITQ
+				cout << "\nhps2x64: RECOMPILER: encountered VDIV w/o WAITQ at address:" << hex << Address;
+				cout << "\n" << R5900::Instruction::Print::PrintInstruction ( inst.Value ).c_str ();
+				cout << "\n" << R5900::Instruction::Print::PrintInstruction ( *(pSrcCodePtr + 1) ).c_str ();
+				cout << "\n" << R5900::Instruction::Print::PrintInstruction ( *(pSrcCodePtr + 2) ).c_str ();
+				cout << "\n" << R5900::Instruction::Print::PrintInstruction ( *(pSrcCodePtr + 3) ).c_str ();
+				cout << "\n" << R5900::Instruction::Print::PrintInstruction ( *(pSrcCodePtr + 4) ).c_str ();
+				cout << "\n" << R5900::Instruction::Print::PrintInstruction ( *(pSrcCodePtr + 5) ).c_str ();
+				cout << "\n" << R5900::Instruction::Print::PrintInstruction ( *(pSrcCodePtr + 6) ).c_str ();
+				cout << "\n" << R5900::Instruction::Print::PrintInstruction ( *(pSrcCodePtr + 7) ).c_str ();
+#endif
+			}
+
+			// alert on vsqrt
+			if ( ( inst.Imm11 == 0x3bd ) && ( NextInst.Imm11 != 0x3bf ) )
+			{
+#ifdef VERBOSE_VSQRT_WO_WAITQ
+				cout << "\nhps2x64: RECOMPILER: encountered VSQRT w/o WAITQ at address:" << hex << Address;
+				cout << "\n" << R5900::Instruction::Print::PrintInstruction ( inst.Value ).c_str ();
+				cout << "\n" << R5900::Instruction::Print::PrintInstruction ( *(pSrcCodePtr + 1) ).c_str ();
+				cout << "\n" << R5900::Instruction::Print::PrintInstruction ( *(pSrcCodePtr + 2) ).c_str ();
+				cout << "\n" << R5900::Instruction::Print::PrintInstruction ( *(pSrcCodePtr + 3) ).c_str ();
+				cout << "\n" << R5900::Instruction::Print::PrintInstruction ( *(pSrcCodePtr + 4) ).c_str ();
+				cout << "\n" << R5900::Instruction::Print::PrintInstruction ( *(pSrcCodePtr + 5) ).c_str ();
+				cout << "\n" << R5900::Instruction::Print::PrintInstruction ( *(pSrcCodePtr + 6) ).c_str ();
+				cout << "\n" << R5900::Instruction::Print::PrintInstruction ( *(pSrcCodePtr + 7) ).c_str ();
+#endif
+			}
+
+
+			// alert on vrsqrt
+			if ( ( inst.Imm11 == 0x3be ) && ( NextInst.Imm11 != 0x3bf ) )
+			{
+#ifdef VERBOSE_VRSQRT_WO_WAITQ
+				cout << "\nhps2x64: RECOMPILER: encountered VRSQRT w/o WAITQ at address:" << hex << Address;
+				cout << "\n" << R5900::Instruction::Print::PrintInstruction ( inst.Value ).c_str ();
+				cout << "\n" << R5900::Instruction::Print::PrintInstruction ( *(pSrcCodePtr + 1) ).c_str ();
+				cout << "\n" << R5900::Instruction::Print::PrintInstruction ( *(pSrcCodePtr + 2) ).c_str ();
+				cout << "\n" << R5900::Instruction::Print::PrintInstruction ( *(pSrcCodePtr + 3) ).c_str ();
+				cout << "\n" << R5900::Instruction::Print::PrintInstruction ( *(pSrcCodePtr + 4) ).c_str ();
+				cout << "\n" << R5900::Instruction::Print::PrintInstruction ( *(pSrcCodePtr + 5) ).c_str ();
+				cout << "\n" << R5900::Instruction::Print::PrintInstruction ( *(pSrcCodePtr + 6) ).c_str ();
+				cout << "\n" << R5900::Instruction::Print::PrintInstruction ( *(pSrcCodePtr + 7) ).c_str ();
+#endif
+			}
+
+		}
+
+
+		
 
 		g_pSrcCodePtr = pSrcCodePtr;
 		
@@ -33466,7 +33537,7 @@ long R5900::Recompiler::SYNC ( R5900::Instruction::Format i, u32 Address )
 	int ret = 1;
 	
 	// for now, stop encoding after this instruction
-	//bStopEncodingAfter = true;
+	bStopEncodingAfter = true;
 	//bStopEncodingBefore = true;
 	
 	switch ( OpLevel )
@@ -33484,9 +33555,9 @@ long R5900::Recompiler::SYNC ( R5900::Instruction::Format i, u32 Address )
 #endif
 			break;
 			
-		case 1:
+		//case 1:
 			// this instruction doesn't do anything currently
-			break;
+			//break;
 			
 		default:
 			return -1;
@@ -39287,7 +39358,8 @@ long R5900::Recompiler::Generate_VADDp ( u32 bSub, R5900::Instruction::Format i,
 		e->pandregreg ( RAX, RDX );
 
 		
-		if ( ( __builtin_popcount ( i.xyzw ) < 3 ) )
+		//if ( ( __builtin_popcount ( i.xyzw ) < 3 ) )
+		if ( ( popcnt32 ( i.xyzw ) < 3 ) )
 		{
 			e->pshufdregregimm ( RDX, RAX, _op_r5900_shuffle_lut_1 [ i.xyzw ] );
 
@@ -39819,7 +39891,8 @@ long R5900::Recompiler::Generate_VMULp ( R5900::Instruction::Format i, u32 FtCom
 		//e->movdqa_memreg ( & v0, RAX );
 		//e->movdqa_memreg ( & v1, RCX );
 		
-		if ( __builtin_popcount ( i.xyzw ) < 3 )
+		//if ( __builtin_popcount ( i.xyzw ) < 3 )
+		if ( popcnt32 ( i.xyzw ) < 3 )
 		{
 			e->pshufdregregimm ( RBX, RAX, _op_r5900_shuffle_lut_1 [ i.xyzw ] );
 			e->pshufdregregimm ( RCX, RCX, _op_r5900_shuffle_lut_1 [ i.xyzw ] );
@@ -40414,7 +40487,8 @@ long R5900::Recompiler::Generate_VMADDp ( u32 bSub, R5900::Instruction::Format i
 		//e->movdqa_memreg ( & v0, RAX );
 		//e->movdqa_memreg ( & v1, RCX );
 		
-		if ( __builtin_popcount ( i.xyzw ) < 3 )
+		//if ( __builtin_popcount ( i.xyzw ) < 3 )
+		if ( popcnt32 ( i.xyzw ) < 3 )
 		{
 			e->pshufdregregimm ( RBX, RAX, _op_r5900_shuffle_lut_1 [ i.xyzw ] );
 			e->pshufdregregimm ( RCX, RCX, _op_r5900_shuffle_lut_1 [ i.xyzw ] );
@@ -40841,7 +40915,8 @@ long R5900::Recompiler::Generate_VMADDp ( u32 bSub, R5900::Instruction::Format i
 		e->pcmpgtdregreg ( RDX, 5 );
 		e->pandregreg ( RAX, RDX );
 
-		if ( ( __builtin_popcount ( i.xyzw ) < 3 ) )
+		//if ( ( __builtin_popcount ( i.xyzw ) < 3 ) )
+		if ( ( popcnt32 ( i.xyzw ) < 3 ) )
 		{
 			e->pshufdregregimm ( RDX, RAX, _op_r5900_shuffle_lut_1 [ i.xyzw ] );
 

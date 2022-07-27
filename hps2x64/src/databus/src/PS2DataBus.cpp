@@ -150,12 +150,12 @@ DataBus::PS2_BusInterface_Write DataBus::LUT_BusWrite64 [ DataBus::c_LUT_Bus_Siz
 DataBus::PS2_BusInterface_Read DataBus::LUT_BusRead128 [ DataBus::c_LUT_Bus_Size ];
 DataBus::PS2_BusInterface_Write DataBus::LUT_BusWrite128 [ DataBus::c_LUT_Bus_Size ];
 
-DataBus::DataBusEntry DataBus::LUT_DataBus_Read [ DataBus::c_LUT_Bus_Size ] __attribute__ ((aligned (16)));
-DataBus::DataBusEntry DataBus::LUT_DataBus_Write [ DataBus::c_LUT_Bus_Size ] __attribute__ ((aligned (16)));
+alignas(16) DataBus::DataBusEntry DataBus::LUT_DataBus_Read [ DataBus::c_LUT_Bus_Size ];
+alignas(16) DataBus::DataBusEntry DataBus::LUT_DataBus_Write [ DataBus::c_LUT_Bus_Size ];
 
-u32* DataBus::pRegRefList0x1000_Read [ 65536 >> 4 ] __attribute__ ((aligned (16)));
-u32* DataBus::pRegRefList0x1100_Read [ 65536 >> 4 ] __attribute__ ((aligned (16)));
-u32* DataBus::pRegRefList0x1200_Read [ 65536 >> 4 ] __attribute__ ((aligned (16)));
+alignas(16) u32* DataBus::pRegRefList0x1000_Read [ 65536 >> 4 ];
+alignas(16) u32* DataBus::pRegRefList0x1100_Read [ 65536 >> 4 ];
+alignas(16) u32* DataBus::pRegRefList0x1200_Read [ 65536 >> 4 ];
 
 
 DataBus::PS2_BusInterface_Read DataBus::LUT_RegRead [ DataBus::c_LUT_Reg_Size ];

@@ -954,18 +954,18 @@ namespace R5900
 				
 
 		
-		Reg128 GPR [ 32 ];
+		alignas(64) Reg128 GPR [ 32 ];
 		
 		// need a bitmap to determine which GPR registers are loading from memory so we know if to stall pipeline or not
 		u32 GPRLoading_Bitmap;
 
 		//Reg32 Hi, Lo;
 		//Reg64 HiLo;
-		Reg128 HI, LO;
+		alignas(64) Reg128 HI, LO;
 
 //		u32 CPR0 [ 32 ];	// COP0 control registers
-		CPR0_Regs CPR0;		// COP0 control registers
-		long CPC0 [ 32 ];
+		alignas(64) CPR0_Regs CPR0;		// COP0 control registers
+		alignas(64) long CPC0 [ 32 ];
 		
 		// CPCOND0 is used for bc0 instructions (to see if dma complete condition is met)
 		u32 CPCOND0;
@@ -976,10 +976,10 @@ namespace R5900
 		// for now, make just float
 		//FloatReg ACC;
 		//DoubleLong dACC;
-		FloatLong dACC;
+		alignas(64) FloatLong dACC;
 		
-		FloatReg CPR1 [ 32 ];
-		long CPC1 [ 32 ];
+		alignas(64) FloatReg CPR1 [ 32 ];
+		alignas(64) long CPC1 [ 32 ];
 		
 		u32 divide_flag, invalid_zero_flag, invalid_negative_flag;
 		u32 divide_stickyflag, invalid_zero_stickyflag, invalid_negative_stickyflag;
@@ -1038,7 +1038,7 @@ namespace R5900
 		//COP2_Device COP2;
 		
 		// shift amount register
-		u32 SA;
+		alignas(64) u32 SA;
 
 		// the program counter
 		u32 PC;

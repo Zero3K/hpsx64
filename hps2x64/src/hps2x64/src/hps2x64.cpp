@@ -21,17 +21,21 @@
 #include "hps2x64.h"
 #include "WinApiHandler.h"
 #include <fstream>
-#include "ConfigFile.h"
+//#include "ConfigFile.h"
 
 #include "WinJoy.h"
 
 //#include "VU_Print.h"
 
+#include "json.hpp"
+
+#include "guicon.h"
+
 using namespace WinApi;
 
 using namespace Playstation2;
 using namespace Utilities::Strings;
-using namespace Config;
+//using namespace Config;
 
 
 #ifdef _DEBUG_VERSION_
@@ -44,6 +48,817 @@ using namespace Config;
 #define ENABLE_DIRECT_INPUT
 
 
+
+json jsnMenuBar = {
+{ "MenuBar", { 
+	{ "File", {
+		{ "Caption", {
+			{ "English", "File" }
+		} },
+		{ "SubMenu", {
+			{ "Load", {
+				{ "Caption", {
+					{ "English", "Load" }
+				} },
+				{ "SubMenu", {
+					{ "Bios", {
+						{ "Caption", {
+							{ "English", "Bios" }
+						} },
+						{ "Function", (unsigned long long) hps2x64::OnClick_File_Load_BIOS }
+					} },	// end File | Load | Bios
+					{ "State", {
+						{ "Caption", {
+							{ "English", "State" }
+						} },
+						{ "Function", (unsigned long long) hps2x64::OnClick_File_Load_State }
+					} },	// end File | Load | State
+					{ "Insert/Remove PS2 Game Disk", {
+						{ "Caption", {
+							{ "English", "Insert/Remove PS2 Game Disk" }
+						} },
+						{ "Function", (unsigned long long) hps2x64::OnClick_File_Load_GameDisk_PS2 }
+					} },	// end File | Load | Game Disk
+					{ "Insert/Remove PS1 Game Disk", {
+						{ "Caption", {
+							{ "English", "Insert/Remove PS1 Game Disk" }
+						} },
+						{ "Function", (unsigned long long) hps2x64::OnClick_File_Load_GameDisk_PS1 }
+					} },	// end File | Load | Game Disk
+					{ "Insert/Remove Audio Disk", {
+						{ "Caption", {
+							{ "English", "Insert/Remove Audio Disk" }
+						} },
+						{ "Function", (unsigned long long) hps2x64::OnClick_File_Load_AudioDisk }
+					} },	// end File | Load | Audio Disk
+				} }	// end File | Load | SubMenu
+			} },	// end File | Load
+			{ "Save", {
+				{ "Caption", {
+					{ "English", "Save" }
+				} },
+				{ "SubMenu", {
+					{ "State", {
+						{ "Caption", {
+							{ "English", "State" }
+						} },
+						{ "Function", (unsigned long long) hps2x64::OnClick_File_Save_State }
+					} }	// end File | Save | State
+				} }	// end File | Save | SubMenu
+			} },
+			{ "Run", {
+				{ "Caption", {
+					{ "English", "Run" }
+				} },
+				{ "Function", (unsigned long long) hps2x64::OnClick_File_Run },
+				{ "ShortcutKey", {
+					{ "Key", 0x52 },
+					{ "Modifier", 0x11 },
+				} },
+			} },
+			{ "Reset", {
+				{ "Caption", {
+					{ "English", "Reset" }
+				} },
+				{ "Function", (unsigned long long) hps2x64::OnClick_File_Reset }
+			} },
+			{ "Exit", {
+				{ "Caption", {
+					{ "English", "Exit" }
+				} },
+				{ "Function", (unsigned long long) hps2x64::OnClick_File_Exit }
+			} }	// end File | Exit
+
+		} }	// end File | Submenu
+
+	} },	// end File
+	{ "Debug", {
+		{ "Caption", {
+			{ "English", "Debug" }
+		} },
+		{ "SubMenu", {
+			{ "Break", {
+				{ "Caption", {
+					{ "English", "Break" }
+				} },
+				{ "Function", (unsigned long long) hps2x64::OnClick_Debug_Break }
+			} },
+			{ "Step Into", {
+				{ "Caption", {
+					{ "English", "Step Into" }
+				} },
+				{ "Function", (unsigned long long) hps2x64::OnClick_Debug_StepInto },
+				{ "ShortcutKey", {
+					{ "Key", 0x41 },
+					{ "Modifier", 0 },
+				} },
+			} },
+			{ "Step Instr PS1", {
+				{ "Caption", {
+					{ "English", "Step Instr PS1" }
+				} },
+				{ "Function", (unsigned long long) hps2x64::OnClick_Debug_StepPS1_Instr },
+				{ "ShortcutKey", {
+					{ "Key", '1' },
+					{ "Modifier", 0 },
+				} },
+			} },
+			{ "Step Instr PS2", {
+				{ "Caption", {
+					{ "English", "Step Instr PS2" }
+				} },
+				{ "Function", (unsigned long long) hps2x64::OnClick_Debug_StepPS2_Instr },
+				{ "ShortcutKey", {
+					{ "Key", '2' },
+					{ "Modifier", 0 },
+				} },
+			} },
+			{ "Output Current Sector", {
+				{ "Caption", {
+					{ "English", "Output Current Sector" }
+				} },
+				{ "Function", (unsigned long long) hps2x64::OnClick_Debug_OutputCurrentSector }
+			} },
+			{ "Show PS1", {
+				{ "Caption", {
+					{ "English", "Show PS1" }
+				} },
+				{ "SubMenu", {
+					{ "All", {
+						{ "Caption", {
+							{ "English", "All" }
+						} },
+						{ "Function", (unsigned long long) hps2x64::OnClick_Debug_Show_All }
+					} },
+					{ "Frame Buffer", {
+						{ "Caption", {
+							{ "English", "Frame Buffer" }
+						} },
+						{ "Function", (unsigned long long) hps2x64::OnClick_Debug_Show_FrameBuffer }
+					} },
+					{ "R3000A", {
+						{ "Caption", {
+							{ "English", "R3000A" }
+						} },
+						{ "Function", (unsigned long long) hps2x64::OnClick_Debug_Show_R3000A }
+					} },
+					{ "Memory", {
+						{ "Caption", {
+							{ "English", "Memory" }
+						} },
+						{ "Function", (unsigned long long) hps2x64::OnClick_Debug_Show_Memory }
+					} },
+					{ "DMA", {
+						{ "Caption", {
+							{ "English", "DMA" }
+						} },
+						{ "Function", (unsigned long long) hps2x64::OnClick_Debug_Show_DMA }
+					} },
+					{ "Timers", {
+						{ "Caption", {
+							{ "English", "Timers" }
+						} },
+						{ "Function", (unsigned long long) hps2x64::OnClick_Debug_Show_TIMER }
+					} },
+					{ "SPU", {
+						{ "Caption", {
+							{ "English", "SPU" }
+						} },
+						{ "Function", (unsigned long long) hps2x64::OnClick_Debug_Show_SPU }
+					} },
+					{ "INTC", {
+						{ "Caption", {
+							{ "English", "INTC" }
+						} },
+						{ "Function", (unsigned long long) hps2x64::OnClick_Debug_Show_INTC }
+					} },
+					{ "PS1 GPU", {
+						{ "Caption", {
+							{ "English", "PS1 GPU" }
+						} },
+						//{ "Function", (unsigned long long) NULL }
+					} },
+					{ "INTC", {
+						{ "Caption", {
+							{ "English", "INTC" }
+						} },
+						{ "Function", (unsigned long long) hps2x64::OnClick_Debug_Show_INTC }
+					} },
+					{ "MDEC", {
+						{ "Caption", {
+							{ "English", "MDEC" }
+						} },
+					} },
+					{ "SIO", {
+						{ "Caption", {
+							{ "English", "SIO" }
+						} },
+					} },
+					{ "PIO", {
+						{ "Caption", {
+							{ "English", "PIO" }
+						} },
+					} },
+					{ "CD", {
+						{ "Caption", {
+							{ "English", "CD" }
+						} },
+					} },
+					{ "Bus", {
+						{ "Caption", {
+							{ "English", "Bus" }
+						} },
+					} },
+					{ "R3000A I-Cache", {
+						{ "Caption", {
+							{ "English", "R3000A I-Cache" }
+						} },
+					} },
+					{ "SPU0", {
+						{ "Caption", {
+							{ "English", "SPU0" }
+						} },
+						{ "Function", (unsigned long long) hps2x64::OnClick_Debug_Show_SPU0 }
+					} },
+					{ "SPU1", {
+						{ "Caption", {
+							{ "English", "SPU1" }
+						} },
+						{ "Function", (unsigned long long) hps2x64::OnClick_Debug_Show_SPU1 }
+					} },
+				} },
+			} },
+			{ "Show PS2", {
+				{ "Caption", {
+					{ "English", "Show PS2" }
+				} },
+				{ "SubMenu", {
+					{ "PS2 All", {
+						{ "Caption", {
+							{ "English", "PS2 All" }
+						} },
+						{ "Function", (unsigned long long) hps2x64::OnClick_Debug_Show_PS2_All }
+					} },
+					{ "PS2 Frame Buffer", {
+						{ "Caption", {
+							{ "English", "PS2 Frame Buffer" }
+						} },
+						{ "Function", (unsigned long long) hps2x64::OnClick_Debug_Show_PS2_FrameBuffer }
+					} },
+					{ "R5900", {
+						{ "Caption", {
+							{ "English", "R5900" }
+						} },
+						{ "Function", (unsigned long long) hps2x64::OnClick_Debug_Show_R5900 }
+					} },
+					{ "PS2 Memory", {
+						{ "Caption", {
+							{ "English", "PS2 Memory" }
+						} },
+						{ "Function", (unsigned long long) hps2x64::OnClick_Debug_Show_PS2_Memory }
+					} },
+					{ "PS2 DMA", {
+						{ "Caption", {
+							{ "English", "PS2 DMA" }
+						} },
+						{ "Function", (unsigned long long) hps2x64::OnClick_Debug_Show_PS2_DMA }
+					} },
+					{ "PS2 Timers", {
+						{ "Caption", {
+							{ "English", "PS2 Timers" }
+						} },
+						{ "Function", (unsigned long long) hps2x64::OnClick_Debug_Show_PS2_TIMER }
+					} },
+					{ "PS2 INTC", {
+						{ "Caption", {
+							{ "English", "PS2 INTC" }
+						} },
+						{ "Function", (unsigned long long) hps2x64::OnClick_Debug_Show_PS2_INTC }
+					} },
+					{ "PS2 GPU", {
+						{ "Caption", {
+							{ "English", "PS2 GPU" }
+						} },
+						//{ "Function", (unsigned long long) NULL }
+					} },
+					{ "VU0", {
+						{ "Caption", {
+							{ "English", "VU0" }
+						} },
+						{ "Function", (unsigned long long) hps2x64::OnClick_Debug_Show_PS2_VU0 }
+					} },
+					{ "VU1", {
+						{ "Caption", {
+							{ "English", "VU1" }
+						} },
+						{ "Function", (unsigned long long) hps2x64::OnClick_Debug_Show_PS2_VU1 }
+					} },
+					{ "IPU", {
+						{ "Caption", {
+							{ "English", "IPU" }
+						} },
+					} },
+					{ "SIF", {
+						{ "Caption", {
+							{ "English", "SIF" }
+						} },
+					} },
+					{ "PS2 Bus", {
+						{ "Caption", {
+							{ "English", "PS2 Bus" }
+						} },
+					} },
+					{ "R5900 I-Cache", {
+						{ "Caption", {
+							{ "English", "R5900 I-Cache" }
+						} },
+					} },
+				} },
+			} },
+
+		} },
+	} },
+	{ "Peripherals", {
+		{ "Caption", {
+			{ "English", "Peripherals" }
+		} },
+		{ "SubMenu", {
+			{ "Pad 1", {
+				{ "Caption", {
+					{ "English", "Pad 1" }
+				} },
+				{ "SubMenu", {
+					{ "Configure Joypad 1...", {
+						{ "Caption", {
+							{ "English", "Configure Joypad 1..." }
+						} },
+						{ "Function", (unsigned long long) hps2x64::OnClick_Controllers0_Configure }
+					} },
+					{ "Pad 1 Type", {
+						{ "Caption", {
+							{ "English", "Pad 1 Type" }
+						} },
+						{ "SubMenu", {
+							{ "Pad 1 Digital", {
+								{ "Caption", {
+									{ "English", "Pad 1 Digital" }
+								} },
+								{ "Function", (unsigned long long) hps2x64::OnClick_Pad1Type_Digital },
+							} },
+							{ "Pad 1 Analog", {
+								{ "Caption", {
+									{ "English", "Pad 1 Analog" }
+								} },
+								{ "Function", (unsigned long long) hps2x64::OnClick_Pad1Type_Analog },
+							} },
+							{ "Pad 1 DualShock2", {
+								{ "Caption", {
+									{ "English", "Pad 1 DualShock2" }
+								} },
+								{ "Function", (unsigned long long) hps2x64::OnClick_Pad1Type_DualShock2 },
+							} },
+						} },
+					} },
+					{ "Pad 1: Input", {
+						{ "Caption", {
+							{ "English", "Pad 1: Input" }
+						} },
+						{ "SubMenu", {
+							{ "Pad 1: None", {
+								{ "Caption", {
+									{ "English", "Pad 1: None" }
+								} },
+								{ "Function", (unsigned long long) hps2x64::OnClick_Pad1Input_None },
+							} },
+							{ "Pad 1: Device0", {
+								{ "Caption", {
+									{ "English", "Pad 1: Device0" }
+								} },
+								{ "Function", (unsigned long long) hps2x64::OnClick_Pad1Input_Device0 },
+							} },
+							{ "Pad 1: Device1", {
+								{ "Caption", {
+									{ "English", "Pad 1: Device1" }
+								} },
+								{ "Function", (unsigned long long) hps2x64::OnClick_Pad1Input_Device1 },
+							} },
+						} },
+					} },
+				} },
+			} },	// end Pad 1
+			{ "Pad 2", {
+				{ "Caption", {
+					{ "English", "Pad 2" }
+				} },
+				{ "SubMenu", {
+					{ "Configure Joypad 2...", {
+						{ "Caption", {
+							{ "English", "Configure Joypad 2..." }
+						} },
+						{ "Function", (unsigned long long) hps2x64::OnClick_Controllers1_Configure }
+					} },
+					{ "Pad 2 Type", {
+						{ "Caption", {
+							{ "English", "Pad 2 Type" }
+						} },
+						{ "SubMenu", {
+							{ "Pad 2 Digital", {
+								{ "Caption", {
+									{ "English", "Pad 2 Digital" }
+								} },
+								{ "Function", (unsigned long long) hps2x64::OnClick_Pad2Type_Digital },
+							} },
+							{ "Pad 2 Analog", {
+								{ "Caption", {
+									{ "English", "Pad 2 Analog" }
+								} },
+								{ "Function", (unsigned long long) hps2x64::OnClick_Pad2Type_Analog },
+							} },
+							{ "Pad 2 DualShock2", {
+								{ "Caption", {
+									{ "English", "Pad 2 DualShock2" }
+								} },
+								{ "Function", (unsigned long long) hps2x64::OnClick_Pad2Type_DualShock2 },
+							} },
+						} },
+					} },
+					{ "Pad 2: Input", {
+						{ "Caption", {
+							{ "English", "Pad 2: Input" }
+						} },
+						{ "SubMenu", {
+							{ "Pad 2: None", {
+								{ "Caption", {
+									{ "English", "Pad 2: None" }
+								} },
+								{ "Function", (unsigned long long) hps2x64::OnClick_Pad2Input_None },
+							} },
+							{ "Pad 2: Device0", {
+								{ "Caption", {
+									{ "English", "Pad 2: Device0" }
+								} },
+								{ "Function", (unsigned long long) hps2x64::OnClick_Pad2Input_Device0 },
+							} },
+							{ "Pad 2: Device1", {
+								{ "Caption", {
+									{ "English", "Pad 2: Device1" }
+								} },
+								{ "Function", (unsigned long long) hps2x64::OnClick_Pad2Input_Device1 },
+							} },
+						} },
+					} },
+				} },
+			} },	// end Pad 2
+			{ "Memory Cards", {
+				{ "Caption", {
+					{ "English", "Memory Cards" }
+				} },
+				{ "SubMenu", {
+					{ "Card 1", {
+						{ "Caption", {
+							{ "English", "Card 1" }
+						} },
+						{ "SubMenu", {
+							{ "Connect Card1", {
+								{ "Caption", {
+									{ "English", "Connect Card1" },
+									{ "Function", (unsigned long long) hps2x64::OnClick_Card1_Connect },
+								} },
+							} },
+							{ "Disconnect Card1", {
+								{ "Caption", {
+									{ "English", "Disconnect Card1" },
+									{ "Function", (unsigned long long) hps2x64::OnClick_Card1_Disconnect },
+								} },
+							} },
+						} },
+					} },	// end Card 1
+					{ "Card 2", {
+						{ "Caption", {
+							{ "English", "Card 2" }
+						} },
+						{ "SubMenu", {
+							{ "Connect Card2", {
+								{ "Caption", {
+									{ "English", "Connect Card2" },
+									{ "Function", (unsigned long long) hps2x64::OnClick_Card2_Connect },
+								} },
+							} },
+							{ "Disconnect Card2", {
+								{ "Caption", {
+									{ "English", "Disconnect Card2" },
+									{ "Function", (unsigned long long) hps2x64::OnClick_Card2_Disconnect },
+								} },
+							} },
+						} },
+					} },
+				} },
+			} },
+			{ "Re-Detect Joypad(s)", {
+				{ "Caption", {
+					{ "English", "Re-Detect Joypad(s)" }
+				} },
+				{ "Function", (unsigned long long) hps2x64::OnClick_Redetect_Pads },
+			} },
+		} },
+	} },
+	{ "Region", {
+		{ "Caption", {
+			{ "English", "Region" }
+		} },
+		{ "SubMenu", {
+			{ "Europe", {
+				{ "Caption", {
+					{ "English", "Europe" }
+				} },
+				{ "Function", (unsigned long long) hps2x64::OnClick_Region_Europe }
+			} },
+			{ "Japan", {
+				{ "Caption", {
+					{ "English", "Japan" }
+				} },
+				{ "Function", (unsigned long long) hps2x64::OnClick_Region_Japan }
+			} },
+			{ "North America", {
+				{ "Caption", {
+					{ "English", "North America" }
+				} },
+				{ "Function", (unsigned long long) hps2x64::OnClick_Region_NorthAmerica }
+			} },
+		} },	// end Region | SubMenu
+	} },	// end Region
+	{ "Audio", {
+		{ "Caption", {
+			{ "English", "Audio" }
+		} },
+		{ "SubMenu", {
+			{ "Enable", {
+				{ "Caption", {
+					{ "English", "Enable" }
+				} },
+				{ "Function", (unsigned long long) hps2x64::OnClick_Audio_Enable } }
+			},
+			{ "Volume", {
+				{ "Caption", {
+					{ "English", "Volume" }
+				} },
+				{ "SubMenu", {
+					{ "100%", {
+						{ "Caption", {
+							{ "English", "100%" }
+						} },
+						{ "Function", (unsigned long long) hps2x64::OnClick_Audio_Volume_100 }
+					} },
+					{ "75%", {
+						{ "Caption", {
+							{ "English", "75%" }
+						} },
+						{ "Function", (unsigned long long) hps2x64::OnClick_Audio_Volume_75 }
+					} },
+					{ "50%", {
+						{ "Caption", {
+							{ "English", "50%" }
+						} },
+						{ "Function", (unsigned long long) hps2x64::OnClick_Audio_Volume_50 }
+					} },
+					{ "25%", {
+						{ "Caption", {
+							{ "English", "25%" }
+						} },
+						{ "Function", (unsigned long long) hps2x64::OnClick_Audio_Volume_25 }
+					} },
+				} },
+			} },
+			{ "Buffer Size", {
+				{ "Caption", {
+					{ "English", "Buffer Size" }
+				} },
+				{ "SubMenu", {
+					{ "8 KB", {
+						{ "Caption", {
+							{ "English", "8 KB" }
+						} },
+						{ "Function", (unsigned long long) hps2x64::OnClick_Audio_Buffer_8k }
+					} },
+					{ "16 KB", {
+						{ "Caption", {
+							{ "English", "16 KB" }
+						} },
+						{ "Function", (unsigned long long) hps2x64::OnClick_Audio_Buffer_16k }
+					} },
+					{ "32 KB", {
+						{ "Caption", {
+							{ "English", "32 KB" }
+						} },
+						{ "Function", (unsigned long long) hps2x64::OnClick_Audio_Buffer_32k }
+					} },
+					{ "64 KB", {
+						{ "Caption", {
+							{ "English", "64 KB" }
+						} },
+						{ "Function", (unsigned long long) hps2x64::OnClick_Audio_Buffer_64k }
+					} },
+					{ "128 KB", {
+						{ "Caption", {
+							{ "English", "128 KB" }
+						} },
+						{ "Function", (unsigned long long) hps2x64::OnClick_Audio_Buffer_1m }
+					} },
+				} },
+			} },
+			{ "Filter", {
+				{ "Caption", {
+					{ "English", "Filter" }
+				} },
+				{ "Function", (unsigned long long) hps2x64::OnClick_Audio_Filter }
+			} },
+			{ "SPU Multi-Thread", {
+				{ "Caption", {
+					{ "English", "SPU Multi-Thread" }
+				} },
+				{ "Function", (unsigned long long) hps2x64::OnClick_Audio_MultiThread }
+			} },
+		} },
+	} },	// end Audio
+	{ "Video", {
+		{ "Caption", {
+			{ "English", "Video" }
+		} },
+		{ "SubMenu", {
+			/*
+			{ "Scanlines", {
+				{ "Caption", {
+					{ "English", "Scanlines" }
+				} },
+				{ "SubMenu", {
+					{ "Enable Scanlines", {
+						{ "Caption", {
+							{ "English", "Enable Scanlines" }
+						} },
+						{ "Function", (unsigned long long) hps2x64::OnClick_Video_ScanlinesEnable }
+					} },
+					{ "Disable Scanlines", {
+						{ "Caption", {
+							{ "English", "Disable Scanlines" }
+						} },
+						{ "Function", (unsigned long long) hps2x64::OnClick_Video_ScanlinesDisable }
+					} },
+				} },
+			} },	// end Scanlines
+			*/
+			{ "Window Size x1", {
+				{ "Caption", {
+					{ "English", "Window Size x1" }
+				} },
+				{ "Function", (unsigned long long) hps2x64::OnClick_Video_WindowSizeX1 }
+			} },
+			{ "Window Size x1.5", {
+				{ "Caption", {
+					{ "English", "Window Size x1.5" }
+				} },
+				{ "Function", (unsigned long long) hps2x64::OnClick_Video_WindowSizeX15 }
+			} },
+			{ "Window Size x2", {
+				{ "Caption", {
+					{ "English", "Window Size x2" }
+				} },
+				{ "Function", (unsigned long long) hps2x64::OnClick_Video_WindowSizeX2 }
+			} },
+			{ "Full Screen", {
+				{ "Caption", {
+					{ "English", "Full Screen" }
+				} },
+				{ "Function", (unsigned long long) hps2x64::OnClick_Video_FullScreen },
+				{ "ShortcutKey", {
+					{ "Key", 0x46 },
+					{ "Modifier", 0x11 },
+				} },
+			} },
+			{ "Enable Vsync", {
+				{ "Caption", {
+					{ "English", "Enable Vsync" }
+				} },
+				{ "Function", (unsigned long long) hps2x64::OnClick_Video_EnableVsync },
+			} },
+		} },
+	} },
+	{ "CPU", {
+		{ "Caption", {
+			{ "English", "CPU" }
+		} },
+		{ "SubMenu", {
+			{ "CPU: R3000A", {
+				{ "Caption", {
+					{ "English", "CPU: R3000A" }
+				} },
+				{ "SubMenu", {
+					{ "Interpreter: R3000A", {
+						{ "Caption", {
+							{ "English", "Interpreter: R3000A" }
+						} },
+						{ "Function", (unsigned long long) hps2x64::OnClick_R3000ACPU_Interpreter }
+					} },
+					{ "Recompiler: R3000A", {
+						{ "Caption", {
+							{ "English", "Recompiler: R3000A" }
+						} },
+						{ "Function", (unsigned long long) hps2x64::OnClick_R3000ACPU_Recompiler }
+					} },
+				} },
+			} },	// end CPU: R3000A
+			{ "CPU: R5900", {
+				{ "Caption", {
+					{ "English", "CPU: R5900" }
+				} },
+				{ "SubMenu", {
+					{ "Interpreter: R5900", {
+						{ "Caption", {
+							{ "English", "Interpreter: R5900" }
+						} },
+						{ "Function", (unsigned long long) hps2x64::OnClick_R5900CPU_Interpreter }
+					} },
+					{ "Recompiler: R5900", {
+						{ "Caption", {
+							{ "English", "Recompiler: R5900" }
+						} },
+						{ "Function", (unsigned long long) hps2x64::OnClick_R5900CPU_Recompiler }
+					} },
+				} },
+			} },	// end CPU: R5900
+			{ "CPU: VU0", {
+				{ "Caption", {
+					{ "English", "CPU: VU0" }
+				} },
+				{ "SubMenu", {
+					{ "Interpreter: VU0", {
+						{ "Caption", {
+							{ "English", "Interpreter: VU0" }
+						} },
+						{ "Function", (unsigned long long) hps2x64::OnClick_VU0_Interpreter }
+					} },
+					{ "Recompiler: VU0", {
+						{ "Caption", {
+							{ "English", "Recompiler: VU0" }
+						} },
+						{ "Function", (unsigned long long) hps2x64::OnClick_VU0_Recompiler }
+					} },
+				} },
+			} },	// end CPU: VU0
+			{ "CPU: VU1", {
+				{ "Caption", {
+					{ "English", "CPU: VU1" }
+				} },
+				{ "SubMenu", {
+					{ "Interpreter: VU1", {
+						{ "Caption", {
+							{ "English", "Interpreter: VU1" }
+						} },
+						{ "Function", (unsigned long long) hps2x64::OnClick_VU1_Interpreter }
+					} },
+					{ "Recompiler: VU1", {
+						{ "Caption", {
+							{ "English", "Recompiler: VU1" }
+						} },
+						{ "Function", (unsigned long long) hps2x64::OnClick_VU1_Recompiler }
+					} },
+				} },
+			} },	// end CPU: VU1
+
+		} },
+	} },	// end CPU
+	{ "GPU", {
+		{ "Caption", {
+			{ "English", "GPU" }
+		} },
+		{ "SubMenu", {
+			{ "GPU: Threads", {
+				{ "Caption", {
+					{ "English", "GPU: Threads" }
+				} },
+				{ "SubMenu", {
+					{ "0 (single-thread)", {
+						{ "Caption", {
+							{ "English", "0 (single-thread)" }
+						} },
+						{ "Function", (unsigned long long) hps2x64::OnClick_GPU_0Threads }
+					} },
+					{ "1 (multi-thread)", {
+						{ "Caption", {
+							{ "English", "1 (multi-thread)" }
+						} },
+						{ "Function", (unsigned long long) hps2x64::OnClick_GPU_1Threads }
+					} },
+				} },
+			} },	// end GPU: Threads
+		} },
+	} },
+
+} }	// end MenuBar
+};
+
+
+
+
 hps2x64 _HPS2X64;
 
 
@@ -54,12 +869,17 @@ volatile u32 hps2x64::_MenuWasClicked;
 
 WindowClass::Window *hps2x64::ProgramWindow;
 
-string hps2x64::BiosPath;
 string hps2x64::ExecutablePath;
 char ExePathTemp [ hps2x64::c_iExeMaxPathLength + 1 ];
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int iCmdShow)
 {
+	
+#if !defined(__GNUC__)
+	// don't need this for gcc
+	RedirectIOToConsole();
+#endif
+
 	WindowClass::Register ( hInstance, "testSystem" );
 	
 	cout << "Initializing program...\n";
@@ -131,192 +951,6 @@ int hps2x64::HandleMenuClick ()
 		MenuWasClicked = 1;
 		
 		
-		/*
-		if ( _MenuClick.File_Load_State )
-		{
-		}
-		else if ( _MenuClick.File_Load_BIOS )
-		{
-		}
-		
-		
-		
-#ifndef EE_ONLY_COMPILE
-		//else if ( _MenuClick.File_Load_GameDisk_PS2CD || _MenuClick.File_Load_GameDisk_PS2DVD || _MenuClick.File_Load_GameDisk_PS1 )
-		else if ( _MenuClick.File_Load_GameDisk_PS2 || _MenuClick.File_Load_GameDisk_PS1 )
-		{
-		}
-		else if ( _MenuClick.File_Load_AudioDisk )
-		{
-		}
-#endif		
-		
-		
-		
-		else if ( _MenuClick.File_Save_State )
-		{
-		}
-		else if ( _MenuClick.File_Reset )
-		{
-		}
-		else if ( _MenuClick.File_Run )
-		{
-		}
-		else if ( _MenuClick.File_Exit )
-		{
-		}
-		else if ( _MenuClick.Debug_Break )
-		{
-		}
-		else if ( _MenuClick.Debug_StepInto )
-		{
-		}
-		else if ( _MenuClick.Debug_StepPS1_Instr )
-		{
-		}
-		else if ( _MenuClick.Debug_StepPS2_Instr )
-		{
-		}
-		else if ( _MenuClick.Debug_ShowWindow_All )
-		{
-		}
-		else if ( _MenuClick.Debug_ShowWindow_R5900 )
-		{
-		}
-		else if ( _MenuClick.Debug_ShowWindow_PS2_Memory )
-		{
-		}
-		else if ( _MenuClick.Debug_ShowWindow_PS2_DMA )
-		{
-		}
-		else if ( _MenuClick.Debug_ShowWindow_PS2_TIMER )
-		{
-		}
-		else if ( _MenuClick.Debug_ShowWindow_PS2_VU0 )
-		{
-		}
-		else if ( _MenuClick.Debug_ShowWindow_PS2_VU1 )
-		{
-		}
-		else if ( _MenuClick.Debug_ShowWindow_PS2_INTC )
-		{
-		}
-		else if ( _MenuClick.Debug_ShowWindow_PS2_FrameBuffer )
-		{
-		}
-		else if ( _MenuClick.Debug_ShowWindow_Memory )
-		{
-		}
-		
-		
-		else if ( _MenuClick.Controllers_Configure )
-		{
-		}
-		else if ( _MenuClick.Pad1Type_Digital )
-		{
-		}
-		else if ( _MenuClick.Pad1Type_Analog )
-		{
-		}
-		else if ( _MenuClick.Pad2Type_Digital )
-		{
-		}
-		else if ( _MenuClick.Pad2Type_Analog )
-		{
-		}
-		else if ( _MenuClick.MemoryCard1_Connected )
-		{
-		}
-		else if ( _MenuClick.MemoryCard1_Disconnected )
-		{
-		}
-		else if ( _MenuClick.MemoryCard2_Connected )
-		{
-		}
-		else if ( _MenuClick.MemoryCard2_Disconnected )
-		{
-		}
-		
-		
-		
-		else if ( _MenuClick.Region_Europe )
-		{
-		}
-		else if ( _MenuClick.Region_Japan )
-		{
-		}
-		else if ( _MenuClick.Region_NorthAmerica )
-		{
-		}
-		
-		
-		
-		else if ( _MenuClick.Audio_Enable )
-		{
-		}
-		else if ( _MenuClick.Audio_Volume_100 )
-		{
-		}
-		else if ( _MenuClick.Audio_Volume_75 )
-		{
-		}
-		else if ( _MenuClick.Audio_Volume_50 )
-		{
-		}
-		else if ( _MenuClick.Audio_Volume_25 )
-		{
-		}
-		else if ( _MenuClick.Audio_Buffer_8k )
-		{
-		}
-		else if ( _MenuClick.Audio_Buffer_16k )
-		{
-		}
-		else if ( _MenuClick.Audio_Buffer_32k )
-		{
-		}
-		else if ( _MenuClick.Audio_Buffer_64k )
-		{
-		}
-		else if ( _MenuClick.Audio_Buffer_1m )
-		{
-		}
-		else if ( _MenuClick.Audio_Filter )
-		{
-		}
-		
-		
-		else if ( _MenuClick.Video_FullScreen )
-		{
-		}
-		
-#ifndef EE_ONLY_COMPILE
-		else if ( _MenuClick.Debug_ShowWindow_R3000A )
-		{
-		}
-		else if ( _MenuClick.Debug_ShowWindow_DMA )
-		{
-		}
-		else if ( _MenuClick.Debug_ShowWindow_TIMER )
-		{
-		}
-		else if ( _MenuClick.Debug_ShowWindow_SPU )
-		{
-		}
-		else if ( _MenuClick.Debug_ShowWindow_CD )
-		{
-		}
-		else if ( _MenuClick.Debug_ShowWindow_INTC )
-		{
-		}
-		else if ( _MenuClick.Debug_ShowWindow_SPU0 )
-		{
-		}
-		else if ( _MenuClick.Debug_ShowWindow_SPU1 )
-		{
-		}
-#endif
-		*/
 		
 		
 		// update anything that was checked/unchecked
@@ -694,18 +1328,22 @@ void hps2x64::InitializeProgram ()
 	////////////////////////////////////////////
 	// add menu bar to program window
 	WindowClass::MenuBar *m = ProgramWindow->Menus;
+
+	ProgramWindow->CreateMenuFromJson( jsnMenuBar, "English" );
+
+	/*
 	m->AddMainMenuItem ( "File" );
 	m->AddMainMenuItem ( "Debug" );
 	m->AddMenu ( "File", "Load" );
-	m->AddItem ( "Load", "Bios\tb", OnClick_File_Load_BIOS );
-	m->AddItem ( "Load", "State\tF4", OnClick_File_Load_State );
+	m->AddItem ( "Load", "Bios", OnClick_File_Load_BIOS );
+	m->AddItem ( "Load", "State", OnClick_File_Load_State );
 	//m->AddItem ( "Load", "Insert/Remove PS2 CD Game Disk", OnClick_File_Load_GameDisk_PS2CD );
 	//m->AddItem ( "Load", "Insert/Remove PS2 DVD Game Disk", OnClick_File_Load_GameDisk_PS2DVD );
-	m->AddItem ( "Load", "Insert/Remove PS2 Game Disk\tg", OnClick_File_Load_GameDisk_PS2 );
+	m->AddItem ( "Load", "Insert/Remove PS2 Game Disk", OnClick_File_Load_GameDisk_PS2 );
 	m->AddItem ( "Load", "Insert/Remove PS1 Game Disk", OnClick_File_Load_GameDisk_PS1 );
 	m->AddItem ( "Load", "Insert/Remove Audio Disk", OnClick_File_Load_AudioDisk );
 	m->AddMenu ( "File", "Save" );
-	m->AddItem ( "Save", "State\ts", OnClick_File_Save_State );
+	m->AddItem ( "Save", "State", OnClick_File_Save_State );
 	m->AddItem ( "File", "Reset", OnClick_File_Reset );
 	//m->AddItem ( "Save", "Bios Debug Info", SaveBIOSClick );
 	//m->AddItem ( "Save", "RAM Debug Info", SaveRAMClick );
@@ -765,7 +1403,7 @@ void hps2x64::InitializeProgram ()
 	m->AddMainMenuItem ( "Peripherals" );
 	//m->AddItem ( "Peripherals", "Configure Joypad...", OnClick_Controllers_Configure );
 	m->AddMenu ( "Peripherals", "Pad 1" );
-	m->AddItem ( "Pad 1", "Configure Joypad1...\tj", OnClick_Controllers0_Configure );
+	m->AddItem ( "Pad 1", "Configure Joypad1...", OnClick_Controllers0_Configure );
 	m->AddMenu ( "Pad 1", "Pad 1 Type" );
 	m->AddItem ( "Pad 1 Type", "Pad 1 Digital", OnClick_Pad1Type_Digital );
 	m->AddItem ( "Pad 1 Type", "Pad 1 Analog", OnClick_Pad1Type_Analog );
@@ -863,7 +1501,7 @@ void hps2x64::InitializeProgram ()
 	m->AddMenu ( "GPU", "GPU: Threads" );
 	m->AddItem ( "GPU: Threads", "0 (single-thread)", OnClick_GPU_0Threads );
 	m->AddItem ( "GPU: Threads", "1 (multi-thread)", OnClick_GPU_1Threads );
-	
+	*/
 	
 	cout << "\nShowing menu bar";
 	
@@ -877,22 +1515,7 @@ void hps2x64::InitializeProgram ()
 	
 	// need a shortcut key for "run"
 	ProgramWindow->AddShortcutKey ( OnClick_File_Run, 0x52 );
-
-	// need a shortcut key for "load bios"
-	ProgramWindow->AddShortcutKey ( OnClick_File_Load_BIOS, 0x42 );
-
-	// need a shortcut key for "insert/remove PS2 game disk"
-	ProgramWindow->AddShortcutKey ( OnClick_File_Load_GameDisk_PS2, 0x47 );
-
-	// need a shortcut key for "save state"
-	ProgramWindow->AddShortcutKey ( OnClick_File_Save_State, 0x53 );
-
-	// need a shortcut key for "load state"
-	ProgramWindow->AddShortcutKey ( OnClick_File_Load_State, 0x73 );
-
-	// need a shortcut key for "configure joypad1"
-	ProgramWindow->AddShortcutKey ( OnClick_Controllers0_Configure, 0x4A );
-
+	
 	// need a shortcut key to toggle full screen
 	ProgramWindow->AddShortcutKey ( OnClick_Video_FullScreen, 0x46 );
 	ProgramWindow->AddShortcutKey ( OnClick_Video_FullScreen, 0x1b );
@@ -960,8 +1583,8 @@ void hps2x64::InitializeProgram ()
 	
 	cout << "\nLoading memory cards if available...";
 	
-	//_HPS2X64._SYSTEM._PS1SYSTEM._SIO.Load_MemoryCardFile ( ExecutablePath + "card0", 0 );
-	//_HPS2X64._SYSTEM._PS1SYSTEM._SIO.Load_MemoryCardFile ( ExecutablePath + "card1", 1 );
+	//_SYSTEM._SIO.Load_MemoryCardFile ( ExecutablePath + "card0", 0 );
+	//_SYSTEM._SIO.Load_MemoryCardFile ( ExecutablePath + "card1", 1 );
 	_SYSTEM._PS1SYSTEM._SIO.Load_PS2MemoryCardFile ( ExecutablePath + "ps2card0", 0 );
 	_SYSTEM._PS1SYSTEM._SIO.Load_PS2MemoryCardFile ( ExecutablePath + "ps2card1", 1 );
 	
@@ -1359,8 +1982,8 @@ void hps2x64::RunProgram ()
 	// Closing Program //
 	
 	// write back memory cards
-	//_HPS2X64._SYSTEM._PS1SYSTEM._SIO.Store_MemoryCardFile ( ExecutablePath + "card0", 0 );
-	//_HPS2X64._SYSTEM._PS1SYSTEM._SIO.Store_MemoryCardFile ( ExecutablePath + "card1", 1 );
+	//_SYSTEM._SIO.Store_MemoryCardFile ( ExecutablePath + "card0", 0 );
+	//_SYSTEM._SIO.Store_MemoryCardFile ( ExecutablePath + "card1", 1 );
 	_SYSTEM._PS1SYSTEM._SIO.Store_PS2MemoryCardFile ( ExecutablePath + "ps2card0", 0 );
 	_SYSTEM._PS1SYSTEM._SIO.Store_PS2MemoryCardFile ( ExecutablePath + "ps2card1", 1 );
 	
@@ -2094,6 +2717,7 @@ void hps2x64::OnClick_Debug_OutputCurrentSector ( int i )
 	//_HPS2X64._SYSTEM._CD.OutputCurrentSector ();
 	//_HPS2X64._SYSTEM.Test ();
 	
+	/*
 	long *pData = (long*) & Playstation1::SIO::DJoy.gameControllerStates[0];
 	
 	Playstation1::SIO::DJoy.Update( 0 );
@@ -2114,6 +2738,17 @@ void hps2x64::OnClick_Debug_OutputCurrentSector ( int i )
 		cout << "\nAxis#" << dec << i << "=" << hex << *pData << " " << dec << *pData;
 		pData++;
 	}
+	*/
+
+	// output ipu testing data
+	cout << "\nIPU-FIFO-IN-SIZE= " << dec << _HPS2X64._SYSTEM._IPU.FifoIn_Size;
+	cout << "\nIPU-FIFO-OUT-SIZE= " << dec << _HPS2X64._SYSTEM._IPU.FifoOut_Size;
+	cout << "\nIPU-DECODER-FIFO-OUT-SIZE= " << dec << _HPS2X64._SYSTEM._IPU.thedecoder.ipu0_data;
+	cout << "\nIPU-COMMAND-WRITE= " << hex << _HPS2X64._SYSTEM._IPU.CMD_Write.Value;
+	cout << "\nIPU-COMMAND-READ= " << hex << _HPS2X64._SYSTEM._IPU.CMD_Read.Value;
+	cout << "\nIPU-CTRL= " << hex << _HPS2X64._SYSTEM._IPU.Regs.CTRL.Value;
+	cout << "\nIPU-BP= " << hex << _HPS2X64._SYSTEM._IPU.Regs.BP.Value;
+	cout << "\nIPU-TOP= " << hex << _HPS2X64._SYSTEM._IPU.Regs.TOP.Value;
 	
 	_MenuWasClicked = 1;
 }
@@ -3396,7 +4031,7 @@ void hps2x64::SaveState ( string FilePath )
 	// We need to prompt for the file to save state to
 	if ( !FilePath.compare ( "" ) )
 	{
-		FilePath = ProgramWindow->ShowFileSaveDialog_Savestate ();
+		FilePath = ProgramWindow->ShowFileSaveDialog ();
 	}
 
 	ofstream OutputFile ( FilePath.c_str (), ios::binary );
@@ -3455,10 +4090,10 @@ void hps2x64::LoadState ( string FilePath )
 	//_SYSTEM._CD.cd_image.WaitForAllReadsComplete ();
 	
 	////////////////////////////////////////////////////////
-	// We need to prompt for the file to load the save state from
+	// We need to prompt for the file to save state to
 	if ( !FilePath.compare( "" ) )
 	{
-		FilePath = ProgramWindow->ShowFileOpenDialog_Savestate ();
+		FilePath = ProgramWindow->ShowFileOpenDialog ();
 	}
 
 	ifstream InputFile ( FilePath.c_str (), ios::binary );
@@ -3511,14 +4146,15 @@ void hps2x64::LoadBIOS ( string FilePath )
 {
 	bool bRet;
 	string NVMPath;
-	 cout << "Loading BIOS.\n";
+	
+	cout << "Loading BIOS.\n";
 	
 	////////////////////////////////////////////////////////
 	// We need to prompt for the TEST program to run
 	if ( !FilePath.compare ( "" ) )
 	{
 		cout << "Prompting for BIOS file.\n";
-		FilePath = ProgramWindow->ShowFileOpenDialog_BIOS ();
+		FilePath = ProgramWindow->ShowFileOpenDialog ();
 	}
 	
 	cout << "Loading into memory.\n";
@@ -3537,9 +4173,6 @@ void hps2x64::LoadBIOS ( string FilePath )
 	{
 		// code loaded successfully
 		cout << "\nCode loaded successfully into BIOS.\n";
-
-		// set the path for the bios
-		BiosPath = FilePath;
 
 		NVMPath = GetPath ( FilePath.c_str () ) + GetFile ( FilePath.c_str () ) + ".nvm";
 		NVMPath.copy ( _SYSTEM.Last_NVM_Path, 2048 );
@@ -3573,8 +4206,8 @@ string hps2x64::LoadDisk ( string FilePath )
 	// We need to prompt for the TEST program to run
 	if ( !FilePath.compare ( "" ) )
 	{
-		cout << "Prompting for Disk Image file.\n";
-		FilePath = ProgramWindow->ShowFileOpenDialog_Image ();
+		cout << "Prompting for BIOS file.\n";
+		FilePath = ProgramWindow->ShowFileOpenDialog ();
 	}
 	
 	
@@ -3585,108 +4218,162 @@ string hps2x64::LoadDisk ( string FilePath )
 }
 
 
-// create config file object
-Config::File cfg;
 
 
 void hps2x64::LoadConfig ( string ConfigFileName )
 {
-	// create config file object
-	//Config::File cfg;
-	
-	cfg.Clear ();
-	
-	// load the configuration file
-	cfg.Load ( ConfigFileName );
-	
-	// load the variables from the configuration file
-	
-	cfg.Get_Value32 ( "Pad1_DigitalAnalog", _HPS2X64._SYSTEM._PS1SYSTEM._SIO.ControlPad_Type [ 0 ] );
-	cfg.Get_Value32 ( "Pad2_DigitalAnalog", _HPS2X64._SYSTEM._PS1SYSTEM._SIO.ControlPad_Type [ 1 ] );
-	cfg.Get_Value32 ( "MemoryCard1_Disconnected", _HPS2X64._SYSTEM._PS1SYSTEM._SIO.MemoryCard_ConnectionState [ 0 ] );
-	cfg.Get_Value32 ( "MemoryCard2_Disconnected", _HPS2X64._SYSTEM._PS1SYSTEM._SIO.MemoryCard_ConnectionState [ 1 ] );
-	
-	cfg.Get_Value32 ( "CD_Region", _HPS2X64._SYSTEM._PS1SYSTEM._CD.Region );
-	
-	cfg.Get_Value32 ( "SPU_Enable_AudioOutput", _HPS2X64._SYSTEM._PS1SYSTEM._SPU.AudioOutput_Enabled );
-	cfg.Get_Value32 ( "SPU_Enable_Filter", _HPS2X64._SYSTEM._PS1SYSTEM._SPU.AudioFilter_Enabled );
-	cfg.Get_Value32 ( "SPU_BufferSize", _HPS2X64._SYSTEM._PS1SYSTEM._SPU.NextPlayBuffer_Size );
-	cfg.Get_Value32 ( "SPU_GlobalVolume", _HPS2X64._SYSTEM._PS1SYSTEM._SPU.GlobalVolume );
-	
-	// load the key configurations too
-	cfg.Get_Value32 ( "Pad1_KeyX", _HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_X [ 0 ] );
-	cfg.Get_Value32 ( "Pad1_KeyO", _HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_O [ 0 ] );
-	cfg.Get_Value32 ( "Pad1_KeyTriangle", _HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_Triangle [ 0 ] );
-	cfg.Get_Value32 ( "Pad1_KeySquare", _HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_Square [ 0 ] );
-	cfg.Get_Value32 ( "Pad1_KeyR1", _HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_R1 [ 0 ] );
-	cfg.Get_Value32 ( "Pad1_KeyR2", _HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_R2 [ 0 ] );
-	cfg.Get_Value32 ( "Pad1_KeyR3", _HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_R3 [ 0 ] );
-	cfg.Get_Value32 ( "Pad1_KeyL1", _HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_L1 [ 0 ] );
-	cfg.Get_Value32 ( "Pad1_KeyL2", _HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_L2 [ 0 ] );
-	cfg.Get_Value32 ( "Pad1_KeyL3", _HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_L3 [ 0 ] );
-	cfg.Get_Value32 ( "Pad1_KeyStart", _HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_Start [ 0 ] );
-	cfg.Get_Value32 ( "Pad1_KeySelect", _HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_Select [ 0 ] );
-	cfg.Get_Value32 ( "Pad1_KeyLeftAnalogX", _HPS2X64._SYSTEM._PS1SYSTEM._SIO.LeftAnalog_X [ 0 ] );
-	cfg.Get_Value32 ( "Pad1_KeyLeftAnalogY", _HPS2X64._SYSTEM._PS1SYSTEM._SIO.LeftAnalog_Y [ 0 ] );
-	cfg.Get_Value32 ( "Pad1_KeyRightAnalogX", _HPS2X64._SYSTEM._PS1SYSTEM._SIO.RightAnalog_X [ 0 ] );
-	cfg.Get_Value32 ( "Pad1_KeyRightAnalogY", _HPS2X64._SYSTEM._PS1SYSTEM._SIO.RightAnalog_Y [ 0 ] );
-	cfg.Get_String("BIOS", BiosPath);
+
+	// read a JSON file
+	std::ifstream i( ConfigFileName );
+
+	if ( !i )
+	{
+		cout << "\nhps2x64::LoadConfig: Problem loading config file: " << ConfigFileName;
+		return;
+	}
+
+	nlohmann::json jsonSettings;
+	i >> jsonSettings;
+
+	// save the controller settings //
+
+	// pad 1 //
+
+	_SYSTEM._PS1SYSTEM._SIO.ControlPad_Type [ 0 ] = jsonSettings [ "Controllers" ] [ "Pad1" ] [ "DigitalAnalog" ];
+
+	_SYSTEM._PS1SYSTEM._SIO.Key_X [ 0 ] = jsonSettings [ "Controllers" ] [ "Pad1" ] [ "KeyX" ];
+	_SYSTEM._PS1SYSTEM._SIO.Key_O [ 0 ] = jsonSettings [ "Controllers" ] [ "Pad1" ] [ "KeyO" ];
+	_SYSTEM._PS1SYSTEM._SIO.Key_Triangle [ 0 ] = jsonSettings [ "Controllers" ] [ "Pad1" ] [ "KeyTriangle" ];
+	_SYSTEM._PS1SYSTEM._SIO.Key_Square [ 0 ] = jsonSettings [ "Controllers" ] [ "Pad1" ] [ "KeySquare" ];
+	_SYSTEM._PS1SYSTEM._SIO.Key_R1 [ 0 ] = jsonSettings [ "Controllers" ] [ "Pad1" ] [ "KeyR1" ];
+	_SYSTEM._PS1SYSTEM._SIO.Key_R2 [ 0 ] = jsonSettings [ "Controllers" ] [ "Pad1" ] [ "KeyR2" ];
+	_SYSTEM._PS1SYSTEM._SIO.Key_R3 [ 0 ] = jsonSettings [ "Controllers" ] [ "Pad1" ] [ "KeyR3" ];
+	_SYSTEM._PS1SYSTEM._SIO.Key_L1 [ 0 ] = jsonSettings [ "Controllers" ] [ "Pad1" ] [ "KeyL1" ];
+	_SYSTEM._PS1SYSTEM._SIO.Key_L2 [ 0 ] = jsonSettings [ "Controllers" ] [ "Pad1" ] [ "KeyL2" ];
+	_SYSTEM._PS1SYSTEM._SIO.Key_L3 [ 0 ] = jsonSettings [ "Controllers" ] [ "Pad1" ] [ "KeyL3" ];
+	_SYSTEM._PS1SYSTEM._SIO.Key_Start [ 0 ] = jsonSettings [ "Controllers" ] [ "Pad1" ] [ "KeyStart" ];
+	_SYSTEM._PS1SYSTEM._SIO.Key_Select [ 0 ] = jsonSettings [ "Controllers" ] [ "Pad1" ] [ "KeySelect" ];
+	_SYSTEM._PS1SYSTEM._SIO.LeftAnalog_X [ 0 ] = jsonSettings [ "Controllers" ] [ "Pad1" ] [ "KeyLeftAnalogX" ];
+	_SYSTEM._PS1SYSTEM._SIO.LeftAnalog_Y [ 0 ] = jsonSettings [ "Controllers" ] [ "Pad1" ] [ "KeyLeftAnalogY" ];
+	_SYSTEM._PS1SYSTEM._SIO.RightAnalog_X [ 0 ] = jsonSettings [ "Controllers" ] [ "Pad1" ] [ "KeyRightAnalogX" ];
+	_SYSTEM._PS1SYSTEM._SIO.RightAnalog_Y [ 0 ] = jsonSettings [ "Controllers" ] [ "Pad1" ] [ "KeyRightAnalogY" ];
+
+	// pad 2 //
+
+	_SYSTEM._PS1SYSTEM._SIO.ControlPad_Type [ 1 ] = jsonSettings [ "Controllers" ] [ "Pad2" ] [ "DigitalAnalog" ];
+
+	_SYSTEM._PS1SYSTEM._SIO.Key_X [ 1 ] = jsonSettings [ "Controllers" ] [ "Pad2" ] [ "KeyX" ];
+	_SYSTEM._PS1SYSTEM._SIO.Key_O [ 1 ] = jsonSettings [ "Controllers" ] [ "Pad2" ] [ "KeyO" ];
+	_SYSTEM._PS1SYSTEM._SIO.Key_Triangle [ 1 ] = jsonSettings [ "Controllers" ] [ "Pad2" ] [ "KeyTriangle" ];
+	_SYSTEM._PS1SYSTEM._SIO.Key_Square [ 1 ] = jsonSettings [ "Controllers" ] [ "Pad2" ] [ "KeySquare" ];
+	_SYSTEM._PS1SYSTEM._SIO.Key_R1 [ 1 ] = jsonSettings [ "Controllers" ] [ "Pad2" ] [ "KeyR1" ];
+	_SYSTEM._PS1SYSTEM._SIO.Key_R2 [ 1 ] = jsonSettings [ "Controllers" ] [ "Pad2" ] [ "KeyR2" ];
+	_SYSTEM._PS1SYSTEM._SIO.Key_R3 [ 1 ] = jsonSettings [ "Controllers" ] [ "Pad2" ] [ "KeyR3" ];
+	_SYSTEM._PS1SYSTEM._SIO.Key_L1 [ 1 ] = jsonSettings [ "Controllers" ] [ "Pad2" ] [ "KeyL1" ];
+	_SYSTEM._PS1SYSTEM._SIO.Key_L2 [ 1 ] = jsonSettings [ "Controllers" ] [ "Pad2" ] [ "KeyL2" ];
+	_SYSTEM._PS1SYSTEM._SIO.Key_L3 [ 1 ] = jsonSettings [ "Controllers" ] [ "Pad2" ] [ "KeyL3" ];
+	_SYSTEM._PS1SYSTEM._SIO.Key_Start [ 1 ] = jsonSettings [ "Controllers" ] [ "Pad2" ] [ "KeyStart" ];
+	_SYSTEM._PS1SYSTEM._SIO.Key_Select [ 1 ] = jsonSettings [ "Controllers" ] [ "Pad2" ] [ "KeySelect" ];
+	_SYSTEM._PS1SYSTEM._SIO.LeftAnalog_X [ 1 ] = jsonSettings [ "Controllers" ] [ "Pad2" ] [ "KeyLeftAnalogX" ];
+	_SYSTEM._PS1SYSTEM._SIO.LeftAnalog_Y [ 1 ] = jsonSettings [ "Controllers" ] [ "Pad2" ] [ "KeyLeftAnalogY" ];
+	_SYSTEM._PS1SYSTEM._SIO.RightAnalog_X [ 1 ] = jsonSettings [ "Controllers" ] [ "Pad2" ] [ "KeyRightAnalogX" ];
+	_SYSTEM._PS1SYSTEM._SIO.RightAnalog_Y [ 1 ] = jsonSettings [ "Controllers" ] [ "Pad2" ] [ "KeyRightAnalogY" ];
+
+	// memory cards //
+
+	_SYSTEM._PS1SYSTEM._SIO.MemoryCard_ConnectionState [ 0 ] = jsonSettings [ "Controllers" ] [ "MemoryCard1" ] [ "Disconnected" ];
+	_SYSTEM._PS1SYSTEM._SIO.MemoryCard_ConnectionState [ 1 ] = jsonSettings [ "Controllers" ] [ "MemoryCard2" ] [ "Disconnected" ];
+
+	// device settings //
+
+	// CD //
+
+	_SYSTEM._PS1SYSTEM._CD.Region = jsonSettings [ "CD" ] [ "Region" ];
+
+	// SPU //
+
+	_SYSTEM._PS1SYSTEM._SPU.AudioOutput_Enabled = jsonSettings [ "SPU" ] [ "Enable_AudioOutput" ];
+	_SYSTEM._PS1SYSTEM._SPU.AudioFilter_Enabled = jsonSettings [ "SPU" ] [ "Enable_Filter" ];
+	_SYSTEM._PS1SYSTEM._SPU.NextPlayBuffer_Size = jsonSettings [ "SPU" ] [ "BufferSize" ];
+	_SYSTEM._PS1SYSTEM._SPU.GlobalVolume = jsonSettings [ "SPU" ] [ "GlobalVolume" ];
+
+
 }
 
 
 void hps2x64::SaveConfig ( string ConfigFileName )
 {
-	// create config file object
-	//Config::File cfg;
+	// save configuration as json (using nlohmann json)
+	nlohmann::json jsonSettings;
 
-	cfg.Clear ();
-	
-	cout << "\nSaving pad config";
-	
-	// load the variables from the configuration file
-	
-	cfg.Set_Value32 ( "Pad1_DigitalAnalog", _HPS2X64._SYSTEM._PS1SYSTEM._SIO.ControlPad_Type [ 0 ] );
-	cfg.Set_Value32 ( "Pad2_DigitalAnalog", _HPS2X64._SYSTEM._PS1SYSTEM._SIO.ControlPad_Type [ 1 ] );
-	
-	cout << "\nSaving card config";
-	
-	cfg.Set_Value32 ( "MemoryCard1_Disconnected", _HPS2X64._SYSTEM._PS1SYSTEM._SIO.MemoryCard_ConnectionState [ 0 ] );
-	cfg.Set_Value32 ( "MemoryCard2_Disconnected", _HPS2X64._SYSTEM._PS1SYSTEM._SIO.MemoryCard_ConnectionState [ 1 ] );
-	
-	cout << "\nSaving cd config";
-	
-	cfg.Set_Value32 ( "CD_Region", _HPS2X64._SYSTEM._PS1SYSTEM._CD.Region );
-	
-	cout << "\nSaving spu config";
-	
-	cfg.Set_Value32 ( "SPU_Enable_AudioOutput", _HPS2X64._SYSTEM._PS1SYSTEM._SPU.AudioOutput_Enabled );
-	cfg.Set_Value32 ( "SPU_Enable_Filter", _HPS2X64._SYSTEM._PS1SYSTEM._SPU.AudioFilter_Enabled );
-	cfg.Set_Value32 ( "SPU_BufferSize", _HPS2X64._SYSTEM._PS1SYSTEM._SPU.NextPlayBuffer_Size );
-	cfg.Set_Value32 ( "SPU_GlobalVolume", _HPS2X64._SYSTEM._PS1SYSTEM._SPU.GlobalVolume );
-	
-	cout << "\nSaving pad config";
-	
-	// load the key configurations too
-	cfg.Set_Value32 ( "Pad1_KeyX", _HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_X [ 0 ] );
-	cfg.Set_Value32 ( "Pad1_KeyO", _HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_O [ 0 ] );
-	cfg.Set_Value32 ( "Pad1_KeyTriangle", _HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_Triangle [ 0 ] );
-	cfg.Set_Value32 ( "Pad1_KeySquare", _HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_Square [ 0 ] );
-	cfg.Set_Value32 ( "Pad1_KeyR1", _HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_R1 [ 0 ] );
-	cfg.Set_Value32 ( "Pad1_KeyR2", _HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_R2 [ 0 ] );
-	cfg.Set_Value32 ( "Pad1_KeyR3", _HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_R3 [ 0 ] );
-	cfg.Set_Value32 ( "Pad1_KeyL1", _HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_L1 [ 0 ] );
-	cfg.Set_Value32 ( "Pad1_KeyL2", _HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_L2 [ 0 ] );
-	cfg.Set_Value32 ( "Pad1_KeyL3", _HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_L3 [ 0 ] );
-	cfg.Set_Value32 ( "Pad1_KeyStart", _HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_Start [ 0 ] );
-	cfg.Set_Value32 ( "Pad1_KeySelect", _HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_Select [ 0 ] );
-	cfg.Set_Value32 ( "Pad1_KeyLeftAnalogX", _HPS2X64._SYSTEM._PS1SYSTEM._SIO.LeftAnalog_X [ 0 ] );
-	cfg.Set_Value32 ( "Pad1_KeyLeftAnalogY", _HPS2X64._SYSTEM._PS1SYSTEM._SIO.LeftAnalog_Y [ 0 ] );
-	cfg.Set_Value32 ( "Pad1_KeyRightAnalogX", _HPS2X64._SYSTEM._PS1SYSTEM._SIO.RightAnalog_X [ 0 ] );
-	cfg.Set_Value32 ( "Pad1_KeyRightAnalogY", _HPS2X64._SYSTEM._PS1SYSTEM._SIO.RightAnalog_Y [ 0 ] );
-	cfg.Set_String("BIOS", BiosPath);
 
-	// save the configuration file
-	cfg.Save ( ConfigFileName );
+	// save the controller settings //
+
+	// pad 1 //
+
+	jsonSettings [ "Controllers" ] [ "Pad1" ] [ "DigitalAnalog" ] = _SYSTEM._PS1SYSTEM._SIO.ControlPad_Type [ 0 ];
+
+	jsonSettings [ "Controllers" ] [ "Pad1" ] [ "KeyX" ] = _SYSTEM._PS1SYSTEM._SIO.Key_X [ 0 ];
+	jsonSettings [ "Controllers" ] [ "Pad1" ] [ "KeyO" ] = _SYSTEM._PS1SYSTEM._SIO.Key_O [ 0 ];
+	jsonSettings [ "Controllers" ] [ "Pad1" ] [ "KeyTriangle" ] = _SYSTEM._PS1SYSTEM._SIO.Key_Triangle [ 0 ];
+	jsonSettings [ "Controllers" ] [ "Pad1" ] [ "KeySquare" ] = _SYSTEM._PS1SYSTEM._SIO.Key_Square [ 0 ];
+	jsonSettings [ "Controllers" ] [ "Pad1" ] [ "KeyR1" ] = _SYSTEM._PS1SYSTEM._SIO.Key_R1 [ 0 ];
+	jsonSettings [ "Controllers" ] [ "Pad1" ] [ "KeyR2" ] = _SYSTEM._PS1SYSTEM._SIO.Key_R2 [ 0 ];
+	jsonSettings [ "Controllers" ] [ "Pad1" ] [ "KeyR3" ] = _SYSTEM._PS1SYSTEM._SIO.Key_R3 [ 0 ];
+	jsonSettings [ "Controllers" ] [ "Pad1" ] [ "KeyL1" ] = _SYSTEM._PS1SYSTEM._SIO.Key_L1 [ 0 ];
+	jsonSettings [ "Controllers" ] [ "Pad1" ] [ "KeyL2" ] = _SYSTEM._PS1SYSTEM._SIO.Key_L2 [ 0 ];
+	jsonSettings [ "Controllers" ] [ "Pad1" ] [ "KeyL3" ] = _SYSTEM._PS1SYSTEM._SIO.Key_L3 [ 0 ];
+	jsonSettings [ "Controllers" ] [ "Pad1" ] [ "KeyStart" ] = _SYSTEM._PS1SYSTEM._SIO.Key_Start [ 0 ];
+	jsonSettings [ "Controllers" ] [ "Pad1" ] [ "KeySelect" ] = _SYSTEM._PS1SYSTEM._SIO.Key_Select [ 0 ];
+	jsonSettings [ "Controllers" ] [ "Pad1" ] [ "KeyLeftAnalogX" ] = _SYSTEM._PS1SYSTEM._SIO.LeftAnalog_X [ 0 ];
+	jsonSettings [ "Controllers" ] [ "Pad1" ] [ "KeyLeftAnalogY" ] = _SYSTEM._PS1SYSTEM._SIO.LeftAnalog_Y [ 0 ];
+	jsonSettings [ "Controllers" ] [ "Pad1" ] [ "KeyRightAnalogX" ] = _SYSTEM._PS1SYSTEM._SIO.RightAnalog_X [ 0 ];
+	jsonSettings [ "Controllers" ] [ "Pad1" ] [ "KeyRightAnalogY" ] = _SYSTEM._PS1SYSTEM._SIO.RightAnalog_Y [ 0 ];
+
+	// pad 2 //
+
+	jsonSettings [ "Controllers" ] [ "Pad2" ] [ "DigitalAnalog" ] = _SYSTEM._PS1SYSTEM._SIO.ControlPad_Type [ 1 ];
+
+	jsonSettings [ "Controllers" ] [ "Pad2" ] [ "KeyX" ] = _SYSTEM._PS1SYSTEM._SIO.Key_X [ 1 ];
+	jsonSettings [ "Controllers" ] [ "Pad2" ] [ "KeyO" ] = _SYSTEM._PS1SYSTEM._SIO.Key_O [ 1 ];
+	jsonSettings [ "Controllers" ] [ "Pad2" ] [ "KeyTriangle" ] = _SYSTEM._PS1SYSTEM._SIO.Key_Triangle [ 1 ];
+	jsonSettings [ "Controllers" ] [ "Pad2" ] [ "KeySquare" ] = _SYSTEM._PS1SYSTEM._SIO.Key_Square [ 1 ];
+	jsonSettings [ "Controllers" ] [ "Pad2" ] [ "KeyR1" ] = _SYSTEM._PS1SYSTEM._SIO.Key_R1 [ 1 ];
+	jsonSettings [ "Controllers" ] [ "Pad2" ] [ "KeyR2" ] = _SYSTEM._PS1SYSTEM._SIO.Key_R2 [ 1 ];
+	jsonSettings [ "Controllers" ] [ "Pad2" ] [ "KeyR3" ] = _SYSTEM._PS1SYSTEM._SIO.Key_R3 [ 1 ];
+	jsonSettings [ "Controllers" ] [ "Pad2" ] [ "KeyL1" ] = _SYSTEM._PS1SYSTEM._SIO.Key_L1 [ 1 ];
+	jsonSettings [ "Controllers" ] [ "Pad2" ] [ "KeyL2" ] = _SYSTEM._PS1SYSTEM._SIO.Key_L2 [ 1 ];
+	jsonSettings [ "Controllers" ] [ "Pad2" ] [ "KeyL3" ] = _SYSTEM._PS1SYSTEM._SIO.Key_L3 [ 1 ];
+	jsonSettings [ "Controllers" ] [ "Pad2" ] [ "KeyStart" ] = _SYSTEM._PS1SYSTEM._SIO.Key_Start [ 1 ];
+	jsonSettings [ "Controllers" ] [ "Pad2" ] [ "KeySelect" ] = _SYSTEM._PS1SYSTEM._SIO.Key_Select [ 1 ];
+	jsonSettings [ "Controllers" ] [ "Pad2" ] [ "KeyLeftAnalogX" ] = _SYSTEM._PS1SYSTEM._SIO.LeftAnalog_X [ 1 ];
+	jsonSettings [ "Controllers" ] [ "Pad2" ] [ "KeyLeftAnalogY" ] = _SYSTEM._PS1SYSTEM._SIO.LeftAnalog_Y [ 1 ];
+	jsonSettings [ "Controllers" ] [ "Pad2" ] [ "KeyRightAnalogX" ] = _SYSTEM._PS1SYSTEM._SIO.RightAnalog_X [ 1 ];
+	jsonSettings [ "Controllers" ] [ "Pad2" ] [ "KeyRightAnalogY" ] = _SYSTEM._PS1SYSTEM._SIO.RightAnalog_Y [ 1 ];
+
+	// memory cards //
+
+	jsonSettings [ "Controllers" ] [ "MemoryCard1" ] [ "Disconnected" ] = _SYSTEM._PS1SYSTEM._SIO.MemoryCard_ConnectionState [ 0 ];
+	jsonSettings [ "Controllers" ] [ "MemoryCard2" ] [ "Disconnected" ] = _SYSTEM._PS1SYSTEM._SIO.MemoryCard_ConnectionState [ 1 ];
+
+	// device settings //
+
+	// CD //
+
+	jsonSettings [ "CD" ] [ "Region" ] = _SYSTEM._PS1SYSTEM._CD.Region;
+
+	// SPU //
+
+	jsonSettings [ "SPU" ] [ "Enable_AudioOutput" ] = _SYSTEM._PS1SYSTEM._SPU.AudioOutput_Enabled;
+	jsonSettings [ "SPU" ] [ "Enable_Filter" ] = _SYSTEM._PS1SYSTEM._SPU.AudioFilter_Enabled;
+	jsonSettings [ "SPU" ] [ "BufferSize" ] = _SYSTEM._PS1SYSTEM._SPU.NextPlayBuffer_Size;
+	jsonSettings [ "SPU" ] [ "GlobalVolume" ] = _SYSTEM._PS1SYSTEM._SPU.GlobalVolume;
+
+
+	// write the settings to file as json //
+
+	std::ofstream o( ConfigFileName );
+	o << std::setw(4) << jsonSettings << std::endl;	
 }
 
 
@@ -3827,22 +4514,22 @@ bool Dialog_KeyConfigure::Show_ConfigureKeysDialog ( int iPadNum )
 	Joysticks j;
 	
 	/*
-	Key_Pointers [ 0 ] = &_HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_X;
-	Key_Pointers [ 1 ] = &_HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_O;
-	Key_Pointers [ 2 ] = &_HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_Triangle;
-	Key_Pointers [ 3 ] = &_HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_Square;
-	Key_Pointers [ 4 ] = &_HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_R1;
-	Key_Pointers [ 5 ] = &_HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_R2;
-	Key_Pointers [ 6 ] = &_HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_R3;
-	Key_Pointers [ 7 ] = &_HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_L1;
-	Key_Pointers [ 8 ] = &_HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_L2;
-	Key_Pointers [ 9 ] = &_HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_L3;
-	Key_Pointers [ 10 ] = &_HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_Triangle;
-	Key_Pointers [ 11 ] = &_HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_Square;
-	Key_Pointers [ 12 ] = &_HPS2X64._SYSTEM._PS1SYSTEM._SIO.LeftAnalog_X;
-	Key_Pointers [ 13 ] = &_HPS2X64._SYSTEM._PS1SYSTEM._SIO.LeftAnalog_Y;
-	Key_Pointers [ 14 ] = &_HPS2X64._SYSTEM._PS1SYSTEM._SIO.RightAnalog_X;
-	Key_Pointers [ 15 ] = &_HPS2X64._SYSTEM._PS1SYSTEM._SIO.RightAnalog_Y;
+	Key_Pointers [ 0 ] = &_SYSTEM._SIO.Key_X;
+	Key_Pointers [ 1 ] = &_SYSTEM._SIO.Key_O;
+	Key_Pointers [ 2 ] = &_SYSTEM._SIO.Key_Triangle;
+	Key_Pointers [ 3 ] = &_SYSTEM._SIO.Key_Square;
+	Key_Pointers [ 4 ] = &_SYSTEM._SIO.Key_R1;
+	Key_Pointers [ 5 ] = &_SYSTEM._SIO.Key_R2;
+	Key_Pointers [ 6 ] = &_SYSTEM._SIO.Key_R3;
+	Key_Pointers [ 7 ] = &_SYSTEM._SIO.Key_L1;
+	Key_Pointers [ 8 ] = &_SYSTEM._SIO.Key_L2;
+	Key_Pointers [ 9 ] = &_SYSTEM._SIO.Key_L3;
+	Key_Pointers [ 10 ] = &_SYSTEM._SIO.Key_Triangle;
+	Key_Pointers [ 11 ] = &_SYSTEM._SIO.Key_Square;
+	Key_Pointers [ 12 ] = &_SYSTEM._SIO.LeftAnalog_X;
+	Key_Pointers [ 13 ] = &_SYSTEM._SIO.LeftAnalog_Y;
+	Key_Pointers [ 14 ] = &_SYSTEM._SIO.RightAnalog_X;
+	Key_Pointers [ 15 ] = &_SYSTEM._SIO.RightAnalog_Y;
 	*/
 
 	//if ( !isDialogShowing )

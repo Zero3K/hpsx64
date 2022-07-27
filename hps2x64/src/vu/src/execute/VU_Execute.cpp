@@ -44,34 +44,47 @@ Debug::Log Execute::debug;
 
 
 // will need this for accurate operation, and cycle accuracy is required
+
 #define ENABLE_STALLS
 #define ENABLE_STALLS_INT
+
+// these are for if not doing execution reorder
+/*
+#define ENABLE_STALLS_MOVE
+#define ENABLE_STALLS_MR32
+
+#define ENABLE_STALLS_LQ
+#define ENABLE_STALLS_LQD
+#define ENABLE_STALLS_LQI
+#define ENABLE_STALLS_RGET
+#define ENABLE_STALLS_RNEXT
+#define ENABLE_STALLS_MFIR
+#define ENABLE_STALLS_MFP
+*/
+
+/*
 #define ENABLE_INTDELAYSLOT
+
+#define ENABLE_INTDELAYSLOT_CALC
 
 
 #define ENABLE_INTDELAYSLOT_ILW_BEFORE
 #define ENABLE_INTDELAYSLOT_ILWR_BEFORE
-//#define ENABLE_INTDELAYSLOT_ILW_AFTER
-//#define ENABLE_INTDELAYSLOT_ILWR_AFTER
 
 #define ENABLE_INTDELAYSLOT_ISW
 #define ENABLE_INTDELAYSLOT_ISWR
 
 
-//#define ENABLE_INTDELAYSLOT_LQ
-//#define ENABLE_INTDELAYSLOT_SQ
 #define ENABLE_INTDELAYSLOT_LQD_BEFORE
 #define ENABLE_INTDELAYSLOT_LQI_BEFORE
 #define ENABLE_INTDELAYSLOT_SQD_BEFORE
 #define ENABLE_INTDELAYSLOT_SQI_BEFORE
+*/
 
-
-#define ENABLE_INTDELAYSLOT_LQD_AFTER
-#define ENABLE_INTDELAYSLOT_LQI_AFTER
-#define ENABLE_INTDELAYSLOT_SQD_AFTER
-#define ENABLE_INTDELAYSLOT_SQI_AFTER
-
-
+//#define ENABLE_INTDELAYSLOT_LQD_AFTER
+//#define ENABLE_INTDELAYSLOT_LQI_AFTER
+//#define ENABLE_INTDELAYSLOT_SQD_AFTER
+//#define ENABLE_INTDELAYSLOT_SQI_AFTER
 
 
 
@@ -80,9 +93,20 @@ Debug::Log Execute::debug;
 
 
 
-//#define ENABLE_NEW_CLIP_BUFFER
-//#define ENABLE_NEW_FLAG_BUFFER
 #define ENABLE_SNAPSHOTS
+
+
+//#define USE_NEW_RECOMPILE2
+
+#define USE_NEW_RECOMPILE2_INTCALC
+
+#define USE_NEW_RECOMPILE2_MOVE
+#define USE_NEW_RECOMPILE2_MR32
+
+#define USE_NEW_RECOMPILE2_LQI
+#define USE_NEW_RECOMPILE2_LQD
+#define USE_NEW_RECOMPILE2_SQI
+#define USE_NEW_RECOMPILE2_SQD
 
 
 
@@ -146,9 +170,9 @@ Debug::Log Execute::debug;
 //#define INLINE_DEBUG_RNEXT
 //#define INLINE_DEBUG_LD
 
-//#define INLINE_DEBUG_VU
-//#define INLINE_DEBUG_UNIMPLEMENTED
-//#define INLINE_DEBUG_EXT
+#define INLINE_DEBUG_VU
+#define INLINE_DEBUG_UNIMPLEMENTED
+#define INLINE_DEBUG_EXT
 
 
 #endif
@@ -212,15 +236,6 @@ void Execute::ABS ( VU *v, Instruction::Format i )
 	// set the source register(s)
 	v->Set_SrcReg ( i.Value, i.Fs );
 	
-#ifdef ENABLE_NEW_BITMAP_FLAGS
-	Get_BFBuffer ();
-	if ( v->TestStall () ){ Get_BFBuffer ();
-	if ( v->TestStall () ){ Get_BFBuffer ();
-	if ( v->TestStall () ) Get_BFBuffer (); }}
-	
-	v->Set_SrcReg ( i.Value, i.Ft );
-	v->Set_BFBuffer ( SrcRegs_Bitmap );
-#else
 	
 	// make sure the source registers are available
 	if ( v->TestStall () )
@@ -236,7 +251,7 @@ void Execute::ABS ( VU *v, Instruction::Format i )
 	// set the destination register(s)
 	// note: can only set this once the pipeline is not stalled since it modifies the pipeline stage bitmap
 	v->Set_DestReg_Upper ( i.Value, i.Ft );
-#endif
+
 #endif
 
 	if ( i.destx )
@@ -1826,13 +1841,6 @@ void Execute::FTOI4 ( VU *v, Instruction::Format i )
 #endif
 
 
-#ifdef ENABLE_TEST_DEBUG_FTOI4
-	v->test1_src1.sw0 = v->vf [ i.Fs ].sw0;
-	v->test1_src1.sw1 = v->vf [ i.Fs ].sw1;
-	v->test1_src1.sw2 = v->vf [ i.Fs ].sw2;
-	v->test1_src1.sw3 = v->vf [ i.Fs ].sw3;
-#endif
-
 	if ( i.destx )
 	{
 		v->vf [ i.Ft ].sw0 = PS2_Float_ToInteger ( v->vf [ i.Fs ].fx * c_fMultiplier );
@@ -1856,13 +1864,6 @@ void Execute::FTOI4 ( VU *v, Instruction::Format i )
 	// the accompanying lower instruction can't modify the same register
 	v->LastModifiedRegister = i.Ft;
 
-#ifdef ENABLE_TEST_DEBUG_FTOI4
-	v->test1_result1.sw0 = v->vf [ i.Ft ].sw0;
-	v->test1_result1.sw1 = v->vf [ i.Ft ].sw1;
-	v->test1_result1.sw2 = v->vf [ i.Ft ].sw2;
-	v->test1_result1.sw3 = v->vf [ i.Ft ].sw3;
-#endif
-	
 	// flags affected: none
 
 #if defined INLINE_DEBUG_FTOI4 || defined INLINE_DEBUG_VU || defined INLINE_DEBUG_FPU	// || defined INLINE_DEBUG_UNIMPLEMENTED
@@ -2798,31 +2799,13 @@ void Execute::CLIP ( VU *v, Instruction::Format i )
 	if ( fz > fw_plus.f ) v->ClippingFlag.z_plus0 = 1; else if ( fz < fw_minus.f ) v->ClippingFlag.z_minus0 = 1;
 #endif
 	
-	// set 24 bits to the clipping flag
-	//v->vi [ 18 ].u = v->ClippingFlag.Value & 0xffffff;
 
-#ifdef ENABLE_SNAPSHOTS
 
-	if ( !v->Status.SetClip_Flag )
-	{
-		v->vi [ 18 ].u = ( ( v->vi [ 18 ].u << 6 ) | ( v->ClippingFlag.Value & 0x3f ) ) & 0xffffff;
-	}
+	//if ( !v->Status.SetClip_Flag )
+	//{
+		v->vi [ VU::REG_CLIPFLAG ].u = ( ( v->vi [ VU::REG_CLIPFLAG ].u << 6 ) | ( v->ClippingFlag.Value & 0x3f ) ) & 0xffffff;
+	//}
 
-#else
-	
-#ifdef ENABLE_NEW_CLIP_BUFFER
-	// check if LO instruction is FCSET or not
-	if ( VU::CurInstLO.Opcode != 17 )
-	{
-		v->Get_CFBuffer ( 0 );
-		v->Set_CFBuffer ( v->ClippingFlag.Value, 6 );
-	}
-#else
-	v->FlagSave [ v->iFlagSave_Index & v->c_lFlag_Delay_Mask ].FlagsAffected = VU::RF_UPDATE_CLIP;
-	v->FlagSave [ v->iFlagSave_Index & v->c_lFlag_Delay_Mask ].ClippingFlag = v->ClippingFlag.Value;
-#endif
-
-#endif
 
 
 #if defined INLINE_DEBUG_CLIP || defined INLINE_DEBUG_VU || defined INLINE_DEBUG_FPU	// || defined INLINE_DEBUG_UNIMPLEMENTED
@@ -2860,25 +2843,10 @@ void Execute::OPMSUB ( VU *v, Instruction::Format i )
 	debug << " ACC= x=" << v->dACC [ 0 ].f << " y=" << v->dACC [ 1 ].f << " z=" << v->dACC [ 2 ].f << " w=" << v->dACC [ 3 ].f;
 #endif
 
-	/*
-	// must store result in intermediate variables before saving into registers
-	float fd_x, fd_y, fd_z;
-
+	
 	// fd_x = ACC_x - fs_y * ft_z
-	fd_x = PS2_Float_Msub ( v->dACC [ 0 ].f, v->vf [ i.Fd ].fx, v->vf [ i.Fs ].fy,  v->vf [ i.Ft ].fz, 3, & v->vi [ 16 ].sLo, & v->vi [ 17 ].sLo );
-	
 	// fd_y = ACC_y - fs_x * ft_z
-	fd_y = PS2_Float_Msub ( v->dACC [ 1 ].f, v->vf [ i.Fd ].fy, v->vf [ i.Fs ].fx,  v->vf [ i.Ft ].fz, 2, & v->vi [ 16 ].sLo, & v->vi [ 17 ].sLo );
-	
 	// fd_z = ACC_z - fs_x * ft_y
-	fd_z = PS2_Float_Msub ( v->dACC [ 2 ].f, v->vf [ i.Fd ].fz, v->vf [ i.Fs ].fx,  v->vf [ i.Ft ].fy, 1, & v->vi [ 16 ].sLo, & v->vi [ 17 ].sLo );
-	
-	// now can store result without possibly corrupting registers
-	v->vf [ i.Fd ].fx = fd_x;
-	v->vf [ i.Fd ].fy = fd_y;
-	v->vf [ i.Fd ].fz = fd_z;
-	*/
-	
 	VuUpperOp_MSUB ( v, i, PS2_Float_Msub );
 	
 #if defined INLINE_DEBUG_OPMULA || defined INLINE_DEBUG_VU || defined INLINE_DEBUG_FPU	// || defined INLINE_DEBUG_UNIMPLEMENTED
@@ -2918,9 +2886,11 @@ void Execute::B ( VU *v, Instruction::Format i )
 
 		// next instruction is in the branch delay slot
 		VU::DelaySlot *d = & ( v->DelaySlots [ v->NextDelaySlotIndex ^ 1 ] );
+		v->Status.DelaySlot_Valid |= 0x2;
+
+
 		d->Instruction = i;
 		//d->cb = r->_cb_Branch;
-		v->Status.DelaySlot_Valid |= 0x2;
 }
 
 void Execute::BAL ( VU *v, Instruction::Format i )
@@ -2936,11 +2906,14 @@ void Execute::BAL ( VU *v, Instruction::Format i )
 	v->Execute_IntDelaySlot ();
 #endif
 
+
 		// next instruction is in the branch delay slot
 		VU::DelaySlot *d = & ( v->DelaySlots [ v->NextDelaySlotIndex ^ 1 ] );
+		v->Status.DelaySlot_Valid |= 0x2;
+
+
 		d->Instruction = i;
 		//d->cb = r->_cb_Branch;
-		v->Status.DelaySlot_Valid |= 0x2;
 		
 		// should probably store updated program counter divided by 8 it looks like, unless the PC is already divided by 8??
 		//v->vi [ i.it ].uLo = v->PC + 16;
@@ -2960,11 +2933,14 @@ void Execute::IBEQ ( VU *v, Instruction::Format i )
 	debug << " BRANCH";
 #endif
 
+
 		// next instruction is in the branch delay slot
 		VU::DelaySlot *d = & ( v->DelaySlots [ v->NextDelaySlotIndex ^ 1 ] );
+		v->Status.DelaySlot_Valid |= 0x2;
+
+
 		d->Instruction = i;
 		//d->cb = r->_cb_Branch;
-		v->Status.DelaySlot_Valid |= 0x2;
 	}
 }
 
@@ -2983,9 +2959,12 @@ void Execute::IBNE ( VU *v, Instruction::Format i )
 
 		// next instruction is in the branch delay slot
 		VU::DelaySlot *d = & ( v->DelaySlots [ v->NextDelaySlotIndex ^ 1 ] );
+		v->Status.DelaySlot_Valid |= 0x2;
+
+
 		d->Instruction = i;
 		//d->cb = r->_cb_Branch;
-		v->Status.DelaySlot_Valid |= 0x2;
+
 	}
 }
 
@@ -3004,9 +2983,11 @@ void Execute::IBLTZ ( VU *v, Instruction::Format i )
 
 		// next instruction is in the branch delay slot
 		VU::DelaySlot *d = & ( v->DelaySlots [ v->NextDelaySlotIndex ^ 1 ] );
+		v->Status.DelaySlot_Valid |= 0x2;
+
+
 		d->Instruction = i;
 		//d->cb = r->_cb_Branch;
-		v->Status.DelaySlot_Valid |= 0x2;
 	}
 }
 
@@ -3025,9 +3006,10 @@ void Execute::IBGTZ ( VU *v, Instruction::Format i )
 
 		// next instruction is in the branch delay slot
 		VU::DelaySlot *d = & ( v->DelaySlots [ v->NextDelaySlotIndex ^ 1 ] );
+		v->Status.DelaySlot_Valid |= 0x2;
+
 		d->Instruction = i;
 		//d->cb = r->_cb_Branch;
-		v->Status.DelaySlot_Valid |= 0x2;
 	}
 }
 
@@ -3046,9 +3028,10 @@ void Execute::IBLEZ ( VU *v, Instruction::Format i )
 
 		// next instruction is in the branch delay slot
 		VU::DelaySlot *d = & ( v->DelaySlots [ v->NextDelaySlotIndex ^ 1 ] );
+		v->Status.DelaySlot_Valid |= 0x2;
+
 		d->Instruction = i;
 		//d->cb = r->_cb_Branch;
-		v->Status.DelaySlot_Valid |= 0x2;
 	}
 }
 
@@ -3067,9 +3050,11 @@ void Execute::IBGEZ ( VU *v, Instruction::Format i )
 
 		// next instruction is in the branch delay slot
 		VU::DelaySlot *d = & ( v->DelaySlots [ v->NextDelaySlotIndex ^ 1 ] );
+		v->Status.DelaySlot_Valid |= 0x2;
+
+
 		d->Instruction = i;
 		//d->cb = r->_cb_Branch;
-		v->Status.DelaySlot_Valid |= 0x2;
 	}
 }
 
@@ -3087,15 +3072,17 @@ void Execute::JR ( VU *v, Instruction::Format i )
 	
 	// next instruction is in the branch delay slot
 	VU::DelaySlot *d = & ( v->DelaySlots [ v->NextDelaySlotIndex ^ 1 ] );
+	v->Status.DelaySlot_Valid |= 0x2;
+
 	d->Instruction = i;
 	//d->cb = r->_cb_JumpRegister;
 
 	// *** todo *** check if address exception should be generated if lower 3-bits of jump address are not zero
 	// will clear out lower three bits of address for now
 	//d->Data = v->vi [ i.is ].uLo & ~7;
-	d->Data = v->vi [ i.is ].uLo;
+	d->Data = v->vi [ i.is & 0xf ].uLo;
 	
-	v->Status.DelaySlot_Valid |= 0x2;
+
 }
 
 void Execute::JALR ( VU *v, Instruction::Format i )
@@ -3112,18 +3099,20 @@ void Execute::JALR ( VU *v, Instruction::Format i )
 	
 	// next instruction is in the branch delay slot
 	VU::DelaySlot *d = & ( v->DelaySlots [ v->NextDelaySlotIndex ^ 1 ] );
+	v->Status.DelaySlot_Valid |= 0x2;
+
+
 	d->Instruction = i;
 	//d->cb = r->_cb_JumpRegister;
 
 	// *** todo *** check if address exception should be generated if lower 3-bits of jump address are not zero
 	// will clear out lower three bits of address for now
 	//d->Data = v->vi [ i.is ].uLo & ~7;
-	d->Data = v->vi [ i.is ].uLo;
+	d->Data = v->vi [ i.is & 0xf ].uLo;
 	
-	v->Status.DelaySlot_Valid |= 0x2;
 	
 	//v->vi [ i.it ].uLo = v->PC + 16;
-	v->vi [ i.it ].uLo = ( v->PC + 16 ) >> 3;
+	v->vi [ i.it & 0xf ].uLo = ( v->PC + 16 ) >> 3;
 	
 #if defined INLINE_DEBUG_JALR || defined INLINE_DEBUG_VU || defined INLINE_DEBUG_INT	// || defined INLINE_DEBUG_UNIMPLEMENTED
 	debug << hex << " Output: it(hex)=" << v->vi [ i.it ].uLo;
@@ -3152,9 +3141,6 @@ void Execute::FCEQ ( VU *v, Instruction::Format i )
 	v->Execute_IntDelaySlot ();
 #endif
 
-#ifdef ENABLE_NEW_CLIP_BUFFER
-	v->Update_CFBuffer ();
-#endif
 
 #ifdef ENABLE_SNAPSHOTS
 	v->vi [ 1 ].u = ! ( ( v->FlagSave [ ( v->iFlagSave_Index + 1 ) & v->c_lFlag_Delay_Mask ].ClipFlag ^ i.Imm24 ) & 0xffffff );
@@ -3162,6 +3148,7 @@ void Execute::FCEQ ( VU *v, Instruction::Format i )
 	//v->vi [ 1 ].u = ( ( ( v->vi [ 18 ].u & 0xffffff ) == i.Imm24 ) ? 1 : 0 );
 	v->vi [ 1 ].u = ! ( ( v->vi [ 18 ].u ^ i.Imm24 ) & 0xffffff );
 #endif
+
 	
 #if defined INLINE_DEBUG_FCEQ || defined INLINE_DEBUG_VU || defined INLINE_DEBUG_INT	// || defined INLINE_DEBUG_UNIMPLEMENTED
 	debug << hex << " Output:" << " vi1=" << v->vi [ 1 ].u;
@@ -3180,15 +3167,13 @@ void Execute::FCAND ( VU *v, Instruction::Format i )
 	v->Execute_IntDelaySlot ();
 #endif
 
-#ifdef ENABLE_NEW_CLIP_BUFFER
-	v->Update_CFBuffer ();
-#endif
 
 #ifdef ENABLE_SNAPSHOTS
 	v->vi [ 1 ].u = ( ( v->FlagSave [ ( v->iFlagSave_Index + 1 ) & v->c_lFlag_Delay_Mask ].ClipFlag & i.Imm24 ) ? 1 : 0 );
 #else
 	v->vi [ 1 ].u = ( ( v->vi [ 18 ].u & i.Imm24 ) ? 1 : 0 );
 #endif
+
 	
 #if defined INLINE_DEBUG_FCAND || defined INLINE_DEBUG_VU || defined INLINE_DEBUG_INT	// || defined INLINE_DEBUG_UNIMPLEMENTED
 	debug << hex << " Output:" << " vi1=" << v->vi [ 1 ].u;
@@ -3207,16 +3192,14 @@ void Execute::FCOR ( VU *v, Instruction::Format i )
 	v->Execute_IntDelaySlot ();
 #endif
 
-#ifdef ENABLE_NEW_CLIP_BUFFER
-	v->Update_CFBuffer ();
-#endif
 
 #ifdef ENABLE_SNAPSHOTS
 	v->vi [ 1 ].u = ( ( ( ( v->FlagSave [ ( v->iFlagSave_Index + 1 ) & v->c_lFlag_Delay_Mask ].ClipFlag & 0xffffff ) | i.Imm24 ) == 0xffffff ) ? 1 : 0 );
 #else
 	v->vi [ 1 ].u = ( ( ( ( v->vi [ 18 ].u & 0xffffff ) | i.Imm24 ) == 0xffffff ) ? 1 : 0 );
 #endif
-	
+
+
 #if defined INLINE_DEBUG_FCOR || defined INLINE_DEBUG_VU || defined INLINE_DEBUG_INT	// || defined INLINE_DEBUG_UNIMPLEMENTED
 	debug << hex << " Output:" << " vi1=" << v->vi [ 1 ].u;
 #endif
@@ -3234,15 +3217,13 @@ void Execute::FCGET ( VU *v, Instruction::Format i )
 	v->Execute_IntDelaySlot ();
 #endif
 
-#ifdef ENABLE_NEW_CLIP_BUFFER
-	v->Update_CFBuffer ();
-#endif
 
 #ifdef ENABLE_SNAPSHOTS
 	v->vi [ i.it & 0xf ].uLo = v->FlagSave [ ( v->iFlagSave_Index + 1 ) & v->c_lFlag_Delay_Mask ].ClipFlag & 0xfff;
 #else
 	v->vi [ i.it ].uLo = v->vi [ 18 ].u & 0xfff;
 #endif
+
 	
 #if defined INLINE_DEBUG_FCGET || defined INLINE_DEBUG_VU || defined INLINE_DEBUG_INT	// || defined INLINE_DEBUG_UNIMPLEMENTED
 	debug << hex << " Output:" << " it=" << v->vi [ i.it ].u;
@@ -3257,6 +3238,7 @@ void Execute::FCSET ( VU *v, Instruction::Format i )
 
 	//v->vi [ 18 ].u = i.Imm24;
 
+
 #ifdef ENABLE_SNAPSHOTS
 	v->vi [ 18 ].u = i.Imm24;
 	
@@ -3264,17 +3246,13 @@ void Execute::FCSET ( VU *v, Instruction::Format i )
 	v->Status.SetClip_Flag = 1;
 #else
 
-#ifdef ENABLE_NEW_CLIP_BUFFER
-	v->Get_CFBuffer ( 0 );
-	v->Set_CFBuffer ( i.Imm24, 24 );
-#else
 	//v->FlagSave [ v->iFlagSave_Index & v->c_lFlag_Delay_Mask ].FlagsAffected = VU::RF_SET_CLIP;
 	//v->FlagSave [ v->iFlagSave_Index & v->c_lFlag_Delay_Mask ].ClippingFlag = i.Imm24;
 	v->FlagSave [ v->iFlagSave_Index & v->c_lFlag_Delay_Mask ].FlagsAffected_Lower = VU::RF_SET_CLIP;
 	v->FlagSave [ v->iFlagSave_Index & v->c_lFlag_Delay_Mask ].FlagsSet_Lower = i.Imm24;
-#endif
 
 #endif
+
 }
 
 void Execute::FMEQ ( VU *v, Instruction::Format i )
@@ -3307,16 +3285,14 @@ void Execute::FMEQ ( VU *v, Instruction::Format i )
 	v->Execute_IntDelaySlot ();
 #endif
 
-#ifdef ENABLE_NEW_FLAG_BUFFER
-	v->Update_MFBuffer ();
-#endif
 
 #ifdef ENABLE_SNAPSHOTS
-	v->vi [ i.it ].u = ! ( ( v->FlagSave [ ( v->iFlagSave_Index + 1 ) & v->c_lFlag_Delay_Mask ].MACFlag ^ v->vi [ i.is ].u ) & 0xffff );
+	v->vi [ i.it & 0xf ].u = ! ( ( v->FlagSave [ ( v->iFlagSave_Index + 1 ) & v->c_lFlag_Delay_Mask ].MACFlag ^ v->vi [ i.is & 0xf ].u ) & 0xffff );
 #else
 	//v->vi [ i.it ].u = ~( v->vi [ i.is ].u ^ v->vi [ 17 ].u );
 	v->vi [ i.it ].u = ! ( ( v->vi [ i.is ].u ^ v->vi [ 17 ].u ) & 0xffff );
 #endif
+
 	
 #if defined INLINE_DEBUG_FMEQ || defined INLINE_DEBUG_VU || defined INLINE_DEBUG_INT	// || defined INLINE_DEBUG_UNIMPLEMENTED
 	debug << hex << " Output:" << " it=" << v->vi [ i.it ].u;
@@ -3353,16 +3329,14 @@ void Execute::FMAND ( VU *v, Instruction::Format i )
 	v->Execute_IntDelaySlot ();
 #endif
 
-#ifdef ENABLE_NEW_FLAG_BUFFER
-	v->Update_MFBuffer ();
-#endif
 
 #ifdef ENABLE_SNAPSHOTS
 	v->vi [ i.it & 0xf ].u = v->FlagSave [ ( v->iFlagSave_Index + 1 ) & v->c_lFlag_Delay_Mask ].MACFlag & v->vi [ i.is & 0xf ].u;
 #else
 	v->vi [ i.it ].u = v->vi [ i.is ].u & v->vi [ 17 ].u;
 #endif
-	
+
+
 #if defined INLINE_DEBUG_FMAND || defined INLINE_DEBUG_VU || defined INLINE_DEBUG_INT	// || defined INLINE_DEBUG_UNIMPLEMENTED
 	debug << hex << " Output:" << " it=" << v->vi [ i.it ].u;
 #endif
@@ -3398,15 +3372,13 @@ void Execute::FMOR ( VU *v, Instruction::Format i )
 	v->Execute_IntDelaySlot ();
 #endif
 
-#ifdef ENABLE_NEW_FLAG_BUFFER
-	v->Update_MFBuffer ();
-#endif
 
 #ifdef ENABLE_SNAPSHOTS
-	v->vi [ i.it ].u = v->FlagSave [ ( v->iFlagSave_Index + 1 ) & v->c_lFlag_Delay_Mask ].MACFlag | v->vi [ i.is ].u;
+	v->vi [ i.it & 0xf ].u = v->FlagSave [ ( v->iFlagSave_Index + 1 ) & v->c_lFlag_Delay_Mask ].MACFlag | v->vi [ i.is & 0xf ].u;
 #else
 	v->vi [ i.it ].u = v->vi [ i.is ].u | v->vi [ 17 ].u;
 #endif
+
 	
 #if defined INLINE_DEBUG_FMOR || defined INLINE_DEBUG_VU || defined INLINE_DEBUG_INT	// || defined INLINE_DEBUG_UNIMPLEMENTED
 	debug << hex << " Output:" << " it=" << v->vi [ i.it ].u;
@@ -3425,9 +3397,6 @@ void Execute::FSEQ ( VU *v, Instruction::Format i )
 	v->Execute_IntDelaySlot ();
 #endif
 
-#ifdef ENABLE_NEW_FLAG_BUFFER
-	v->Update_SFBuffer ();
-#endif
 
 #ifdef ENABLE_NEW_QP_HANDLING
 	// this affects the status flag also
@@ -3436,13 +3405,14 @@ void Execute::FSEQ ( VU *v, Instruction::Format i )
 
 
 #ifdef ENABLE_SNAPSHOTS
-	v->vi [ i.it ].u = ! ( ( v->FlagSave [ ( v->iFlagSave_Index + 1 ) & v->c_lFlag_Delay_Mask ].StatusFlag ^ ( ( i.Imm15_1 << 11 ) | ( i.Imm15_0 ) ) ) & 0xfff );
+	v->vi [ i.it & 0xf ].u = ! ( ( v->FlagSave [ ( v->iFlagSave_Index + 1 ) & v->c_lFlag_Delay_Mask ].StatusFlag ^ ( ( i.Imm15_1 << 11 ) | ( i.Imm15_0 ) ) ) & 0xfff );
 #else
 	//v->vi [ i.it ].u = ~( v->vi [ 16 ].u ^ ( ( ( i.Imm15_1 << 11 ) | ( i.Imm15_0 ) ) & 0xfff ) );
 	//v->vi [ i.it ].u = ( ( ( v->vi [ 16 ].u & 0xfff ) == ( ( ( i.Imm15_1 << 11 ) | ( i.Imm15_0 ) ) & 0xfff ) ) ? 1 : 0 );
 	v->vi [ i.it ].u = ! ( ( v->vi [ 16 ].u ^ ( ( i.Imm15_1 << 11 ) | ( i.Imm15_0 ) ) ) & 0xfff );
 #endif
-	
+
+
 #if defined INLINE_DEBUG_FSEQ || defined INLINE_DEBUG_VU || defined INLINE_DEBUG_INT	// || defined INLINE_DEBUG_UNIMPLEMENTED
 	debug << hex << " Output:" << " it=" << v->vi [ i.it ].u;
 #endif
@@ -3456,6 +3426,7 @@ void Execute::FSSET ( VU *v, Instruction::Format i )
 
 	//v->vi [ 16 ].u = ( v->vi [ 16 ].u & 0x3f ) | ( ( ( i.Imm15_1 << 11 ) | ( i.Imm15_0 ) ) & 0xfc0 );
 
+
 #ifdef ENABLE_SNAPSHOTS
 	v->vi [ 16 ].u = ( v->vi [ 16 ].u & 0x3f ) | ( ( ( i.Imm15_1 << 11 ) | ( i.Imm15_0 ) ) & 0xfc0 );
 	
@@ -3463,17 +3434,13 @@ void Execute::FSSET ( VU *v, Instruction::Format i )
 	v->Status.SetStatus_Flag = 1;
 #else
 	
-#ifdef ENABLE_NEW_FLAG_BUFFER
-	v->Get_SFBuffer ( 0 );
-	v->Set_SFBuffer ( VU::Temp_StatusFlag, 0x3f );
-#else
 	//v->FlagSave [ v->iFlagSave_Index & v->c_lFlag_Delay_Mask ].FlagsAffected = VU::RF_SET_STICKY;
 	//v->FlagSave [ v->iFlagSave_Index & v->c_lFlag_Delay_Mask ].StatusFlag = ( ( ( i.Imm15_1 << 11 ) | ( i.Imm15_0 ) ) & 0xfc0 );
 	v->FlagSave [ v->iFlagSave_Index & v->c_lFlag_Delay_Mask ].FlagsAffected_Lower = VU::RF_SET_STICKY;
 	v->FlagSave [ v->iFlagSave_Index & v->c_lFlag_Delay_Mask ].FlagsSet_Lower = ( ( ( i.Imm15_1 << 11 ) | ( i.Imm15_0 ) ) & 0xfc0 );
-#endif
 
 #endif
+
 }
 
 void Execute::FSAND ( VU *v, Instruction::Format i )
@@ -3488,20 +3455,19 @@ void Execute::FSAND ( VU *v, Instruction::Format i )
 	v->Execute_IntDelaySlot ();
 #endif
 
-#ifdef ENABLE_NEW_FLAG_BUFFER
-	v->Update_SFBuffer ();
-#endif
 
 #ifdef ENABLE_NEW_QP_HANDLING
 	// this affects the status flag also
 	v->CheckQ ();
 #endif
 
+
 #ifdef ENABLE_SNAPSHOTS
 	v->vi [ i.it ].u = v->FlagSave [ ( v->iFlagSave_Index + 1 ) & v->c_lFlag_Delay_Mask ].StatusFlag & ( ( ( i.Imm15_1 << 11 ) | ( i.Imm15_0 ) ) & 0xfff );
 #else
 	v->vi [ i.it ].u = v->vi [ 16 ].u & ( ( ( i.Imm15_1 << 11 ) | ( i.Imm15_0 ) ) & 0xfff );
 #endif
+
 	
 #if defined INLINE_DEBUG_FSAND || defined INLINE_DEBUG_VU || defined INLINE_DEBUG_INT	// || defined INLINE_DEBUG_UNIMPLEMENTED
 	debug << hex << " Output:" << " it=" << v->vi [ i.it ].u;
@@ -3520,20 +3486,19 @@ void Execute::FSOR ( VU *v, Instruction::Format i )
 	v->Execute_IntDelaySlot ();
 #endif
 
-#ifdef ENABLE_NEW_FLAG_BUFFER
-	v->Update_SFBuffer ();
-#endif
 
 #ifdef ENABLE_NEW_QP_HANDLING
 	// this affects the status flag also
 	v->CheckQ ();
 #endif
 
+
 #ifdef ENABLE_SNAPSHOTS
 	v->vi [ i.it ].u = v->FlagSave [ ( v->iFlagSave_Index + 1 ) & v->c_lFlag_Delay_Mask ].StatusFlag | ( ( ( i.Imm15_1 << 11 ) | ( i.Imm15_0 ) ) & 0xfff );
 #else
 	v->vi [ i.it ].u = v->vi [ 16 ].u | ( ( ( i.Imm15_1 << 11 ) | ( i.Imm15_0 ) ) & 0xfff );
 #endif
+
 
 #if defined INLINE_DEBUG_FSOR || defined INLINE_DEBUG_VU || defined INLINE_DEBUG_INT	// || defined INLINE_DEBUG_UNIMPLEMENTED
 	debug << hex << " Output:" << " it=" << v->vi [ i.it ].u;
@@ -3547,7 +3512,7 @@ void Execute::FSOR ( VU *v, Instruction::Format i )
 
 void Execute::IADD ( VU *v, Instruction::Format i )
 {
-#if defined INLINE_DEBUG_IADD || defined INLINE_DEBUG_VU || defined INLINE_DEBUG_INT	// || defined INLINE_DEBUG_UNIMPLEMENTED
+#if defined INLINE_DEBUG_IADD || defined INLINE_DEBUG_VU || defined INLINE_DEBUG_INT
 	debug << "\r\n" << hex << "VU#" << v->Number << " " << setw( 8 ) << v->PC << " " << dec << v->CycleCount << " " << Print::PrintInstructionLO ( i.Value ).c_str () << "; " << hex << i.Value;
 	debug << " is=" << hex << v->vi [ i.is ].uLo << " it=" << v->vi [ i.it ].uLo;
 #endif
@@ -3575,6 +3540,26 @@ void Execute::IADD ( VU *v, Instruction::Format i )
 #ifdef ENABLE_INTDELAYSLOT
 	// execute int delay slot immediately
 	v->Execute_IntDelaySlot ();
+#endif
+
+#ifdef USE_NEW_RECOMPILE2_INTCALC
+
+	// check if int calc result needs to be output to delay slot or not
+	if ( v->pLUT_StaticInfo [ ( v->PC & v->ulVuMem_Mask ) >> 3 ] & ( 1 << 10 ) )
+	{
+#if defined INLINE_DEBUG_IADD || defined INLINE_DEBUG_VU || defined INLINE_DEBUG_INT
+	debug << ">INT-DELAY-SLOT";
+#endif
+		v->Set_IntDelaySlot ( i.id & 0xf, v->vi [ i.is & 0xf ].uLo + v->vi [ i.it & 0xf ].uLo );
+	}
+	else
+	{
+		v->vi [ i.id & 0xf ].u = v->vi [ i.is & 0xf ].uLo + v->vi [ i.it & 0xf ].uLo;
+	}
+
+#else
+
+#ifdef ENABLE_INTDELAYSLOT_CALC
 
 	v->Set_IntDelaySlot ( i.id & 0xf, v->vi [ i.is & 0xf ].uLo + v->vi [ i.it & 0xf ].uLo );
 
@@ -3582,15 +3567,31 @@ void Execute::IADD ( VU *v, Instruction::Format i )
 	v->vi [ i.id ].u = v->vi [ i.is ].uLo + v->vi [ i.it ].uLo;
 #endif
 
+#endif
 	
 #if defined INLINE_DEBUG_IADD || defined INLINE_DEBUG_VU || defined INLINE_DEBUG_INT	// || defined INLINE_DEBUG_UNIMPLEMENTED
 	debug << " Output: id=" << hex << v->vi [ i.id ].uLo;
 #endif
 }
 
+void Execute::VIADD ( VU *v, Instruction::Format i )
+{
+#if defined INLINE_DEBUG_IADD || defined INLINE_DEBUG_VU || defined INLINE_DEBUG_INT
+	debug << "\r\n" << hex << "VU#" << v->Number << " " << setw( 8 ) << v->PC << " " << dec << v->CycleCount << " " << Print::PrintInstructionLO ( i.Value ).c_str () << "; " << hex << i.Value;
+	debug << " is=" << hex << v->vi [ i.is ].uLo << " it=" << v->vi [ i.it ].uLo;
+#endif
+
+		v->vi [ i.id & 0xf ].u = v->vi [ i.is & 0xf ].uLo + v->vi [ i.it & 0xf ].uLo;
+
+#if defined INLINE_DEBUG_IADD || defined INLINE_DEBUG_VU || defined INLINE_DEBUG_INT	// || defined INLINE_DEBUG_UNIMPLEMENTED
+	debug << " Output: id=" << hex << v->vi [ i.id ].uLo;
+#endif
+}
+
+
 void Execute::IADDI ( VU *v, Instruction::Format i )
 {
-#if defined INLINE_DEBUG_IADDI || defined INLINE_DEBUG_VU || defined INLINE_DEBUG_INT	// || defined INLINE_DEBUG_UNIMPLEMENTED
+#if defined INLINE_DEBUG_IADDI || defined INLINE_DEBUG_VU || defined INLINE_DEBUG_INT
 	debug << "\r\n" << hex << "VU#" << v->Number << " " << setw( 8 ) << v->PC << " " << dec << v->CycleCount << " " << Print::PrintInstructionLO ( i.Value ).c_str () << "; " << hex << i.Value;
 	debug << " is=" << hex << v->vi [ i.is ].uLo;
 #endif
@@ -3613,10 +3614,30 @@ void Execute::IADDI ( VU *v, Instruction::Format i )
 	// note: no need to set destination register since instruction is on the integer pipeline
 #endif
 
-	// it = is + Imm5
 #ifdef ENABLE_INTDELAYSLOT
 	// execute int delay slot immediately
 	v->Execute_IntDelaySlot ();
+#endif
+
+	// it = is + Imm5
+#ifdef USE_NEW_RECOMPILE2_INTCALC
+
+	// check if int calc result needs to be output to delay slot or not
+	if ( v->pLUT_StaticInfo [ ( v->PC & v->ulVuMem_Mask ) >> 3 ] & ( 1 << 10 ) )
+	{
+#if defined INLINE_DEBUG_IADDI || defined INLINE_DEBUG_VU || defined INLINE_DEBUG_INT
+	debug << ">INT-DELAY-SLOT";
+#endif
+		v->Set_IntDelaySlot ( i.it & 0xf, v->vi [ i.is & 0xf ].uLo + ( (s32) i.Imm5 ) );
+	}
+	else
+	{
+		v->vi [ i.it & 0xf ].u = v->vi [ i.is & 0xf ].uLo + ( (s32) i.Imm5 );
+	}
+
+#else
+
+#ifdef ENABLE_INTDELAYSLOT_CALC
 	
 	// *TODO* ?? adding with an s32 could put a 32-bit value in i.it ??
 	v->Set_IntDelaySlot ( i.it & 0xf, v->vi [ i.is & 0xf ].uLo + ( (s32) i.Imm5 ) );
@@ -3625,15 +3646,32 @@ void Execute::IADDI ( VU *v, Instruction::Format i )
 #else
 	v->vi [ i.it ].u = v->vi [ i.is ].uLo + ( (s32) i.Imm5 );
 #endif
+
+#endif
 	
 #if defined INLINE_DEBUG_IADDI || defined INLINE_DEBUG_VU || defined INLINE_DEBUG_INT	// || defined INLINE_DEBUG_UNIMPLEMENTED
 	debug << " Output: it=" << hex << v->vi [ i.it ].uLo;
 #endif
 }
 
+void Execute::VIADDI ( VU *v, Instruction::Format i )
+{
+#if defined INLINE_DEBUG_IADDI || defined INLINE_DEBUG_VU || defined INLINE_DEBUG_INT
+	debug << "\r\n" << hex << "VU#" << v->Number << " " << setw( 8 ) << v->PC << " " << dec << v->CycleCount << " " << Print::PrintInstructionLO ( i.Value ).c_str () << "; " << hex << i.Value;
+	debug << " is=" << hex << v->vi [ i.is ].uLo;
+#endif
+
+		v->vi [ i.it & 0xf ].u = v->vi [ i.is & 0xf ].uLo + ( (s32) i.Imm5 );
+
+#if defined INLINE_DEBUG_IADDI || defined INLINE_DEBUG_VU || defined INLINE_DEBUG_INT	// || defined INLINE_DEBUG_UNIMPLEMENTED
+	debug << " Output: it=" << hex << v->vi [ i.it ].uLo;
+#endif
+}
+
+
 void Execute::IADDIU ( VU *v, Instruction::Format i )
 {
-#if defined INLINE_DEBUG_IADDIU || defined INLINE_DEBUG_VU || defined INLINE_DEBUG_INT	// || defined INLINE_DEBUG_UNIMPLEMENTED
+#if defined INLINE_DEBUG_IADDIU || defined INLINE_DEBUG_VU || defined INLINE_DEBUG_INT
 	debug << "\r\n" << hex << "VU#" << v->Number << " " << setw( 8 ) << v->PC << " " << dec << v->CycleCount << " " << Print::PrintInstructionLO ( i.Value ).c_str () << "; " << hex << i.Value;
 	debug << " is=" << hex << v->vi [ i.is ].uLo;
 #endif
@@ -3656,16 +3694,38 @@ void Execute::IADDIU ( VU *v, Instruction::Format i )
 	// note: no need to set destination register since instruction is on the integer pipeline
 #endif
 
-	// it = is + Imm15
 #ifdef ENABLE_INTDELAYSLOT
 	// execute int delay slot immediately
 	v->Execute_IntDelaySlot ();
+#endif
+
+	// it = is + Imm15
+#ifdef USE_NEW_RECOMPILE2_INTCALC
+
+	// check if int calc result needs to be output to delay slot or not
+	if ( v->pLUT_StaticInfo [ ( v->PC & v->ulVuMem_Mask ) >> 3 ] & ( 1 << 10 ) )
+	{
+#if defined INLINE_DEBUG_IADDIU || defined INLINE_DEBUG_VU || defined INLINE_DEBUG_INT
+	debug << ">INT-DELAY-SLOT";
+#endif
+		v->Set_IntDelaySlot ( i.it & 0xf, v->vi [ i.is & 0xf ].uLo + ( ( i.Imm15_1 << 11 ) | ( i.Imm15_0 ) ) );
+	}
+	else
+	{
+		v->vi [ i.it & 0xf ].u = v->vi [ i.is & 0xf ].uLo + ( ( i.Imm15_1 << 11 ) | ( i.Imm15_0 ) );
+	}
+
+#else
+
+#ifdef ENABLE_INTDELAYSLOT_CALC
 	
 	v->Set_IntDelaySlot ( i.it & 0xf, v->vi [ i.is & 0xf ].uLo + ( ( i.Imm15_1 << 11 ) | ( i.Imm15_0 ) ) );
 	//v->Set_IntDelaySlot ( i.it & 0xf, ( v->vi [ i.is & 0xf ].uLo + ( ( i.Imm15_1 << 11 ) | ( i.Imm15_0 ) ) ) | ( v->vi [ i.is & 0xf ].u & 0xffff0000 ) );
 
 #else
 	v->vi [ i.it ].u = v->vi [ i.is ].uLo + ( ( i.Imm15_1 << 11 ) | ( i.Imm15_0 ) );
+#endif
+
 #endif
 	
 #if defined INLINE_DEBUG_IADDIU || defined INLINE_DEBUG_VU || defined INLINE_DEBUG_INT	// || defined INLINE_DEBUG_UNIMPLEMENTED
@@ -3675,7 +3735,7 @@ void Execute::IADDIU ( VU *v, Instruction::Format i )
 
 void Execute::ISUB ( VU *v, Instruction::Format i )
 {
-#if defined INLINE_DEBUG_ISUB || defined INLINE_DEBUG_VU || defined INLINE_DEBUG_INT	// || defined INLINE_DEBUG_UNIMPLEMENTED
+#if defined INLINE_DEBUG_ISUB || defined INLINE_DEBUG_VU || defined INLINE_DEBUG_INT
 	debug << "\r\n" << hex << "VU#" << v->Number << " " << setw( 8 ) << v->PC << " " << dec << v->CycleCount << " " << Print::PrintInstructionLO ( i.Value ).c_str () << "; " << hex << i.Value;
 	debug << " is=" << hex << v->vi [ i.is ].uLo << " it=" << v->vi [ i.it ].uLo;
 #endif
@@ -3698,15 +3758,37 @@ void Execute::ISUB ( VU *v, Instruction::Format i )
 	// note: no need to set destination register since instruction is on the integer pipeline
 #endif
 
-	// id = is - it
 #ifdef ENABLE_INTDELAYSLOT
 	// execute int delay slot immediately
 	v->Execute_IntDelaySlot ();
+#endif
+
+	// id = is - it
+#ifdef USE_NEW_RECOMPILE2_INTCALC
+
+	// check if int calc result needs to be output to delay slot or not
+	if ( v->pLUT_StaticInfo [ ( v->PC & v->ulVuMem_Mask ) >> 3 ] & ( 1 << 10 ) )
+	{
+#if defined INLINE_DEBUG_ISUB || defined INLINE_DEBUG_VU || defined INLINE_DEBUG_INT
+	debug << ">INT-DELAY-SLOT";
+#endif
+		v->Set_IntDelaySlot ( i.id & 0xf, v->vi [ i.is & 0xf ].uLo - v->vi [ i.it & 0xf ].uLo );
+	}
+	else
+	{
+		v->vi [ i.id & 0xf ].u = v->vi [ i.is & 0xf ].uLo - v->vi [ i.it & 0xf ].uLo;
+	}
+
+#else
+
+#ifdef ENABLE_INTDELAYSLOT_CALC
 	
 	v->Set_IntDelaySlot ( i.id & 0xf, v->vi [ i.is & 0xf ].uLo - v->vi [ i.it & 0xf ].uLo );
 
 #else
 	v->vi [ i.id ].u = v->vi [ i.is ].uLo - v->vi [ i.it ].uLo;
+#endif
+
 #endif
 	
 #if defined INLINE_DEBUG_ISUB || defined INLINE_DEBUG_VU || defined INLINE_DEBUG_INT	// || defined INLINE_DEBUG_UNIMPLEMENTED
@@ -3714,9 +3796,23 @@ void Execute::ISUB ( VU *v, Instruction::Format i )
 #endif
 }
 
+void Execute::VISUB ( VU *v, Instruction::Format i )
+{
+#if defined INLINE_DEBUG_ISUB || defined INLINE_DEBUG_VU || defined INLINE_DEBUG_INT
+	debug << "\r\n" << hex << "VU#" << v->Number << " " << setw( 8 ) << v->PC << " " << dec << v->CycleCount << " " << Print::PrintInstructionLO ( i.Value ).c_str () << "; " << hex << i.Value;
+	debug << " is=" << hex << v->vi [ i.is ].uLo << " it=" << v->vi [ i.it ].uLo;
+#endif
+
+		v->vi [ i.id & 0xf ].u = v->vi [ i.is & 0xf ].uLo - v->vi [ i.it & 0xf ].uLo;
+
+#if defined INLINE_DEBUG_ISUB || defined INLINE_DEBUG_VU || defined INLINE_DEBUG_INT	// || defined INLINE_DEBUG_UNIMPLEMENTED
+	debug << " Output: id=" << hex << v->vi [ i.id ].uLo;
+#endif
+}
+
 void Execute::ISUBIU ( VU *v, Instruction::Format i )
 {
-#if defined INLINE_DEBUG_ISUBIU || defined INLINE_DEBUG_VU || defined INLINE_DEBUG_INT	// || defined INLINE_DEBUG_UNIMPLEMENTED
+#if defined INLINE_DEBUG_ISUBIU || defined INLINE_DEBUG_VU || defined INLINE_DEBUG_INT
 	debug << "\r\n" << hex << "VU#" << v->Number << " " << setw( 8 ) << v->PC << " " << dec << v->CycleCount << " " << Print::PrintInstructionLO ( i.Value ).c_str () << "; " << hex << i.Value;
 	debug << " is=" << hex << v->vi [ i.is ].uLo;
 #endif
@@ -3739,16 +3835,38 @@ void Execute::ISUBIU ( VU *v, Instruction::Format i )
 	// note: no need to set destination register since instruction is on the integer pipeline
 #endif
 
-	// it = is - Imm15
 #ifdef ENABLE_INTDELAYSLOT
 	// execute int delay slot immediately
 	v->Execute_IntDelaySlot ();
+#endif
+
+	// it = is - Imm15
+#ifdef USE_NEW_RECOMPILE2_INTCALC
+
+	// check if int calc result needs to be output to delay slot or not
+	if ( v->pLUT_StaticInfo [ ( v->PC & v->ulVuMem_Mask ) >> 3 ] & ( 1 << 10 ) )
+	{
+#if defined INLINE_DEBUG_ISUBIU || defined INLINE_DEBUG_VU || defined INLINE_DEBUG_INT
+	debug << ">INT-DELAY-SLOT";
+#endif
+		v->Set_IntDelaySlot ( i.it & 0xf, v->vi [ i.is & 0xf ].uLo - ( ( i.Imm15_1 << 11 ) | ( i.Imm15_0 ) ) );
+	}
+	else
+	{
+		v->vi [ i.it & 0xf ].u = v->vi [ i.is & 0xf ].uLo - ( ( i.Imm15_1 << 11 ) | ( i.Imm15_0 ) );
+	}
+
+#else
+
+#ifdef ENABLE_INTDELAYSLOT_CALC
 	
 	v->Set_IntDelaySlot ( i.it & 0xf, v->vi [ i.is & 0xf ].uLo - ( ( i.Imm15_1 << 11 ) | ( i.Imm15_0 ) ) );
 	//v->Set_IntDelaySlot ( i.it & 0xf, ( v->vi [ i.is & 0xf ].uLo - ( ( i.Imm15_1 << 11 ) | ( i.Imm15_0 ) ) ) | ( v->vi [ i.is & 0xf ].u & 0xffff0000 ) );
 
 #else
 	v->vi [ i.it ].u = v->vi [ i.is ].uLo - ( ( i.Imm15_1 << 11 ) | ( i.Imm15_0 ) );
+#endif
+
 #endif
 	
 #if defined INLINE_DEBUG_ISUBIU || defined INLINE_DEBUG_VU || defined INLINE_DEBUG_INT	// || defined INLINE_DEBUG_UNIMPLEMENTED
@@ -3759,7 +3877,7 @@ void Execute::ISUBIU ( VU *v, Instruction::Format i )
 
 void Execute::IAND ( VU *v, Instruction::Format i )
 {
-#if defined INLINE_DEBUG_IAND || defined INLINE_DEBUG_VU || defined INLINE_DEBUG_INT	// || defined INLINE_DEBUG_UNIMPLEMENTED
+#if defined INLINE_DEBUG_IAND || defined INLINE_DEBUG_VU || defined INLINE_DEBUG_INT
 	debug << "\r\n" << hex << "VU#" << v->Number << " " << setw( 8 ) << v->PC << " " << dec << v->CycleCount << " " << Print::PrintInstructionLO ( i.Value ).c_str () << "; " << hex << i.Value;
 	debug << " is=" << hex << v->vi [ i.is ].uLo << " it=" << v->vi [ i.it ].uLo;
 #endif
@@ -3782,15 +3900,37 @@ void Execute::IAND ( VU *v, Instruction::Format i )
 	// note: no need to set destination register since instruction is on the integer pipeline
 #endif
 
-	// id = is & it
 #ifdef ENABLE_INTDELAYSLOT
 	// execute int delay slot immediately
 	v->Execute_IntDelaySlot ();
+#endif
+
+	// id = is & it
+#ifdef USE_NEW_RECOMPILE2_INTCALC
+
+	// check if int calc result needs to be output to delay slot or not
+	if ( v->pLUT_StaticInfo [ ( v->PC & v->ulVuMem_Mask ) >> 3 ] & ( 1 << 10 ) )
+	{
+#if defined INLINE_DEBUG_IAND || defined INLINE_DEBUG_VU || defined INLINE_DEBUG_INT
+	debug << ">INT-DELAY-SLOT";
+#endif
+		v->Set_IntDelaySlot ( i.id & 0xf, v->vi [ i.is & 0xf ].uLo & v->vi [ i.it & 0xf ].uLo );
+	}
+	else
+	{
+		v->vi [ i.id & 0xf ].u = v->vi [ i.is & 0xf ].uLo & v->vi [ i.it & 0xf ].uLo;
+	}
+
+#else
+
+#ifdef ENABLE_INTDELAYSLOT_CALC
 	
 	v->Set_IntDelaySlot ( i.id & 0xf, v->vi [ i.is & 0xf ].uLo & v->vi [ i.it & 0xf ].uLo );
 
 #else
 	v->vi [ i.id ].u = v->vi [ i.is ].uLo & v->vi [ i.it ].uLo;
+#endif
+
 #endif
 	
 #if defined INLINE_DEBUG_IAND || defined INLINE_DEBUG_VU || defined INLINE_DEBUG_INT	// || defined INLINE_DEBUG_UNIMPLEMENTED
@@ -3798,9 +3938,23 @@ void Execute::IAND ( VU *v, Instruction::Format i )
 #endif
 }
 
+void Execute::VIAND ( VU *v, Instruction::Format i )
+{
+#if defined INLINE_DEBUG_IAND || defined INLINE_DEBUG_VU || defined INLINE_DEBUG_INT
+	debug << "\r\n" << hex << "VU#" << v->Number << " " << setw( 8 ) << v->PC << " " << dec << v->CycleCount << " " << Print::PrintInstructionLO ( i.Value ).c_str () << "; " << hex << i.Value;
+	debug << " is=" << hex << v->vi [ i.is ].uLo << " it=" << v->vi [ i.it ].uLo;
+#endif
+
+		v->vi [ i.id & 0xf ].u = v->vi [ i.is & 0xf ].uLo & v->vi [ i.it & 0xf ].uLo;
+
+#if defined INLINE_DEBUG_IAND || defined INLINE_DEBUG_VU || defined INLINE_DEBUG_INT	// || defined INLINE_DEBUG_UNIMPLEMENTED
+	debug << " Output: id=" << hex << v->vi [ i.id ].uLo;
+#endif
+}
+
 void Execute::IOR ( VU *v, Instruction::Format i )
 {
-#if defined INLINE_DEBUG_IOR || defined INLINE_DEBUG_VU || defined INLINE_DEBUG_INT	// || defined INLINE_DEBUG_UNIMPLEMENTED
+#if defined INLINE_DEBUG_IOR || defined INLINE_DEBUG_VU || defined INLINE_DEBUG_INT
 	debug << "\r\n" << hex << "VU#" << v->Number << " " << setw( 8 ) << v->PC << " " << dec << v->CycleCount << " " << Print::PrintInstructionLO ( i.Value ).c_str () << "; " << hex << i.Value;
 	debug << " is=" << hex << v->vi [ i.is ].uLo << " it=" << v->vi [ i.it ].uLo;
 #endif
@@ -3823,17 +3977,54 @@ void Execute::IOR ( VU *v, Instruction::Format i )
 	// note: no need to set destination register since instruction is on the integer pipeline
 #endif
 
-	// id = is | it
 #ifdef ENABLE_INTDELAYSLOT
 	// execute int delay slot immediately
 	v->Execute_IntDelaySlot ();
+#endif
+
+	// id = is | it
+#ifdef USE_NEW_RECOMPILE2_INTCALC
+
+	// check if int calc result needs to be output to delay slot or not
+	if ( v->pLUT_StaticInfo [ ( v->PC & v->ulVuMem_Mask ) >> 3 ] & ( 1 << 10 ) )
+	{
+#if defined INLINE_DEBUG_IOR || defined INLINE_DEBUG_VU || defined INLINE_DEBUG_INT
+	debug << ">INT-DELAY-SLOT";
+#endif
+		v->Set_IntDelaySlot ( i.id & 0xf, v->vi [ i.is & 0xf ].uLo | v->vi [ i.it & 0xf ].uLo );
+	}
+	else
+	{
+		v->vi [ i.id & 0xf ].u = v->vi [ i.is & 0xf ].uLo | v->vi [ i.it & 0xf ].uLo;
+	}
+
+#else
+
+#ifdef ENABLE_INTDELAYSLOT_CALC
 	
 	v->Set_IntDelaySlot ( i.id & 0xf, v->vi [ i.is & 0xf ].uLo | v->vi [ i.it & 0xf ].uLo );
 
 #else
 	v->vi [ i.id ].u = v->vi [ i.is ].uLo | v->vi [ i.it ].uLo;
 #endif
+
+#endif
 	
+#if defined INLINE_DEBUG_IOR || defined INLINE_DEBUG_VU || defined INLINE_DEBUG_INT	// || defined INLINE_DEBUG_UNIMPLEMENTED
+	debug << " Output: id=" << hex << v->vi [ i.id ].uLo;
+#endif
+}
+
+
+void Execute::VIOR ( VU *v, Instruction::Format i )
+{
+#if defined INLINE_DEBUG_IOR || defined INLINE_DEBUG_VU || defined INLINE_DEBUG_INT
+	debug << "\r\n" << hex << "VU#" << v->Number << " " << setw( 8 ) << v->PC << " " << dec << v->CycleCount << " " << Print::PrintInstructionLO ( i.Value ).c_str () << "; " << hex << i.Value;
+	debug << " is=" << hex << v->vi [ i.is ].uLo << " it=" << v->vi [ i.it ].uLo;
+#endif
+
+		v->vi [ i.id & 0xf ].u = v->vi [ i.is & 0xf ].uLo | v->vi [ i.it & 0xf ].uLo;
+
 #if defined INLINE_DEBUG_IOR || defined INLINE_DEBUG_VU || defined INLINE_DEBUG_INT	// || defined INLINE_DEBUG_UNIMPLEMENTED
 	debug << " Output: id=" << hex << v->vi [ i.id ].uLo;
 #endif
@@ -4108,6 +4299,22 @@ void Execute::SQD ( VU *v, Instruction::Format i )
 	v->Execute_IntDelaySlot ();
 #endif
 
+#ifdef USE_NEW_RECOMPILE2_SQD
+
+	// check if int calc result needs to be output to delay slot or not
+	if ( v->pLUT_StaticInfo [ ( v->PC & v->ulVuMem_Mask ) >> 3 ] & ( 1 << 10 ) )
+	{
+		v->Set_IntDelaySlot ( i.it & 0xf, v->vi [ i.it & 0xf ].uLo - 1 );
+		StoreAddress = ( v->vi [ i.it & 0xf ].uLo - 1 ) << 2;
+	}
+	else
+	{
+		v->vi [ i.it & 0xf ].uLo--;
+		StoreAddress = v->vi [ i.it & 0xf ].uLo << 2;
+	}
+
+#else
+
 #ifdef ENABLE_INTDELAYSLOT_SQD_AFTER
 	v->Set_IntDelaySlot ( i.it & 0xf, v->vi [ i.it & 0xf ].uLo - 1 );
 	StoreAddress = ( v->vi [ i.it & 0xf ].uLo - 1 ) << 2;
@@ -4116,6 +4323,8 @@ void Execute::SQD ( VU *v, Instruction::Format i )
 	v->vi [ i.it & 0xf ].uLo--;
 	
 	StoreAddress = v->vi [ i.it & 0xf ].uLo << 2;
+#endif
+
 #endif
 	
 	pVuMem32 = v->GetMemPtr ( StoreAddress );
@@ -4143,6 +4352,46 @@ void Execute::SQD ( VU *v, Instruction::Format i )
 #endif
 }
 
+void Execute::VSQD ( VU *v, Instruction::Format i )
+{
+#if defined INLINE_DEBUG_SQD || defined INLINE_DEBUG_VU || defined INLINE_DEBUG_INT	// || defined INLINE_DEBUG_UNIMPLEMENTED
+	debug << "\r\n" << hex << "VU#" << v->Number << " " << setw( 8 ) << v->PC << " " << dec << v->CycleCount << " " << Print::PrintInstructionLO ( i.Value ).c_str () << "; " << hex << i.Value;
+	debug << hex << " it=" << v->vi [ i.it ].uLo << " fs=" << v->vf [ i.Fs ].uw0 << " " << v->vf [ i.Fs ].uw1 << " " << v->vf [ i.Fs ].uw2 << " " << v->vf [ i.Fs ].uw3;
+#endif
+
+	// SQD fsdest, (--it)
+	// do Imm11 x16
+	
+	u32 StoreAddress;
+	u32* pVuMem32;
+
+	v->vi [ i.it & 0xf ].uLo--;
+	StoreAddress = v->vi [ i.it & 0xf ].uLo << 2;
+
+	pVuMem32 = v->GetMemPtr ( StoreAddress );
+	
+	if ( i.destx ) pVuMem32 [ 0 ] = v->vf [ i.Fs ].uw0;
+	if ( i.desty ) pVuMem32 [ 1 ] = v->vf [ i.Fs ].uw1;
+	if ( i.destz ) pVuMem32 [ 2 ] = v->vf [ i.Fs ].uw2;
+	if ( i.destw ) pVuMem32 [ 3 ] = v->vf [ i.Fs ].uw3;
+
+	// if writing to TPC, then is should also start VU#1
+	if ( !v->Number )
+	{
+		if ( ( StoreAddress << 2 ) == 0x43a0 )
+		{
+			if ( i.destx )
+			{
+				VU1::_VU1->PC = v->vf [ i.Fs ].uw0;
+				VU1::_VU1->StartVU ();
+			}
+		}
+	}
+	
+#if defined INLINE_DEBUG_SQD || defined INLINE_DEBUG_VU || defined INLINE_DEBUG_INT	// || defined INLINE_DEBUG_UNIMPLEMENTED
+	debug << hex << " SA=" << (v->vi [ i.it ].uLo-1);
+#endif
+}
 
 void Execute::SQI ( VU *v, Instruction::Format i )
 {
@@ -4220,7 +4469,21 @@ void Execute::SQI ( VU *v, Instruction::Format i )
 			
 		}
 	}
-	
+
+#ifdef USE_NEW_RECOMPILE2_SQI
+
+	// check if int calc result needs to be output to delay slot or not
+	if ( v->pLUT_StaticInfo [ ( v->PC & v->ulVuMem_Mask ) >> 3 ] & ( 1 << 10 ) )
+	{
+		v->Set_IntDelaySlot ( i.it & 0xf, v->vi [ i.it & 0xf ].uLo + 1 );
+	}
+	else
+	{
+		v->vi [ i.it & 0xf ].uLo++;
+	}
+
+#else
+
 	// post-increment
 #ifdef ENABLE_INTDELAYSLOT_SQI_AFTER
 	
@@ -4230,11 +4493,56 @@ void Execute::SQI ( VU *v, Instruction::Format i )
 	v->vi [ i.it & 0xf ].uLo++;
 #endif
 
+#endif
+
 #if defined INLINE_DEBUG_SQI || defined INLINE_DEBUG_VU || defined INLINE_DEBUG_INT	// || defined INLINE_DEBUG_UNIMPLEMENTED
 	debug << hex << " SA=" << v->vi [ i.it ].uLo;
 #endif
 }
 
+void Execute::VSQI ( VU *v, Instruction::Format i )
+{
+#if defined INLINE_DEBUG_SQI || defined INLINE_DEBUG_VU || defined INLINE_DEBUG_INT	// || defined INLINE_DEBUG_UNIMPLEMENTED
+	debug << "\r\n" << hex << "VU#" << v->Number << " " << setw( 8 ) << v->PC << " " << dec << v->CycleCount << " " << Print::PrintInstructionLO ( i.Value ).c_str () << "; " << hex << i.Value;
+	debug << hex << " it=" << v->vi [ i.it ].uLo << " fs(hex)=" << v->vf [ i.Fs ].uw0 << " " << v->vf [ i.Fs ].uw1 << " " << v->vf [ i.Fs ].uw2 << " " << v->vf [ i.Fs ].uw3;
+	debug << dec << " fs(dec)=" << v->vf [ i.Fs ].fx << " " << v->vf [ i.Fs ].fy << " " << v->vf [ i.Fs ].fz << " " << v->vf [ i.Fs ].fw;
+#endif
+
+	// SQD fsdest, (it++)
+	// do Imm11 x16
+	
+	u32 StoreAddress;
+	u32* pVuMem32;
+
+	StoreAddress = v->vi [ i.it & 0xf ].uLo << 2;
+	
+	pVuMem32 = v->GetMemPtr ( StoreAddress );
+	
+	if ( i.destx ) pVuMem32 [ 0 ] = v->vf [ i.Fs ].uw0;
+	if ( i.desty ) pVuMem32 [ 1 ] = v->vf [ i.Fs ].uw1;
+	if ( i.destz ) pVuMem32 [ 2 ] = v->vf [ i.Fs ].uw2;
+	if ( i.destw ) pVuMem32 [ 3 ] = v->vf [ i.Fs ].uw3;
+
+	// if writing to TPC, then is should also start VU#1
+	if ( !v->Number )
+	{
+		if ( ( StoreAddress << 2 ) == 0x43a0 )
+		{
+			if ( i.destx )
+			{
+				VU1::_VU1->PC = v->vf [ i.Fs ].uw0;
+				VU1::_VU1->StartVU ();
+			}
+			
+		}
+	}
+
+	v->vi [ i.it & 0xf ].uLo++;
+
+#if defined INLINE_DEBUG_SQI || defined INLINE_DEBUG_VU || defined INLINE_DEBUG_INT	// || defined INLINE_DEBUG_UNIMPLEMENTED
+	debug << hex << " SA=" << v->vi [ i.it ].uLo;
+#endif
+}
 
 
 // LOAD (to integer) instructions //
@@ -4284,17 +4592,10 @@ void Execute::ILWR ( VU *v, Instruction::Format i )
 	
 	pVuMem32 = v->GetMemPtr ( LoadAddress );
 	
-#ifdef ENABLE_INTDELAYSLOT_ILWR_AFTER
-	if ( i.destx ) v->Set_IntDelaySlot ( i.it & 0xf, pVuMem32 [ 0 ] );
-	if ( i.desty ) v->Set_IntDelaySlot ( i.it & 0xf, pVuMem32 [ 1 ] );
-	if ( i.destz ) v->Set_IntDelaySlot ( i.it & 0xf, pVuMem32 [ 2 ] );
-	if ( i.destw ) v->Set_IntDelaySlot ( i.it & 0xf, pVuMem32 [ 3 ] );
-#else
 	if ( i.destx ) v->vi [ i.it ].uLo = pVuMem32 [ 0 ];
 	if ( i.desty ) v->vi [ i.it ].uLo = pVuMem32 [ 1 ];
 	if ( i.destz ) v->vi [ i.it ].uLo = pVuMem32 [ 2 ];
 	if ( i.destw ) v->vi [ i.it ].uLo = pVuMem32 [ 3 ];
-#endif
 
 
 #if defined INLINE_DEBUG_ILWR || defined INLINE_DEBUG_VU || defined INLINE_DEBUG_INT	// || defined INLINE_DEBUG_UNIMPLEMENTED
@@ -4348,17 +4649,10 @@ void Execute::ILW ( VU *v, Instruction::Format i )
 	
 	pVuMem32 = v->GetMemPtr ( LoadAddress );
 	
-#ifdef ENABLE_INTDELAYSLOT_ILW_AFTER
-	if ( i.destx ) v->Set_IntDelaySlot ( i.it & 0xf, pVuMem32 [ 0 ] );
-	if ( i.desty ) v->Set_IntDelaySlot ( i.it & 0xf, pVuMem32 [ 1 ] );
-	if ( i.destz ) v->Set_IntDelaySlot ( i.it & 0xf, pVuMem32 [ 2 ] );
-	if ( i.destw ) v->Set_IntDelaySlot ( i.it & 0xf, pVuMem32 [ 3 ] );
-#else
 	if ( i.destx ) v->vi [ i.it ].uLo = pVuMem32 [ 0 ];
 	if ( i.desty ) v->vi [ i.it ].uLo = pVuMem32 [ 1 ];
 	if ( i.destz ) v->vi [ i.it ].uLo = pVuMem32 [ 2 ];
 	if ( i.destw ) v->vi [ i.it ].uLo = pVuMem32 [ 3 ];
-#endif
 	
 #if defined INLINE_DEBUG_ILW || defined INLINE_DEBUG_VU || defined INLINE_DEBUG_INT	// || defined INLINE_DEBUG_UNIMPLEMENTED
 	debug << hex << " LA=" << ( v->vi [ i.is ].sLo + i.Imm11 );
@@ -4383,6 +4677,7 @@ void Execute::Execute_LoadDelaySlot ( VU *v, Instruction::Format i )
 	//if ( i.Ft != v->LastModifiedRegister )
 	if ( ! ( v->FlagSave [ v->iFlagSave_Index & VU::c_lFlag_Delay_Mask ].Int_Bitmap & ( 1 << i.Ft ) ) )
 	{
+
 		if ( i.destx ) v->vf [ i.Ft ].uw0 = v->LoadMoveDelayReg.uw0;
 		if ( i.desty ) v->vf [ i.Ft ].uw1 = v->LoadMoveDelayReg.uw1;
 		if ( i.destz ) v->vf [ i.Ft ].uw2 = v->LoadMoveDelayReg.uw2;
@@ -4463,7 +4758,7 @@ void Execute::LQ ( VU *v, Instruction::Format i )
 	pVuMem32 = v->GetMemPtr ( LoadAddress );
 
 	
-#ifdef ENABLE_STALLS
+#ifdef ENABLE_STALLS_LQ
 	if ( i.destx ) v->LoadMoveDelayReg.uw0 = pVuMem32 [ 0 ];
 	if ( i.desty ) v->LoadMoveDelayReg.uw1 = pVuMem32 [ 1 ];
 	if ( i.destz ) v->LoadMoveDelayReg.uw2 = pVuMem32 [ 2 ];
@@ -4477,13 +4772,20 @@ void Execute::LQ ( VU *v, Instruction::Format i )
 	
 	// clear last modified register to detect if it should be cancelled
 	v->LastModifiedRegister = 0;
-	
+
+	// TODO: this should only happen AFTER upper instruction is executed probably!!!
+	if (i.destx) v->vf[i.Ft].uw0 = pVuMem32[0];
+	if (i.desty) v->vf[i.Ft].uw1 = pVuMem32[1];
+	if (i.destz) v->vf[i.Ft].uw2 = pVuMem32[2];
+	if (i.destw) v->vf[i.Ft].uw3 = pVuMem32[3];
+
 #else
 	// TODO: this should only happen AFTER upper instruction is executed probably!!!
 	if ( i.destx ) v->vf [ i.Ft ].uw0 = pVuMem32 [ 0 ];
 	if ( i.desty ) v->vf [ i.Ft ].uw1 = pVuMem32 [ 1 ];
 	if ( i.destz ) v->vf [ i.Ft ].uw2 = pVuMem32 [ 2 ];
 	if ( i.destw ) v->vf [ i.Ft ].uw3 = pVuMem32 [ 3 ];
+	v->Set_DestReg_Upper(i.Value, i.Ft);
 #endif
 	
 #if defined INLINE_DEBUG_LQ || defined INLINE_DEBUG_VU || defined INLINE_DEBUG_INT	// || defined INLINE_DEBUG_UNIMPLEMENTED
@@ -4529,7 +4831,23 @@ void Execute::LQD ( VU *v, Instruction::Format i )
 	// execute int delay slot immediately
 	v->Execute_IntDelaySlot ();
 #endif
-	
+
+#ifdef USE_NEW_RECOMPILE2_LQD
+
+	// check if int calc result needs to be output to delay slot or not
+	if ( v->pLUT_StaticInfo [ ( v->PC & v->ulVuMem_Mask ) >> 3 ] & ( 1 << 10 ) )
+	{
+		v->Set_IntDelaySlot ( i.is & 0xf, v->vi [ i.is & 0xf ].uLo - 1 );
+		LoadAddress = ( v->vi [ i.is & 0xf ].uLo - 1 ) << 2;
+	}
+	else
+	{
+		v->vi [ i.is & 0xf ].uLo--;
+		LoadAddress = v->vi [ i.is & 0xf ].uLo << 2;
+	}
+
+#else
+
 #ifdef ENABLE_INTDELAYSLOT_LQD_AFTER
 	v->Set_IntDelaySlot ( i.is & 0xf, v->vi [ i.is & 0xf ].uLo - 1 );
 	LoadAddress = ( v->vi [ i.is & 0xf ].uLo - 1 ) << 2;
@@ -4538,10 +4856,12 @@ void Execute::LQD ( VU *v, Instruction::Format i )
 	
 	LoadAddress = v->vi [ i.is & 0xf ].uLo << 2;
 #endif
+
+#endif
 	
 	pVuMem32 = v->GetMemPtr ( LoadAddress );
 	
-#ifdef ENABLE_STALLS
+#ifdef ENABLE_STALLS_LQD
 	if ( i.destx ) v->LoadMoveDelayReg.uw0 = pVuMem32 [ 0 ];
 	if ( i.desty ) v->LoadMoveDelayReg.uw1 = pVuMem32 [ 1 ];
 	if ( i.destz ) v->LoadMoveDelayReg.uw2 = pVuMem32 [ 2 ];
@@ -4560,12 +4880,43 @@ void Execute::LQD ( VU *v, Instruction::Format i )
 	if ( i.desty ) v->vf [ i.Ft ].uw1 = pVuMem32 [ 1 ];
 	if ( i.destz ) v->vf [ i.Ft ].uw2 = pVuMem32 [ 2 ];
 	if ( i.destw ) v->vf [ i.Ft ].uw3 = pVuMem32 [ 3 ];
+	v->Set_DestReg_Upper(i.Value, i.Ft);
 #endif
 	
 #if defined INLINE_DEBUG_LQD || defined INLINE_DEBUG_VU || defined INLINE_DEBUG_INT	// || defined INLINE_DEBUG_UNIMPLEMENTED
 	debug << hex << " Output:" << " ft=" << v->vf [ i.Ft ].uw0 << " " << v->vf [ i.Ft ].uw1 << " " << v->vf [ i.Ft ].uw2 << " " << v->vf [ i.Ft ].uw3;
 #endif
 }
+
+void Execute::VLQD ( VU *v, Instruction::Format i )
+{
+#if defined INLINE_DEBUG_LQD || defined INLINE_DEBUG_VU || defined INLINE_DEBUG_INT	// || defined INLINE_DEBUG_UNIMPLEMENTED
+	debug << "\r\n" << hex << "VU#" << v->Number << " " << setw( 8 ) << v->PC << " " << dec << v->CycleCount << " " << Print::PrintInstructionLO ( i.Value ).c_str () << "; " << hex << i.Value;
+	debug << hex << " is=" << v->vi [ i.is ].uLo;
+	debug << hex << " LA=" << (v->vi [ i.is ].uLo-1);
+#endif
+
+	// LQD ftdest, (--is)
+	// do Imm11 x16
+	
+	u32 LoadAddress;
+	u32* pVuMem32;
+
+	v->vi [ i.is & 0xf ].uLo--;
+	LoadAddress = v->vi [ i.is & 0xf ].uLo << 2;
+
+	pVuMem32 = v->GetMemPtr ( LoadAddress );
+
+	if ( i.destx ) v->vf [ i.Ft ].uw0 = pVuMem32 [ 0 ];
+	if ( i.desty ) v->vf [ i.Ft ].uw1 = pVuMem32 [ 1 ];
+	if ( i.destz ) v->vf [ i.Ft ].uw2 = pVuMem32 [ 2 ];
+	if ( i.destw ) v->vf [ i.Ft ].uw3 = pVuMem32 [ 3 ];
+	
+#if defined INLINE_DEBUG_LQD || defined INLINE_DEBUG_VU || defined INLINE_DEBUG_INT	// || defined INLINE_DEBUG_UNIMPLEMENTED
+	debug << hex << " Output:" << " ft=" << v->vf [ i.Ft ].uw0 << " " << v->vf [ i.Ft ].uw1 << " " << v->vf [ i.Ft ].uw2 << " " << v->vf [ i.Ft ].uw3;
+#endif
+}
+
 
 void Execute::LQI ( VU *v, Instruction::Format i )
 {
@@ -4608,7 +4959,7 @@ void Execute::LQI ( VU *v, Instruction::Format i )
 	
 	pVuMem32 = v->GetMemPtr ( LoadAddress );
 	
-#ifdef ENABLE_STALLS
+#ifdef ENABLE_STALLS_LQI
 	if ( i.destx ) v->LoadMoveDelayReg.uw0 = pVuMem32 [ 0 ];
 	if ( i.desty ) v->LoadMoveDelayReg.uw1 = pVuMem32 [ 1 ];
 	if ( i.destz ) v->LoadMoveDelayReg.uw2 = pVuMem32 [ 2 ];
@@ -4627,14 +4978,32 @@ void Execute::LQI ( VU *v, Instruction::Format i )
 	if ( i.desty ) v->vf [ i.Ft ].uw1 = pVuMem32 [ 1 ];
 	if ( i.destz ) v->vf [ i.Ft ].uw2 = pVuMem32 [ 2 ];
 	if ( i.destw ) v->vf [ i.Ft ].uw3 = pVuMem32 [ 3 ];
+	v->Set_DestReg_Upper(i.Value, i.Ft);
 #endif
-	
+
+
+#ifdef USE_NEW_RECOMPILE2_LQI
+
+	// check if int calc result needs to be output to delay slot or not
+	if ( v->pLUT_StaticInfo [ ( v->PC & v->ulVuMem_Mask ) >> 3 ] & ( 1 << 10 ) )
+	{
+		v->Set_IntDelaySlot ( i.is & 0xf, v->vi [ i.is & 0xf ].uLo + 1 );
+	}
+	else
+	{
+		v->vi [ i.is & 0xf ].uLo++;
+	}
+
+#else
+
 	// post-increment
 #ifdef ENABLE_INTDELAYSLOT_LQI_AFTER
 	
 	v->Set_IntDelaySlot ( i.is & 0xf, v->vi [ i.is & 0xf ].uLo + 1 );
 #else
 	v->vi [ i.is & 0xf ].uLo++;
+#endif
+
 #endif
 	
 #if defined INLINE_DEBUG_LQI || defined INLINE_DEBUG_VU || defined INLINE_DEBUG_INT	// || defined INLINE_DEBUG_UNIMPLEMENTED
@@ -4643,7 +5012,36 @@ void Execute::LQI ( VU *v, Instruction::Format i )
 #endif
 }
 
+void Execute::VLQI ( VU *v, Instruction::Format i )
+{
+#if defined INLINE_DEBUG_LQI || defined INLINE_DEBUG_VU || defined INLINE_DEBUG_INT	// || defined INLINE_DEBUG_UNIMPLEMENTED
+	debug << "\r\n" << hex << "VU#" << v->Number << " " << setw( 8 ) << v->PC << " " << dec << v->CycleCount << " " << Print::PrintInstructionLO ( i.Value ).c_str () << "; " << hex << i.Value;
+	debug << hex << " is=" << v->vi [ i.is ].uLo;
+	debug << hex << " LA=" << v->vi [ i.is ].uLo;
+#endif
 
+	// LQI ftdest, (is++)
+	// do Imm11 x16
+	
+	u32 LoadAddress;
+	u32* pVuMem32;
+
+	LoadAddress = v->vi [ i.is & 0xf ].uLo << 2;
+	
+	pVuMem32 = v->GetMemPtr ( LoadAddress );
+
+	if ( i.destx ) v->vf [ i.Ft ].uw0 = pVuMem32 [ 0 ];
+	if ( i.desty ) v->vf [ i.Ft ].uw1 = pVuMem32 [ 1 ];
+	if ( i.destz ) v->vf [ i.Ft ].uw2 = pVuMem32 [ 2 ];
+	if ( i.destw ) v->vf [ i.Ft ].uw3 = pVuMem32 [ 3 ];
+
+	v->vi [ i.is & 0xf ].uLo++;
+
+#if defined INLINE_DEBUG_LQI || defined INLINE_DEBUG_VU || defined INLINE_DEBUG_INT	// || defined INLINE_DEBUG_UNIMPLEMENTED
+	debug << hex << " Output:" << " ft(hex)=" << v->vf [ i.Ft ].uw0 << " " << v->vf [ i.Ft ].uw1 << " " << v->vf [ i.Ft ].uw2 << " " << v->vf [ i.Ft ].uw3;
+	debug << dec << " ft(dec)=" << v->vf [ i.Ft ].fx << " " << v->vf [ i.Ft ].fy << " " << v->vf [ i.Ft ].fz << " " << v->vf [ i.Ft ].fw;
+#endif
+}
 
 
 
@@ -4690,7 +5088,7 @@ void Execute::MFP ( VU *v, Instruction::Format i )
 #endif
 	*/
 	
-#ifdef ENABLE_STALLS
+#ifdef ENABLE_STALLS_MFP
 	// need to make sure P register is updated properly first
 	v->UpdateP ();
 	
@@ -4708,12 +5106,17 @@ void Execute::MFP ( VU *v, Instruction::Format i )
 	// clear last modified register to detect if it should be cancelled
 	v->LastModifiedRegister = 0;
 #else
+
+	// update p
+	v->UpdateP_Micro ();
+
 	// TODO: this should only store to the float registers AFTER upper instruction has been executed probably!!!
 	// but only if the instruction does not get cancelled by upper instruction
-	if ( i.destx ) v->vf [ i.Ft ].uw0 = v->vi [ 23 ].u;
-	if ( i.desty ) v->vf [ i.Ft ].uw1 = v->vi [ 23 ].u;
-	if ( i.destz ) v->vf [ i.Ft ].uw2 = v->vi [ 23 ].u;
-	if ( i.destw ) v->vf [ i.Ft ].uw3 = v->vi [ 23 ].u;
+	if ( i.destx ) v->vf [ i.Ft ].uw0 = v->vi [ VU::REG_P ].u;
+	if ( i.desty ) v->vf [ i.Ft ].uw1 = v->vi [ VU::REG_P ].u;
+	if ( i.destz ) v->vf [ i.Ft ].uw2 = v->vi [ VU::REG_P ].u;
+	if ( i.destw ) v->vf [ i.Ft ].uw3 = v->vi [ VU::REG_P ].u;
+	v->Set_DestReg_Upper(i.Value, i.Ft);
 #endif
 	
 	// flags affected: none
@@ -4753,12 +5156,38 @@ void Execute::MOVE ( VU *v, Instruction::Format i )
 
 
 	// dest ft = fs
-	
-#ifdef ENABLE_STALLS
-	if ( i.destx ) v->LoadMoveDelayReg.uw0 = v->vf [ i.Fs ].uw0;
-	if ( i.desty ) v->LoadMoveDelayReg.uw1 = v->vf [ i.Fs ].uw1;
-	if ( i.destz ) v->LoadMoveDelayReg.uw2 = v->vf [ i.Fs ].uw2;
-	if ( i.destw ) v->LoadMoveDelayReg.uw3 = v->vf [ i.Fs ].uw3;
+
+#ifdef USE_NEW_RECOMPILE2_MOVE
+
+	if ( v->pStaticInfo[v->Number] [ ( v->PC & v->ulVuMem_Mask ) >> 3 ] & ( 1 << 5 ) )
+	{
+	if ( i.destx ) v->LoadMoveDelayReg.uw0 = v->vf [ i.Fs ].uw0; else v->LoadMoveDelayReg.uw0 = v->vf [ i.Ft ].uw0;
+	if ( i.desty ) v->LoadMoveDelayReg.uw1 = v->vf [ i.Fs ].uw1; else v->LoadMoveDelayReg.uw1 = v->vf [ i.Ft ].uw1;
+	if ( i.destz ) v->LoadMoveDelayReg.uw2 = v->vf [ i.Fs ].uw2; else v->LoadMoveDelayReg.uw2 = v->vf [ i.Ft ].uw2;
+	if ( i.destw ) v->LoadMoveDelayReg.uw3 = v->vf [ i.Fs ].uw3; else v->LoadMoveDelayReg.uw3 = v->vf [ i.Ft ].uw3;
+
+	// enable the quick delay slot
+	v->Status.EnableLoadMoveDelaySlot = 1;
+
+	// put the instruction in the delay slot (for recompiler since it would not be there)
+	v->CurInstLOHI.Lo.Value = i.Value;
+	}
+	else
+	{
+	if ( i.destx ) v->vf [ i.Ft ].uw0 = v->vf [ i.Fs ].uw0;
+	if ( i.desty ) v->vf [ i.Ft ].uw1 = v->vf [ i.Fs ].uw1;
+	if ( i.destz ) v->vf [ i.Ft ].uw2 = v->vf [ i.Fs ].uw2;
+	if ( i.destw ) v->vf [ i.Ft ].uw3 = v->vf [ i.Fs ].uw3;
+	v->Set_DestReg_Upper(i.Value, i.Ft);
+	}
+
+#else
+
+#ifdef ENABLE_STALLS_MOVE
+	if ( i.destx ) v->LoadMoveDelayReg.uw0 = v->vf [ i.Fs ].uw0; else v->LoadMoveDelayReg.uw0 = v->vf [ i.Ft ].uw0;
+	if ( i.desty ) v->LoadMoveDelayReg.uw1 = v->vf [ i.Fs ].uw1; else v->LoadMoveDelayReg.uw1 = v->vf [ i.Ft ].uw1;
+	if ( i.destz ) v->LoadMoveDelayReg.uw2 = v->vf [ i.Fs ].uw2; else v->LoadMoveDelayReg.uw2 = v->vf [ i.Ft ].uw2;
+	if ( i.destw ) v->LoadMoveDelayReg.uw3 = v->vf [ i.Fs ].uw3; else v->LoadMoveDelayReg.uw3 = v->vf [ i.Ft ].uw3;
 	
 	// enable the quick delay slot
 	v->Status.EnableLoadMoveDelaySlot = 1;
@@ -4776,6 +5205,8 @@ void Execute::MOVE ( VU *v, Instruction::Format i )
 	if ( i.destz ) v->vf [ i.Ft ].uw2 = v->vf [ i.Fs ].uw2;
 	if ( i.destw ) v->vf [ i.Ft ].uw3 = v->vf [ i.Fs ].uw3;
 #endif
+
+#endif
 	
 	// flags affected: none
 
@@ -4785,6 +5216,37 @@ void Execute::MOVE ( VU *v, Instruction::Format i )
 #endif
 }
 
+
+void Execute::VMOVE ( VU *v, Instruction::Format i )
+{
+#if defined INLINE_DEBUG_MOVE || defined INLINE_DEBUG_VU || defined INLINE_DEBUG_INT	// || defined INLINE_DEBUG_UNIMPLEMENTED
+	debug << "\r\n" << hex << "VU#" << v->Number << " " << setw( 8 ) << v->PC << " " << dec << v->CycleCount << " " << Print::PrintInstructionLO ( i.Value ).c_str () << "; " << hex << i.Value;
+	if ( i.Fs || i.Ft )
+	debug << " vfx=" << hex << v->vf [ i.Fs ].fx << " vfy=" << v->vf [ i.Fs ].fy << " vfz=" << v->vf [ i.Fs ].fz << " vfw=" << v->vf [ i.Fs ].fw;
+#endif
+
+	if ( i.destx ) v->LoadMoveDelayReg.uw0 = v->vf [ i.Fs ].uw0; else v->LoadMoveDelayReg.uw0 = v->vf [ i.Ft ].uw0;
+	if ( i.desty ) v->LoadMoveDelayReg.uw1 = v->vf [ i.Fs ].uw1; else v->LoadMoveDelayReg.uw1 = v->vf [ i.Ft ].uw1;
+	if ( i.destz ) v->LoadMoveDelayReg.uw2 = v->vf [ i.Fs ].uw2; else v->LoadMoveDelayReg.uw2 = v->vf [ i.Ft ].uw2;
+	if ( i.destw ) v->LoadMoveDelayReg.uw3 = v->vf [ i.Fs ].uw3; else v->LoadMoveDelayReg.uw3 = v->vf [ i.Ft ].uw3;
+	
+	// enable the quick delay slot
+	v->Status.EnableLoadMoveDelaySlot = 1;
+	
+	// put the instruction in the delay slot (for recompiler since it would not be there)
+	v->CurInstLOHI.Lo.Value = i.Value;
+	
+	// clear last modified register to detect if it should be cancelled
+	v->LastModifiedRegister = 0;
+
+
+	// flags affected: none
+
+#if defined INLINE_DEBUG_MOVE || defined INLINE_DEBUG_VU || defined INLINE_DEBUG_INT	// || defined INLINE_DEBUG_UNIMPLEMENTED
+	if ( i.Fs || i.Ft )
+	debug << " Output: Ft=" << " vfx=" << hex << v->vf [ i.Ft ].fx << " vfy=" << v->vf [ i.Ft ].fy << " vfz=" << v->vf [ i.Ft ].fz << " vfw=" << v->vf [ i.Ft ].fw;
+#endif
+}
 
 void Execute::MR32 ( VU *v, Instruction::Format i )
 {
@@ -4799,8 +5261,8 @@ void Execute::MR32 ( VU *v, Instruction::Format i )
 	
 #ifdef ENABLE_STALLS
 	// set the source register(s)
-	//v->Set_SrcReg ( ( ( i.Value << 1 ) & ( 0xe << 21 ) ) | ( ( i.Value >> 3 ) & ( 1 << 21 ) ), i.Fs );
-	v->Set_SrcReg ( ( ( i.Value >> 1 ) & ( 0x7 << 21 ) ) | ( ( i.Value << 3 ) & ( 0x8 << 21 ) ), i.Fs );
+	v->Set_SrcReg ( ( ( i.Value << 1 ) & ( 0xe << 21 ) ) | ( ( i.Value >> 3 ) & ( 1 << 21 ) ), i.Fs );
+	//v->Set_SrcReg ( ( ( i.Value >> 1 ) & ( 0x7 << 21 ) ) | ( ( i.Value << 3 ) & ( 0x8 << 21 ) ), i.Fs );
 	
 	// make sure the source registers are available
 	if ( v->TestStall () )
@@ -4824,12 +5286,38 @@ void Execute::MR32 ( VU *v, Instruction::Format i )
 	
 	// must do this or data can get overwritten
 	temp = v->vf [ i.Fs ].ux;
-	
-#ifdef ENABLE_STALLS
-	if ( i.destx ) v->LoadMoveDelayReg.uw0 = v->vf [ i.Fs ].uy;
-	if ( i.desty ) v->LoadMoveDelayReg.uw1 = v->vf [ i.Fs ].uz;
-	if ( i.destz ) v->LoadMoveDelayReg.uw2 = v->vf [ i.Fs ].uw;
-	if ( i.destw ) v->LoadMoveDelayReg.uw3 = temp;
+
+#ifdef USE_NEW_RECOMPILE2_MR32
+
+	if ( v->pStaticInfo[v->Number] [ ( v->PC & v->ulVuMem_Mask ) >> 3 ] & ( 1 << 5 ) )
+	{
+	if ( i.destx ) v->LoadMoveDelayReg.uw0 = v->vf [ i.Fs ].uy; else v->LoadMoveDelayReg.uw0 = v->vf [ i.Ft ].uw0;
+	if ( i.desty ) v->LoadMoveDelayReg.uw1 = v->vf [ i.Fs ].uz; else v->LoadMoveDelayReg.uw1 = v->vf [ i.Ft ].uw1;
+	if ( i.destz ) v->LoadMoveDelayReg.uw2 = v->vf [ i.Fs ].uw; else v->LoadMoveDelayReg.uw2 = v->vf [ i.Ft ].uw2;
+	if ( i.destw ) v->LoadMoveDelayReg.uw3 = temp; else v->LoadMoveDelayReg.uw3 = v->vf [ i.Ft ].uw3;
+
+	// enable the quick delay slot
+	v->Status.EnableLoadMoveDelaySlot = 1;
+
+	// put the instruction in the delay slot (for recompiler since it would not be there)
+	v->CurInstLOHI.Lo.Value = i.Value;
+	}
+	else
+	{
+	if ( i.destx ) v->vf [ i.Ft ].ux = v->vf [ i.Fs ].uy;
+	if ( i.desty ) v->vf [ i.Ft ].uy = v->vf [ i.Fs ].uz;
+	if ( i.destz ) v->vf [ i.Ft ].uz = v->vf [ i.Fs ].uw;
+	if ( i.destw ) v->vf [ i.Ft ].uw = temp;
+	v->Set_DestReg_Upper(i.Value, i.Ft);
+	}
+
+#else
+
+#ifdef ENABLE_STALLS_MR32
+	if ( i.destx ) v->LoadMoveDelayReg.uw0 = v->vf [ i.Fs ].uy; else v->LoadMoveDelayReg.uw0 = v->vf [ i.Ft ].uw0;
+	if ( i.desty ) v->LoadMoveDelayReg.uw1 = v->vf [ i.Fs ].uz; else v->LoadMoveDelayReg.uw1 = v->vf [ i.Ft ].uw1;
+	if ( i.destz ) v->LoadMoveDelayReg.uw2 = v->vf [ i.Fs ].uw; else v->LoadMoveDelayReg.uw2 = v->vf [ i.Ft ].uw2;
+	if ( i.destw ) v->LoadMoveDelayReg.uw3 = temp; else v->LoadMoveDelayReg.uw3 = v->vf [ i.Ft ].uw3;
 	
 	// enable the quick delay slot
 	v->Status.EnableLoadMoveDelaySlot = 1;
@@ -4845,7 +5333,43 @@ void Execute::MR32 ( VU *v, Instruction::Format i )
 	if ( i.destz ) v->vf [ i.Ft ].uz = v->vf [ i.Fs ].uw;
 	if ( i.destw ) v->vf [ i.Ft ].uw = temp;
 #endif
+
+#endif
 	
+	// flags affected: none
+
+#if defined INLINE_DEBUG_MOVE || defined INLINE_DEBUG_VU || defined INLINE_DEBUG_INT	// || defined INLINE_DEBUG_UNIMPLEMENTED
+	debug << " Output: Ft=" << " vfx=" << hex << v->vf [ i.Ft ].fx << " vfy=" << v->vf [ i.Ft ].fy << " vfz=" << v->vf [ i.Ft ].fz << " vfw=" << v->vf [ i.Ft ].fw;
+#endif
+}
+
+void Execute::VMR32 ( VU *v, Instruction::Format i )
+{
+#if defined INLINE_DEBUG_MOVE || defined INLINE_DEBUG_VU || defined INLINE_DEBUG_INT	// || defined INLINE_DEBUG_UNIMPLEMENTED
+	debug << "\r\n" << hex << "VU#" << v->Number << " " << setw( 8 ) << v->PC << " " << dec << v->CycleCount << " " << Print::PrintInstructionLO ( i.Value ).c_str () << "; " << hex << i.Value;
+	debug << " vfx=" << hex << v->vf [ i.Fs ].fx << " vfy=" << v->vf [ i.Fs ].fy << " vfz=" << v->vf [ i.Fs ].fz << " vfw=" << v->vf [ i.Fs ].fw;
+#endif
+
+	u32 temp;
+
+	// must do this or data can get overwritten
+	temp = v->vf [ i.Fs ].ux;
+
+	if ( i.destx ) v->LoadMoveDelayReg.uw0 = v->vf [ i.Fs ].uy; else v->LoadMoveDelayReg.uw0 = v->vf [ i.Ft ].uw0;
+	if ( i.desty ) v->LoadMoveDelayReg.uw1 = v->vf [ i.Fs ].uz; else v->LoadMoveDelayReg.uw1 = v->vf [ i.Ft ].uw1;
+	if ( i.destz ) v->LoadMoveDelayReg.uw2 = v->vf [ i.Fs ].uw; else v->LoadMoveDelayReg.uw2 = v->vf [ i.Ft ].uw2;
+	if ( i.destw ) v->LoadMoveDelayReg.uw3 = temp; else v->LoadMoveDelayReg.uw3 = v->vf [ i.Ft ].uw3;
+	
+	// enable the quick delay slot
+	v->Status.EnableLoadMoveDelaySlot = 1;
+	
+	// put the instruction in the delay slot (for recompiler since it would not be there)
+	v->CurInstLOHI.Lo.Value = i.Value;
+	
+	// clear last modified register to detect if it should be cancelled
+	v->LastModifiedRegister = 0;
+
+
 	// flags affected: none
 
 #if defined INLINE_DEBUG_MOVE || defined INLINE_DEBUG_VU || defined INLINE_DEBUG_INT	// || defined INLINE_DEBUG_UNIMPLEMENTED
@@ -4888,7 +5412,7 @@ void Execute::MFIR ( VU *v, Instruction::Format i )
 #endif
 
 	
-#ifdef ENABLE_STALLS
+#ifdef ENABLE_STALLS_MFIR
 	if ( i.destx ) v->LoadMoveDelayReg.sw0 = (s32) v->vi [ i.is ].sLo;
 	if ( i.desty ) v->LoadMoveDelayReg.sw1 = (s32) v->vi [ i.is ].sLo;
 	if ( i.destz ) v->LoadMoveDelayReg.sw2 = (s32) v->vi [ i.is ].sLo;
@@ -4908,6 +5432,7 @@ void Execute::MFIR ( VU *v, Instruction::Format i )
 	if ( i.desty ) v->vf [ i.Ft ].sw1 = (s32) v->vi [ i.is ].sLo;
 	if ( i.destz ) v->vf [ i.Ft ].sw2 = (s32) v->vi [ i.is ].sLo;
 	if ( i.destw ) v->vf [ i.Ft ].sw3 = (s32) v->vi [ i.is ].sLo;
+	v->Set_DestReg_Upper(i.Value, i.Ft);
 #endif
 	
 	// flags affected: none
@@ -4948,6 +5473,23 @@ void Execute::MTIR ( VU *v, Instruction::Format i )
 
 	
 	// todo: determine if integer register can be used by branch immediately or if you need int delay slot
+#ifdef USE_NEW_RECOMPILE2_INTCALC
+
+	// check if int calc result needs to be output to delay slot or not
+	if ( v->pLUT_StaticInfo [ ( v->PC & v->ulVuMem_Mask ) >> 3 ] & ( 1 << 10 ) )
+	{
+#if defined INLINE_DEBUG_IADDI || defined INLINE_DEBUG_VU || defined INLINE_DEBUG_INT
+	debug << ">INT-DELAY-SLOT";
+#endif
+		v->Set_IntDelaySlot ( i.it & 0xf, (u16) v->vf [ i.Fs ].vuw [ i.fsf ] );
+	}
+	else
+	{
+		v->vi [ i.it & 0xf ].uLo = (u16) v->vf [ i.Fs ].vuw [ i.fsf ];
+	}
+
+#else
+
 #ifdef ENABLE_INTDELAYSLOT
 	// execute int delay slot immediately
 	v->Execute_IntDelaySlot ();
@@ -4959,7 +5501,23 @@ void Execute::MTIR ( VU *v, Instruction::Format i )
 	v->vi [ i.it ].uLo = (u16) v->vf [ i.Fs ].vuw [ i.fsf ];
 #endif
 
+#endif
+
 	// flags affected: none
+
+#if defined INLINE_DEBUG_MTIR || defined INLINE_DEBUG_VU || defined INLINE_DEBUG_INT	// || defined INLINE_DEBUG_UNIMPLEMENTED
+	debug << " Output: it=" << hex << v->vi [ i.it ].uLo;
+#endif
+}
+
+void Execute::VMTIR ( VU *v, Instruction::Format i )
+{
+#if defined INLINE_DEBUG_MTIR || defined INLINE_DEBUG_VU || defined INLINE_DEBUG_INT	// || defined INLINE_DEBUG_UNIMPLEMENTED
+	debug << "\r\n" << hex << "VU#" << v->Number << " " << setw( 8 ) << v->PC << " " << dec << v->CycleCount << " " << Print::PrintInstructionLO ( i.Value ).c_str () << "; " << hex << i.Value;
+	debug << " Fs=" << hex << v->vf [ i.Fs ].vuw [ i.fsf ];
+#endif
+
+		v->vi [ i.it & 0xf ].uLo = (u16) v->vf [ i.Fs ].vuw [ i.fsf ];
 
 #if defined INLINE_DEBUG_MTIR || defined INLINE_DEBUG_VU || defined INLINE_DEBUG_INT	// || defined INLINE_DEBUG_UNIMPLEMENTED
 	debug << " Output: it=" << hex << v->vi [ i.it ].uLo;
@@ -4977,7 +5535,6 @@ void Execute::RGET ( VU *v, Instruction::Format i )
 	debug << " R=" << hex << v->vi [ VU::REG_R ].u;
 #endif
 
-	//cout << "\nhps2x64: ERROR: VU: Instruction not implemented: RGET";
 
 #ifdef ENABLE_STALLS
 	
@@ -4988,7 +5545,7 @@ void Execute::RGET ( VU *v, Instruction::Format i )
 	//v->Set_DestReg_Upper ( i.Value, i.Ft );
 #endif
 
-#ifdef ENABLE_STALLS
+#ifdef ENABLE_STALLS_RGET
 	if ( i.destx ) v->LoadMoveDelayReg.uw0 = v->vi [ VU::REG_R ].u;
 	if ( i.desty ) v->LoadMoveDelayReg.uw1 = v->vi [ VU::REG_R ].u;
 	if ( i.destz ) v->LoadMoveDelayReg.uw2 = v->vi [ VU::REG_R ].u;
@@ -5008,6 +5565,7 @@ void Execute::RGET ( VU *v, Instruction::Format i )
 	if ( i.desty ) v->vf [ i.Ft ].uw1 = v->vi [ VU::REG_R ].u;
 	if ( i.destz ) v->vf [ i.Ft ].uw2 = v->vi [ VU::REG_R ].u;
 	if ( i.destw ) v->vf [ i.Ft ].uw3 = v->vi [ VU::REG_R ].u;
+	v->Set_DestReg_Upper(i.Value, i.Ft);
 #endif
 
 	
@@ -5041,24 +5599,12 @@ void Execute::RNEXT ( VU *v, Instruction::Format i )
 	unsigned long reg;
 	
 	reg = v->vi [ VU::REG_R ].u;
-	bit = __builtin_popcount ( reg & c_ulRandMask ) & 1;
+	//bit = __builtin_popcount ( reg & c_ulRandMask ) & 1;
+	bit = popcnt32(reg & c_ulRandMask) & 1;
 	v->vi [ VU::REG_R ].u = ( 0x7f << 23 ) | ( ( reg << 1 ) & 0x007fffff ) | bit;
 	
-	/*
-	if ( v->vi [ VU::REG_R ].u & 0x007fffff )
-	{
-		// r = r^23 + r^5 + 1 ??
-		// this will fill in for now
-		// *TODO* fix random number generator
-		v->vi [ VU::REG_R ].u = ( 0x7f << 23 ) | ( ( ( rand () & 0xfff ) ) | ( ( rand () & 0x7ff ) << 12 ) );
-	}
-	else
-	{
-		v->vi [ VU::REG_R ].u = ( 0x7f << 23 );
-	}
-	*/
 	
-#ifdef ENABLE_STALLS
+#ifdef ENABLE_STALLS_RNEXT
 	if ( i.destx ) v->LoadMoveDelayReg.uw0 = v->vi [ VU::REG_R ].u;
 	if ( i.desty ) v->LoadMoveDelayReg.uw1 = v->vi [ VU::REG_R ].u;
 	if ( i.destz ) v->LoadMoveDelayReg.uw2 = v->vi [ VU::REG_R ].u;
@@ -5078,6 +5624,7 @@ void Execute::RNEXT ( VU *v, Instruction::Format i )
 	if ( i.desty ) v->vf [ i.Ft ].uw1 = v->vi [ VU::REG_R ].u;
 	if ( i.destz ) v->vf [ i.Ft ].uw2 = v->vi [ VU::REG_R ].u;
 	if ( i.destw ) v->vf [ i.Ft ].uw3 = v->vi [ VU::REG_R ].u;
+	v->Set_DestReg_Upper(i.Value, i.Ft);
 #endif
 
 	
@@ -5331,9 +5878,8 @@ void Execute::WAITP ( VU *v, Instruction::Format i )
 	// if unit is in use, wait until it is free
 	v->WaitP ();
 #else
-	//if ( ( (s64)v->CycleCount ) < ( (s64)v->PBusyUntil_Cycle ) )
-	//if ( v->PBusyUntil_Cycle )
-	if ( v->CycleCount < ( v->PBusyUntil_Cycle - 1 ) )
+	//if ( v->CycleCount < ( v->PBusyUntil_Cycle ) )
+	if ( ( (s64)v->CycleCount ) < ( (s64)v->PBusyUntil_Cycle ) )
 	{
 		// div/rsqrt/sqrt unit is already busy //
 #ifdef INLINE_DEBUG_STALLS
@@ -5346,11 +5892,13 @@ void Execute::WAITP ( VU *v, Instruction::Format i )
 	v->SetP ();
 #endif
 
-#else
-	v->SetP ();
-	//v->vi [ VU::REG_P ].f = v->NextP.f;
-	//v->PBusyUntil_Cycle = -1LL;
 #endif
+
+#ifdef USE_NEW_RECOMPILE2_WAITP
+	// wait p
+	v->WaitP_Micro ();
+#endif
+
 }
 
 void Execute::WAITQ ( VU *v, Instruction::Format i )
@@ -5384,15 +5932,13 @@ void Execute::WAITQ ( VU *v, Instruction::Format i )
 	
 #endif
 
-#else
-	v->SetQ ();
-	//v->vi [ VU::REG_Q ].f = v->NextQ.f;
-	//v->QBusyUntil_Cycle = -1LL;
-	
-	// have to also set the flags for div/sqrt/rsqrt
-	//v->vi [ VU::REG_STATUSFLAG ].uLo &= ~0x30;
-	//v->vi [ VU::REG_STATUSFLAG ].uLo |= v->NextQ_Flag;
 #endif
+
+#ifdef USE_NEW_RECOMPILE2_WAITQ
+	// wait q
+	v->WaitQ_Micro ();
+#endif
+
 }
 
 
@@ -5450,12 +5996,12 @@ void Execute::DIV ( VU *v, Instruction::Format i )
 	}
 #endif
 
-#else
-	// todo: update cycle count if QBusyUntil_Cycle is greater than CycleCount
-	//v->vi [ VU::REG_Q ].f = v->NextQ.f;
-	v->SetQ ();
 #endif
 	
+#ifdef USE_NEW_RECOMPILE2_WAITQ
+	// wait q
+	v->WaitQ_Micro ();
+#endif
 	
 	fs = (float&) v->vf [ i.Fs ].vuw [ i.fsf ];
 	ft = (float&) v->vf [ i.Ft ].vuw [ i.ftf ];
@@ -5518,12 +6064,12 @@ void Execute::RSQRT ( VU *v, Instruction::Format i )
 	}
 #endif
 
-#else
-	// todo: update cycle count if QBusyUntil_Cycle is greater than CycleCount
-	//v->vi [ VU::REG_Q ].f = v->NextQ.f;
-	v->SetQ ();
 #endif
 	
+#ifdef USE_NEW_RECOMPILE2_WAITQ
+	// wait q
+	v->WaitQ_Micro ();
+#endif
 	
 	fs = (float&) v->vf [ i.Fs ].vuw [ i.fsf ];
 	ft = (float&) v->vf [ i.Ft ].vuw [ i.ftf ];
@@ -5583,12 +6129,12 @@ void Execute::SQRT ( VU *v, Instruction::Format i )
 	}
 #endif
 
-#else
-	// todo: update cycle count if QBusyUntil_Cycle is greater than CycleCount
-	//v->vi [ VU::REG_Q ].f = v->NextQ.f;
-	v->SetQ ();
 #endif
 	
+#ifdef USE_NEW_RECOMPILE2_WAITQ
+	// wait q
+	v->WaitQ_Micro ();
+#endif
 	
 	ft = (float&) v->vf [ i.Ft ].vuw [ i.ftf ];
 	
@@ -5616,7 +6162,8 @@ void Execute::EATAN ( VU *v, Instruction::Format i )
 	debug << dec << " PBusyUntil=" << v->PBusyUntil_Cycle;
 #endif
 
-	static const u64 c_CycleTime = 54;
+	// 53/54 cycles
+	static const u64 c_CycleTime = 53;	//54;
 	
 	// I'll make c0 = pi/4
 	static const long c_fC0 = 0x3f490fdb;
@@ -5643,7 +6190,7 @@ void Execute::EATAN ( VU *v, Instruction::Format i )
 #ifdef ENABLE_STALLS
 	// if the EFU unit is still running, then need to wait until it finishes first
 	//if ( v->PBusyUntil_Cycle )
-	if ( ( (s64)v->CycleCount ) < ( (s64)v->PBusyUntil_Cycle - 1 ) )
+	if ( ( (s64)v->CycleCount ) < ( (s64)v->PBusyUntil_Cycle ) )
 	{
 		// EFU unit is already busy //
 #ifdef INLINE_DEBUG_STALLS
@@ -5655,13 +6202,13 @@ void Execute::EATAN ( VU *v, Instruction::Format i )
 	}
 	
 	v->SetP ();
-#else
-	// todo: update cycle count if PBusyUntil_Cycle is greater than CycleCount
-	//v->vi [ VU::REG_P ].f = v->NextP.f;
-	v->SetP ();
 #endif
 
-	
+#ifdef USE_NEW_RECOMPILE2_WAITP
+	// wait p
+	v->WaitP_Micro ();
+#endif
+
 	fs = (float&) v->vf [ i.Fs ].vuw [ i.fsf ];
 	
 	// get (x-1)/(x+1)
@@ -5699,7 +6246,8 @@ void Execute::EATANxy ( VU *v, Instruction::Format i )
 	debug << dec << " PBusyUntil=" << v->PBusyUntil_Cycle;
 #endif
 
-	static const u64 c_CycleTime = 54;
+	// 53/54 cycles
+	static const u64 c_CycleTime = 53;
 	
 	// I'll make c0 = pi/4
 	static const long c_fC0 = 0x3f490fdb;
@@ -5726,7 +6274,7 @@ void Execute::EATANxy ( VU *v, Instruction::Format i )
 #ifdef ENABLE_STALLS
 	// if the EFU unit is still running, then need to wait until it finishes first
 	//if ( v->PBusyUntil_Cycle )
-	if ( ( (s64)v->CycleCount ) < ( (s64)v->PBusyUntil_Cycle - 1 ) )
+	if ( ( (s64)v->CycleCount ) < ( (s64)v->PBusyUntil_Cycle ) )
 	{
 		// EFU unit is already busy //
 #ifdef INLINE_DEBUG_STALLS
@@ -5737,13 +6285,13 @@ void Execute::EATANxy ( VU *v, Instruction::Format i )
 		v->PipelineWaitP ();
 	}
 	v->SetP ();
-#else
-	// todo: update cycle count if PBusyUntil_Cycle is greater than CycleCount
-	//v->vi [ VU::REG_P ].f = v->NextP.f;
-	v->SetP ();
 #endif
 
-	
+#ifdef USE_NEW_RECOMPILE2_WAITP
+	// wait p
+	v->WaitP_Micro ();
+#endif
+
 	fx = v->vf [ i.Fs ].fx;
 	fy = v->vf [ i.Fs ].fy;
 	
@@ -5782,7 +6330,8 @@ void Execute::EATANxz ( VU *v, Instruction::Format i )
 	debug << dec << " PBusyUntil=" << v->PBusyUntil_Cycle;
 #endif
 
-	static const u64 c_CycleTime = 54;
+	// 53/54 cycles
+	static const u64 c_CycleTime = 53;
 	
 	// I'll make c0 = pi/4
 	static const long c_fC0 = 0x3f490fdb;
@@ -5809,7 +6358,7 @@ void Execute::EATANxz ( VU *v, Instruction::Format i )
 #ifdef ENABLE_STALLS
 	// if the EFU unit is still running, then need to wait until it finishes first
 	//if ( v->PBusyUntil_Cycle )
-	if ( ( (s64)v->CycleCount ) < ( (s64)v->PBusyUntil_Cycle - 1 ) )
+	if ( ( (s64)v->CycleCount ) < ( (s64)v->PBusyUntil_Cycle ) )
 	{
 		// EFU unit is already busy //
 #ifdef INLINE_DEBUG_STALLS
@@ -5820,13 +6369,13 @@ void Execute::EATANxz ( VU *v, Instruction::Format i )
 		v->PipelineWaitP ();
 	}
 	v->SetP ();
-#else
-	// todo: update cycle count if PBusyUntil_Cycle is greater than CycleCount
-	//v->vi [ VU::REG_P ].f = v->NextP.f;
-	v->SetP ();
 #endif
 
-	
+#ifdef USE_NEW_RECOMPILE2_WAITP
+	// wait p
+	v->WaitP_Micro ();
+#endif
+
 	fx = v->vf [ i.Fs ].fx;
 	fz = v->vf [ i.Fs ].fz;
 	
@@ -5865,7 +6414,8 @@ void Execute::EEXP ( VU *v, Instruction::Format i )
 	debug << dec << " PBusyUntil=" << v->PBusyUntil_Cycle;
 #endif
 
-	static const u64 c_CycleTime = 44;
+	// 43/44 cycles
+	static const u64 c_CycleTime = 43;	//44;
 	
 	//static const float c_fC0 = (const float&) ((const long&) 0x3f800000);
 	static const long c_fC1 = 0x3e7fffa8;
@@ -5890,7 +6440,7 @@ void Execute::EEXP ( VU *v, Instruction::Format i )
 #ifdef ENABLE_STALLS
 	// if the EFU unit is still running, then need to wait until it finishes first
 	//if ( v->PBusyUntil_Cycle )
-	if ( ( (s64)v->CycleCount ) < ( (s64)v->PBusyUntil_Cycle - 1 ) )
+	if ( ( (s64)v->CycleCount ) < ( (s64)v->PBusyUntil_Cycle ) )
 	{
 		// EFU unit is already busy //
 #ifdef INLINE_DEBUG_STALLS
@@ -5901,13 +6451,13 @@ void Execute::EEXP ( VU *v, Instruction::Format i )
 		v->PipelineWaitP ();
 	}
 	v->SetP ();
-#else
-	// todo: update cycle count if PBusyUntil_Cycle is greater than CycleCount
-	//v->vi [ VU::REG_P ].f = v->NextP.f;
-	v->SetP ();
 #endif
 
-	
+#ifdef USE_NEW_RECOMPILE2_WAITP
+	// wait p
+	v->WaitP_Micro ();
+#endif
+
 	fs = (float&) v->vf [ i.Fs ].vuw [ i.fsf ];
 	
 	fx2 = PS2_Float_Mul ( fs, fs, 0, & NoFlags, & NoFlags );
@@ -5953,7 +6503,8 @@ void Execute::ESIN ( VU *v, Instruction::Format i )
 	debug << dec << " PBusyUntil=" << v->PBusyUntil_Cycle;
 #endif
 
-	static const u64 c_CycleTime = 29;
+	// 28/29 cycles
+	static const u64 c_CycleTime = 28;	//29;
 	
 	static const long c_fC1 = 0x3f800000;
 	static const long c_fC2 = 0xbe2aaaa4;
@@ -5974,7 +6525,7 @@ void Execute::ESIN ( VU *v, Instruction::Format i )
 #ifdef ENABLE_STALLS
 	// if the EFU unit is still running, then need to wait until it finishes first
 	//if ( v->PBusyUntil_Cycle )
-	if ( ( (s64)v->CycleCount ) < ( (s64)v->PBusyUntil_Cycle - 1 ) )
+	if ( ( (s64)v->CycleCount ) < ( (s64)v->PBusyUntil_Cycle ) )
 	{
 		// EFU unit is already busy //
 #ifdef INLINE_DEBUG_STALLS
@@ -5985,13 +6536,13 @@ void Execute::ESIN ( VU *v, Instruction::Format i )
 		v->PipelineWaitP ();
 	}
 	v->SetP ();
-#else
-	// todo: update cycle count if PBusyUntil_Cycle is greater than CycleCount
-	//v->vi [ VU::REG_P ].f = v->NextP.f;
-	v->SetP ();
 #endif
 
-	
+#ifdef USE_NEW_RECOMPILE2_WAITP
+	// wait p
+	v->WaitP_Micro ();
+#endif
+
 	fs = (float&) v->vf [ i.Fs ].vuw [ i.fsf ];
 	
 	fx2 = PS2_Float_Mul ( fs, fs, 0, & NoFlags, & NoFlags );
@@ -6033,7 +6584,8 @@ void Execute::ERSQRT ( VU *v, Instruction::Format i )
 
 	//cout << "\nhps2x64: ERROR: VU: Instruction not implemented: ERSQRT";
 	
-	static const u64 c_CycleTime = 18;
+	// 17/18 cycles
+	static const u64 c_CycleTime = 17;
 
 	u16 NoFlags;
 	float fs;
@@ -6041,7 +6593,7 @@ void Execute::ERSQRT ( VU *v, Instruction::Format i )
 #ifdef ENABLE_STALLS
 	// if the EFU unit is still running, then need to wait until it finishes first
 	//if ( v->PBusyUntil_Cycle )
-	if ( ( (s64)v->CycleCount ) < ( (s64)v->PBusyUntil_Cycle - 1 ) )
+	if ( ( (s64)v->CycleCount ) < ( (s64)v->PBusyUntil_Cycle ) )
 	{
 		// EFU unit is already busy //
 #ifdef INLINE_DEBUG_STALLS
@@ -6052,12 +6604,13 @@ void Execute::ERSQRT ( VU *v, Instruction::Format i )
 		v->PipelineWaitP ();
 	}
 	v->SetP ();
-#else
-	// todo: update cycle count if PBusyUntil_Cycle is greater than CycleCount
-	//v->vi [ VU::REG_P ].f = v->NextP.f;
-	v->SetP ();
 #endif
 	
+#ifdef USE_NEW_RECOMPILE2_WAITP
+	// wait p
+	v->WaitP_Micro ();
+#endif
+
 	fs = (float&) v->vf [ i.Fs ].vuw [ i.fsf ];
 
 #if defined INLINE_DEBUG_ERSQRT || defined INLINE_DEBUG_VU || defined INLINE_DEBUG_EXT || defined INLINE_DEBUG_UNIMPLEMENTED
@@ -6081,7 +6634,8 @@ void Execute::ERCPR ( VU *v, Instruction::Format i )
 	debug << dec << " PBusyUntil=" << v->PBusyUntil_Cycle;
 #endif
 
-	static const u64 c_CycleTime = 12;
+	// 11/12 cycles
+	static const u64 c_CycleTime = 11;
 
 	u16 NoFlags;
 	float fs;
@@ -6091,7 +6645,7 @@ void Execute::ERCPR ( VU *v, Instruction::Format i )
 #ifdef ENABLE_STALLS
 	// if the EFU unit is still running, then need to wait until it finishes first
 	//if ( v->PBusyUntil_Cycle )
-	if ( ( (s64)v->CycleCount ) < ( (s64)v->PBusyUntil_Cycle - 1 ) )
+	if ( ( (s64)v->CycleCount ) < ( (s64)v->PBusyUntil_Cycle ) )
 	{
 		// EFU unit is already busy //
 #ifdef INLINE_DEBUG_STALLS
@@ -6102,12 +6656,13 @@ void Execute::ERCPR ( VU *v, Instruction::Format i )
 		v->PipelineWaitP ();
 	}
 	v->SetP ();
-#else
-	// todo: update cycle count if PBusyUntil_Cycle is greater than CycleCount
-	//v->vi [ VU::REG_P ].f = v->NextP.f;
-	v->SetP ();
 #endif
-	
+
+#ifdef USE_NEW_RECOMPILE2_WAITP
+	// wait p
+	v->WaitP_Micro ();
+#endif
+
 	fs = (float&) v->vf [ i.Fs ].vuw [ i.fsf ];
 	
 #if defined INLINE_DEBUG_ERCPR || defined INLINE_DEBUG_VU || defined INLINE_DEBUG_EXT || defined INLINE_DEBUG_UNIMPLEMENTED
@@ -6133,9 +6688,9 @@ void Execute::ESQRT ( VU *v, Instruction::Format i )
 	debug << dec << " PBusyUntil=" << v->PBusyUntil_Cycle;
 #endif
 
-	//cout << "\nhps2x64: ERROR: VU: Instruction not implemented: ESQRT";
 	
-	static const u64 c_CycleTime = 12;
+	// 11/12 cycles
+	static const u64 c_CycleTime = 11;
 
 	u16 NoFlags;
 	float fs;
@@ -6143,7 +6698,7 @@ void Execute::ESQRT ( VU *v, Instruction::Format i )
 #ifdef ENABLE_STALLS
 	// if the EFU unit is still running, then need to wait until it finishes first
 	//if ( v->PBusyUntil_Cycle )
-	if ( ( (s64)v->CycleCount ) < ( (s64)v->PBusyUntil_Cycle - 1 ) )
+	if ( ( (s64)v->CycleCount ) < ( (s64)v->PBusyUntil_Cycle ) )
 	{
 		// EFU unit is already busy //
 #ifdef INLINE_DEBUG_STALLS
@@ -6154,12 +6709,13 @@ void Execute::ESQRT ( VU *v, Instruction::Format i )
 		v->PipelineWaitP ();
 	}
 	v->SetP ();
-#else
-	// todo: update cycle count if PBusyUntil_Cycle is greater than CycleCount
-	//v->vi [ VU::REG_P ].f = v->NextP.f;
-	v->SetP ();
 #endif
-	
+
+#ifdef USE_NEW_RECOMPILE2_WAITP
+	// wait p
+	v->WaitP_Micro ();
+#endif
+
 	fs = (float&) v->vf [ i.Fs ].vuw [ i.fsf ];
 	
 #if defined INLINE_DEBUG_ESQRT || defined INLINE_DEBUG_VU || defined INLINE_DEBUG_EXT || defined INLINE_DEBUG_UNIMPLEMENTED
@@ -6183,16 +6739,16 @@ void Execute::ESADD ( VU *v, Instruction::Format i )
 	debug << dec << " PBusyUntil=" << v->PBusyUntil_Cycle;
 #endif
 
-	//cout << "\nhps2x64: ERROR: VU: Instruction not implemented: ESADD";
 
-	static const u64 c_CycleTime = 11;
+	// 10/11 cycles
+	static const u64 c_CycleTime = 10;
 
 	u16 NoFlags;
 	
 #ifdef ENABLE_STALLS
 	// if the EFU unit is still running, then need to wait until it finishes first
 	//if ( v->PBusyUntil_Cycle )
-	if ( ( (s64)v->CycleCount ) < ( (s64)v->PBusyUntil_Cycle - 1 ) )
+	if ( ( (s64)v->CycleCount ) < ( (s64)v->PBusyUntil_Cycle ) )
 	{
 		// EFU unit is already busy //
 #ifdef INLINE_DEBUG_STALLS
@@ -6203,12 +6759,11 @@ void Execute::ESADD ( VU *v, Instruction::Format i )
 		v->PipelineWaitP ();
 	}
 	v->SetP ();
-#else
-	// todo: update cycle count if PBusyUntil_Cycle is greater than CycleCount
-	//v->vi [ VU::REG_P ].f = v->NextP.f;
-	v->SetP ();
 #endif
 	
+	// wait p
+	v->WaitP_Micro ();
+
 	v->NextP.f = PS2_Float_Add ( PS2_Float_Add ( PS2_Float_Mul ( v->vf [ i.Fs ].fx, v->vf [ i.Fs ].fx, 0, & NoFlags, & NoFlags ) , PS2_Float_Mul ( v->vf [ i.Fs ].fy, v->vf [ i.Fs ].fy, 0, & NoFlags, & NoFlags ), 0, & NoFlags, & NoFlags ), PS2_Float_Mul ( v->vf [ i.Fs ].fz, v->vf [ i.Fs ].fz, 0, & NoFlags, & NoFlags ), 0, & NoFlags, & NoFlags );
 	v->PBusyUntil_Cycle = v->CycleCount + c_CycleTime;
 	
@@ -6226,9 +6781,9 @@ void Execute::ERSADD ( VU *v, Instruction::Format i )
 	debug << dec << " PBusyUntil=" << v->PBusyUntil_Cycle;
 #endif
 
-	//cout << "\nhps2x64: ERROR: VU: Instruction not implemented: ERSADD";
 	
-	static const u64 c_CycleTime = 18;
+	// 17/18 cycles
+	static const u64 c_CycleTime = 17;
 
 	u16 NoFlags;
 	//float fs = (float&) v->vf [ i.Fs ].vuw [ i.fsf ];
@@ -6236,7 +6791,7 @@ void Execute::ERSADD ( VU *v, Instruction::Format i )
 #ifdef ENABLE_STALLS
 	// if the EFU unit is still running, then need to wait until it finishes first
 	//if ( v->PBusyUntil_Cycle )
-	if ( ( (s64)v->CycleCount ) < ( (s64)v->PBusyUntil_Cycle - 1 ) )
+	if ( ( (s64)v->CycleCount ) < ( (s64)v->PBusyUntil_Cycle ) )
 	{
 		// EFU unit is already busy //
 #ifdef INLINE_DEBUG_STALLS
@@ -6247,12 +6802,11 @@ void Execute::ERSADD ( VU *v, Instruction::Format i )
 		v->PipelineWaitP ();
 	}
 	v->SetP ();
-#else
-	// todo: update cycle count if PBusyUntil_Cycle is greater than CycleCount
-	//v->vi [ VU::REG_P ].f = v->NextP.f;
-	v->SetP ();
 #endif
 	
+	// wait p
+	v->WaitP_Micro ();
+
 	v->NextP.f = PS2_Float_Div ( 1.0f, PS2_Float_Add ( PS2_Float_Add ( PS2_Float_Mul ( v->vf [ i.Fs ].fx, v->vf [ i.Fs ].fx, 0, & NoFlags, & NoFlags ) , PS2_Float_Mul ( v->vf [ i.Fs ].fy, v->vf [ i.Fs ].fy, 0, & NoFlags, & NoFlags ), 0, & NoFlags, & NoFlags ), PS2_Float_Mul ( v->vf [ i.Fs ].fz, v->vf [ i.Fs ].fz, 0, & NoFlags, & NoFlags ), 0, & NoFlags, & NoFlags ), & NoFlags );
 
 	v->PBusyUntil_Cycle = v->CycleCount + c_CycleTime;
@@ -6272,16 +6826,16 @@ void Execute::ESUM ( VU *v, Instruction::Format i )
 	debug << dec << " PBusyUntil=" << v->PBusyUntil_Cycle;
 #endif
 
-	//cout << "\nhps2x64: ERROR: VU: Instruction not implemented: ESUM";
 	
-	static const u64 c_CycleTime = 12;
+	// 11/12 cycles
+	static const u64 c_CycleTime = 11;
 
 	u16 NoFlags;
 	
 #ifdef ENABLE_STALLS
 	// if the EFU unit is still running, then need to wait until it finishes first
 	//if ( v->PBusyUntil_Cycle )
-	if ( ( (s64)v->CycleCount ) < ( (s64)v->PBusyUntil_Cycle - 1 ) )
+	if ( ( (s64)v->CycleCount ) < ( (s64)v->PBusyUntil_Cycle ) )
 	{
 		// EFU unit is already busy //
 #ifdef INLINE_DEBUG_STALLS
@@ -6292,12 +6846,11 @@ void Execute::ESUM ( VU *v, Instruction::Format i )
 		v->PipelineWaitP ();
 	}
 	v->SetP ();
-#else
-	// todo: update cycle count if PBusyUntil_Cycle is greater than CycleCount
-	//v->vi [ VU::REG_P ].f = v->NextP.f;
-	v->SetP ();
 #endif
 	
+	// wait p
+	v->WaitP_Micro ();
+
 	v->NextP.f = PS2_Float_Add ( PS2_Float_Add ( v->vf [ i.Fs ].fx, v->vf [ i.Fs ].fy, 0, & NoFlags, & NoFlags ), PS2_Float_Add ( v->vf [ i.Fs ].fz, v->vf [ i.Fs ].fw, 0, & NoFlags, & NoFlags ), 0, & NoFlags, & NoFlags );
 	v->PBusyUntil_Cycle = v->CycleCount + c_CycleTime;
 	
@@ -6316,16 +6869,16 @@ void Execute::ELENG ( VU *v, Instruction::Format i )
 	debug << dec << " PBusyUntil=" << v->PBusyUntil_Cycle;
 #endif
 
-	//cout << "\nhps2x64: ERROR: VU: Instruction not implemented: ELENG";
 	
-	static const u64 c_CycleTime = 18;
+	// 17/18 cycles
+	static const u64 c_CycleTime = 17;
 
 	u16 NoFlags;
 	
 #ifdef ENABLE_STALLS
 	// if the EFU unit is still running, then need to wait until it finishes first
 	//if ( v->PBusyUntil_Cycle )
-	if ( ( (s64)v->CycleCount ) < ( (s64)v->PBusyUntil_Cycle - 1 ) )
+	if ( ( (s64)v->CycleCount ) < ( (s64)v->PBusyUntil_Cycle ) )
 	{
 		// EFU unit is already busy //
 #ifdef INLINE_DEBUG_STALLS
@@ -6336,12 +6889,11 @@ void Execute::ELENG ( VU *v, Instruction::Format i )
 		v->PipelineWaitP ();
 	}
 	v->SetP ();
-#else
-	// todo: update cycle count if PBusyUntil_Cycle is greater than CycleCount
-	//v->vi [ VU::REG_P ].f = v->NextP.f;
-	v->SetP ();
 #endif
 	
+	// wait p
+	v->WaitP_Micro ();
+
 	v->NextP.f = PS2_Float_Sqrt ( PS2_Float_Add ( PS2_Float_Add ( PS2_Float_Mul ( v->vf [ i.Fs ].fx, v->vf [ i.Fs ].fx, 0, & NoFlags, & NoFlags ) , PS2_Float_Mul ( v->vf [ i.Fs ].fy, v->vf [ i.Fs ].fy, 0, & NoFlags, & NoFlags ), 0, & NoFlags, & NoFlags ), PS2_Float_Mul ( v->vf [ i.Fs ].fz, v->vf [ i.Fs ].fz, 0, & NoFlags, & NoFlags ), 0, & NoFlags, & NoFlags ), & NoFlags );
 	v->PBusyUntil_Cycle = v->CycleCount + c_CycleTime;
 	
@@ -6360,16 +6912,16 @@ void Execute::ERLENG ( VU *v, Instruction::Format i )
 	debug << dec << " PBusyUntil=" << v->PBusyUntil_Cycle;
 #endif
 
-	//cout << "\nhps2x64: ERROR: VU: Instruction not implemented: ERLENG";
 	
-	static const u64 c_CycleTime = 24;
+	// 23/24 cycles
+	static const u64 c_CycleTime = 23;
 
 	u16 NoFlags;
 	
 #ifdef ENABLE_STALLS
 	// if the EFU unit is still running, then need to wait until it finishes first
 	//if ( v->PBusyUntil_Cycle )
-	if ( ( (s64)v->CycleCount ) < ( (s64)v->PBusyUntil_Cycle - 1 ) )
+	if ( ( (s64)v->CycleCount ) < ( (s64)v->PBusyUntil_Cycle ) )
 	{
 		// EFU unit is already busy //
 #ifdef INLINE_DEBUG_STALLS
@@ -6380,12 +6932,11 @@ void Execute::ERLENG ( VU *v, Instruction::Format i )
 		v->PipelineWaitP ();
 	}
 	v->SetP ();
-#else
-	// todo: update cycle count if PBusyUntil_Cycle is greater than CycleCount
-	//v->vi [ VU::REG_P ].f = v->NextP.f;
-	v->SetP ();
 #endif
 	
+	// wait p
+	v->WaitP_Micro ();
+
 	v->NextP.f = PS2_Float_RSqrt ( 1.0f, PS2_Float_Add ( PS2_Float_Add ( PS2_Float_Mul ( v->vf [ i.Fs ].fx, v->vf [ i.Fs ].fx, 0, & NoFlags, & NoFlags ) , PS2_Float_Mul ( v->vf [ i.Fs ].fy, v->vf [ i.Fs ].fy, 0, & NoFlags, & NoFlags ), 0, & NoFlags, & NoFlags ), PS2_Float_Mul ( v->vf [ i.Fs ].fz, v->vf [ i.Fs ].fz, 0, & NoFlags, & NoFlags ), 0, & NoFlags, & NoFlags ), & NoFlags );
 	v->PBusyUntil_Cycle = v->CycleCount + c_CycleTime;
 	

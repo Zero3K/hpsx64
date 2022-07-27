@@ -65,25 +65,25 @@ namespace R5900
 		static constexpr u32 DCacheLineCount = DCache_Size / DCache_Line_Size;
 
 		// marks if a cache line is valid or not
-		u8 Valid [ DCacheLineCount ] __attribute__ ((aligned (32)));
+		alignas(32) u8 Valid [ DCacheLineCount ];
 		
 		// flips when data is loaded
-		u8 LRF [ DCacheLineCount ] __attribute__ ((aligned (32)));
+		alignas(32) u8 LRF [ DCacheLineCount ];
 
 		// marks if a cache line is dirty/modified or not
-		u8 Dirty [ DCacheLineCount ] __attribute__ ((aligned (32)));
+		alignas(32) u8 Dirty [ DCacheLineCount ];
 
 		// marks if a cache line is locked or not
-		u8 Lock [ DCacheLineCount ] __attribute__ ((aligned (32)));
+		alignas(32) u8 Lock [ DCacheLineCount ];
 		
 		// the block address for the blocks of data in DCache
 		// 16 bytes per cache line
 		// 256 Cache Blocks, so this has 256 entries in the array
-		u32 PFN [ DCacheLineCount ] __attribute__ ((aligned (32)));
+		alignas(32) u32 PFN [ DCacheLineCount ];
 		
 		// the data in ICache
 		// has 1024 entries
-		u32 Data [ DCache_Size / sizeof(u32) ] __attribute__ ((aligned (32)));
+		alignas(32) u32 Data [ DCache_Size / sizeof(u32) ];
 		
 		// constructor
 		// invalidates all cache entries

@@ -23,6 +23,8 @@
 #include "GeneralUtilities.h"
 
 
+
+
 using namespace Playstation1;
 using namespace GeneralUtilities;
 
@@ -2530,8 +2532,9 @@ void SPU::Write ( u32 Address, u32 Data, u32 Mask )
 					Channel = Data & ( -Data );
 					Data ^= Channel;
 					//Channel = CountTrailingZeros16 ( Channel );
-					Channel = __builtin_ctz( Channel );
-					
+					//Channel = __builtin_ctz( Channel );
+					Channel = ctz32(Channel);
+
 					_SPU->Start_SampleDecoding ( Channel );
 				}
 #else
@@ -2582,8 +2585,9 @@ void SPU::Write ( u32 Address, u32 Data, u32 Mask )
 					Channel = Data & ( -Data );
 					Data ^= Channel;
 					//Channel = 16 + CountTrailingZeros16 ( Channel );
-					Channel = 16 + __builtin_ctz( Channel );
-					
+					//Channel = 16 + __builtin_ctz( Channel );
+					Channel = 16 + ctz32(Channel);
+
 					_SPU->Start_SampleDecoding ( Channel );
 				}
 #else
@@ -2632,8 +2636,9 @@ void SPU::Write ( u32 Address, u32 Data, u32 Mask )
 					Channel = Data & ( -Data );
 					Data ^= Channel;
 					//Channel = CountTrailingZeros16 ( Channel );
-					Channel = __builtin_ctz( Channel );
-					
+					//Channel = __builtin_ctz( Channel );
+					Channel = ctz32(Channel);
+
 					if ( ( _SPU->CycleCount - _SPU->StartCycle_Channel [ Channel ] ) >= c_iKeyOffT )
 					{
 
@@ -2731,8 +2736,9 @@ void SPU::Write ( u32 Address, u32 Data, u32 Mask )
 					Channel = Data & ( -Data );
 					Data ^= Channel;
 					//Channel = 16 + CountTrailingZeros16 ( Channel );
-					Channel = 16 + __builtin_ctz( Channel );
-					
+					//Channel = 16 + __builtin_ctz( Channel );
+					Channel = 16 + ctz32(Channel);
+
 					if ( ( _SPU->CycleCount - _SPU->StartCycle_Channel [ Channel ] ) >= c_iKeyOffT )
 					{
 

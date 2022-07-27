@@ -86,7 +86,8 @@ namespace Vu
 				
 				struct
 				{
-					u32 filler8 : 6;
+					u32 bc : 2;
+					u32 filler8 : 4;
 					s32 Imm5 : 5;
 					u32 filler9 : 5;
 					u32 filler10 : 5;
@@ -100,7 +101,7 @@ namespace Vu
 		};
 		
 		
-		union Format2
+		union Format64
 		{
 			struct
 			{

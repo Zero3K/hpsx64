@@ -1,0 +1,236 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>17.0</VCProjectVersion>
+    <ProjectGuid>{252EED8B-7222-4CB4-BA25-1BC9C3E1EB50}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <ProjectName>hps1x64</ProjectName>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <Optimization>Disabled</Optimization>
+    </ClCompile>
+    <Link>
+      <TargetMachine>MachineX86</TargetMachine>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Windows</SubSystem>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <TargetMachine>MachineX86</TargetMachine>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>C:\Users\PCUser\Desktop\TheProject\hpsx64\hps1x64\src\r3000a\src;C:\Users\PCUser\Desktop\TheProject\hpsx64\common\config\src;C:\Users\PCUser\Desktop\TheProject\hpsx64\hps1x64\src\spu\src\spu2;C:\Users\PCUser\Desktop\TheProject\hpsx64\hps1x64\src\spu\src;C:\Users\PCUser\Desktop\TheProject\hpsx64\hps1x64\src\timer\src;C:\Users\PCUser\Desktop\TheProject\hpsx64\hps1x64\src\system\src;C:\Users\PCUser\Desktop\TheProject\hpsx64\hps1x64\src\sio\src;C:\Users\PCUser\Desktop\TheProject\hpsx64\hps1x64\src\r3000a\src\recompile;C:\Users\PCUser\Desktop\TheProject\hpsx64\hps1x64\src\r3000a\src\print;C:\Users\PCUser\Desktop\TheProject\hpsx64\hps1x64\src\r3000a\src\lookup;C:\Users\PCUser\Desktop\TheProject\hpsx64\hps1x64\src\r3000a\src\execute;C:\Users\PCUser\Desktop\TheProject\hpsx64\hps1x64\src\r3000a\src\COP2;C:\Users\PCUser\Desktop\TheProject\hpsx64\hps1x64\src\r3000a\src\cache;C:\Users\PCUser\Desktop\TheProject\hpsx64\hps1x64\src\pio\src;C:\Users\PCUser\Desktop\TheProject\hpsx64\hps1x64\src\mdec\src;C:\Users\PCUser\Desktop\TheProject\hpsx64\hps1x64\src\intc\src;C:\Users\PCUser\Desktop\TheProject\hpsx64\hps1x64\src\hps1x64\src;C:\Users\PCUser\Desktop\TheProject\hpsx64\hps1x64\src\gpu\src;C:\Users\PCUser\Desktop\TheProject\hpsx64\hps1x64\src\dma\src;C:\Users\PCUser\Desktop\TheProject\hpsx64\hps1x64\src\databus\src;C:\Users\PCUser\Desktop\TheProject\hpsx64\hps1x64\src\cdvd\src;C:\Users\PCUser\Desktop\TheProject\hpsx64\hps1x64\src\cd\src;C:\Users\PCUser\Desktop\TheProject\hpsx64\common\StringUtilities;C:\Users\PCUser\Desktop\TheProject\hpsx64\common\WindowsAPI\WinFile\src;C:\Users\PCUser\Desktop\TheProject\hpsx64\common\WindowsAPI\Joystick\src;C:\Users\PCUser\Desktop\TheProject\hpsx64\common\WindowsAPI\InputBox\src;C:\Users\PCUser\Desktop\TheProject\hpsx64\common\WindowsAPI\InfiniteListView\src;C:\Users\PCUser\Desktop\TheProject\hpsx64\common\WindowsAPI\GUIHandler\src;C:\Users\PCUser\Desktop\TheProject\hpsx64\common\WindowsAPI\DisassemblyViewer\src;C:\Users\PCUser\Desktop\TheProject\hpsx64\common\WindowsAPI\DebugValueList\src;C:\Users\PCUser\Desktop\TheProject\hpsx64\common\WindowsAPI\DebugMemoryViewer\src;C:\Users\PCUser\Desktop\TheProject\hpsx64\common\WindowsAPI\BreakpointWindow\src;C:\Users\PCUser\Desktop\TheProject\hpsx64\common\x64Encoder\src;C:\Users\PCUser\Desktop\TheProject\hpsx64\common\DiskImage\dvd\src;C:\Users\PCUser\Desktop\TheProject\hpsx64\common\DiskImage\cd\src;C:\Users\PCUser\Desktop\TheProject\hpsx64\common\debug\src;C:\Users\PCUser\Desktop\TheProject\hpsx64\common;C:\Users\PCUser\Desktop\TheProject\hpsx64\common\breakpoint\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <ExceptionHandling>Async</ExceptionHandling>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>USE_PS1_GPU_TEMPLATES;NOMINMAX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <LargeAddressAware>false</LargeAddressAware>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <PreprocessorDefinitions>USE_PS1_GPU_TEMPLATES;NOMINMAX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ExceptionHandling>Async</ExceptionHandling>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <AdditionalIncludeDirectories>C:\Users\PCUser\Desktop\TheProject\hpsx64\hps1x64\src\r3000a\src;C:\Users\PCUser\Desktop\TheProject\hpsx64\common\config\src;C:\Users\PCUser\Desktop\TheProject\hpsx64\hps1x64\src\spu\src\spu2;C:\Users\PCUser\Desktop\TheProject\hpsx64\hps1x64\src\spu\src;C:\Users\PCUser\Desktop\TheProject\hpsx64\hps1x64\src\timer\src;C:\Users\PCUser\Desktop\TheProject\hpsx64\hps1x64\src\system\src;C:\Users\PCUser\Desktop\TheProject\hpsx64\hps1x64\src\sio\src;C:\Users\PCUser\Desktop\TheProject\hpsx64\hps1x64\src\r3000a\src\recompile;C:\Users\PCUser\Desktop\TheProject\hpsx64\hps1x64\src\r3000a\src\print;C:\Users\PCUser\Desktop\TheProject\hpsx64\hps1x64\src\r3000a\src\lookup;C:\Users\PCUser\Desktop\TheProject\hpsx64\hps1x64\src\r3000a\src\execute;C:\Users\PCUser\Desktop\TheProject\hpsx64\hps1x64\src\r3000a\src\COP2;C:\Users\PCUser\Desktop\TheProject\hpsx64\hps1x64\src\r3000a\src\cache;C:\Users\PCUser\Desktop\TheProject\hpsx64\hps1x64\src\pio\src;C:\Users\PCUser\Desktop\TheProject\hpsx64\hps1x64\src\mdec\src;C:\Users\PCUser\Desktop\TheProject\hpsx64\hps1x64\src\intc\src;C:\Users\PCUser\Desktop\TheProject\hpsx64\hps1x64\src\hps1x64\src;C:\Users\PCUser\Desktop\TheProject\hpsx64\hps1x64\src\gpu\src;C:\Users\PCUser\Desktop\TheProject\hpsx64\hps1x64\src\dma\src;C:\Users\PCUser\Desktop\TheProject\hpsx64\hps1x64\src\databus\src;C:\Users\PCUser\Desktop\TheProject\hpsx64\hps1x64\src\cdvd\src;C:\Users\PCUser\Desktop\TheProject\hpsx64\hps1x64\src\cd\src;C:\Users\PCUser\Desktop\TheProject\hpsx64\common\StringUtilities;C:\Users\PCUser\Desktop\TheProject\hpsx64\common\WindowsAPI\WinFile\src;C:\Users\PCUser\Desktop\TheProject\hpsx64\common\WindowsAPI\Joystick\src;C:\Users\PCUser\Desktop\TheProject\hpsx64\common\WindowsAPI\InputBox\src;C:\Users\PCUser\Desktop\TheProject\hpsx64\common\WindowsAPI\InfiniteListView\src;C:\Users\PCUser\Desktop\TheProject\hpsx64\common\WindowsAPI\GUIHandler\src;C:\Users\PCUser\Desktop\TheProject\hpsx64\common\WindowsAPI\DisassemblyViewer\src;C:\Users\PCUser\Desktop\TheProject\hpsx64\common\WindowsAPI\DebugValueList\src;C:\Users\PCUser\Desktop\TheProject\hpsx64\common\WindowsAPI\DebugMemoryViewer\src;C:\Users\PCUser\Desktop\TheProject\hpsx64\common\WindowsAPI\BreakpointWindow\src;C:\Users\PCUser\Desktop\TheProject\hpsx64\common\x64Encoder\src;C:\Users\PCUser\Desktop\TheProject\hpsx64\common\DiskImage\dvd\src;C:\Users\PCUser\Desktop\TheProject\hpsx64\common\DiskImage\cd\src;C:\Users\PCUser\Desktop\TheProject\hpsx64\common\debug\src;C:\Users\PCUser\Desktop\TheProject\hpsx64\common;C:\Users\PCUser\Desktop\TheProject\hpsx64\common\breakpoint\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <OmitFramePointers>true</OmitFramePointers>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+    </Link>
+    <Link>
+      <LargeAddressAware>false</LargeAddressAware>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="common\breakpoint\src\breakpoint.cpp" />
+    <ClCompile Include="common\config\src\ConfigFile.cpp" />
+    <ClCompile Include="common\debug\src\Debug.cpp" />
+    <ClCompile Include="common\diskimage\cd\src\cdimage.cpp" />
+    <ClCompile Include="common\guicon.cpp" />
+    <ClCompile Include="common\stringutilities\StringUtils.cpp" />
+    <ClCompile Include="common\windowsapi\breakpointwindow\src\BreakpointWindow.cpp" />
+    <ClCompile Include="common\windowsapi\debugmemoryviewer\src\DebugMemoryViewer.cpp" />
+    <ClCompile Include="common\windowsapi\debugvaluelist\src\DebugValueList.cpp" />
+    <ClCompile Include="common\windowsapi\disassemblyviewer\src\DisassemblyViewer.cpp" />
+    <ClCompile Include="common\windowsapi\guihandler\src\MultiThread.cpp" />
+    <ClCompile Include="common\windowsapi\guihandler\src\WinApiHandler.cpp" />
+    <ClCompile Include="common\windowsapi\infinitelistview\src\InfiniteListView.cpp" />
+    <ClCompile Include="common\windowsapi\inputbox\src\InputBox.cpp" />
+    <ClCompile Include="common\windowsapi\joystick\src\DJoySticks.cpp" />
+    <ClCompile Include="common\windowsapi\joystick\src\WinJoy.cpp" />
+    <ClCompile Include="common\windowsapi\winfile\src\WinFile.cpp" />
+    <ClCompile Include="common\x64encoder\src\x64Encoder.cpp" />
+    <ClCompile Include="hps1x64\src\cd\src\PS1_CD.cpp" />
+    <ClCompile Include="hps1x64\src\databus\src\PS1DataBus.cpp" />
+    <ClCompile Include="hps1x64\src\dma\src\PS1_Dma.cpp" />
+    <ClCompile Include="hps1x64\src\gpu\src\PS1_Gpu.cpp" />
+    <ClCompile Include="hps1x64\src\hps1x64\src\hps1x64.cpp" />
+    <ClCompile Include="hps1x64\src\intc\src\PS1_Intc.cpp" />
+    <ClCompile Include="hps1x64\src\mdec\src\PS1_MDEC.cpp" />
+    <ClCompile Include="hps1x64\src\pio\src\PS1_PIO.cpp" />
+    <ClCompile Include="hps1x64\src\r3000a\src\cop2\R3000A_COP2.cpp" />
+    <ClCompile Include="hps1x64\src\r3000a\src\execute\R3000A_Execute.cpp" />
+    <ClCompile Include="hps1x64\src\r3000a\src\lookup\R3000A_Lookup.cpp" />
+    <ClCompile Include="hps1x64\src\r3000a\src\print\R3000ADebugPrint.cpp" />
+    <ClCompile Include="hps1x64\src\r3000a\src\R3000A.cpp" />
+    <ClCompile Include="hps1x64\src\r3000a\src\recompile\R3000A_Recompiler.cpp" />
+    <ClCompile Include="hps1x64\src\sio\src\PS1_SIO.cpp" />
+    <ClCompile Include="hps1x64\src\spu\src\adpcm.cpp" />
+    <ClCompile Include="hps1x64\src\spu\src\gx.cpp" />
+    <ClCompile Include="hps1x64\src\spu\src\PS1_SPU.cpp" />
+    <ClCompile Include="hps1x64\src\system\src\ps1_system.cpp" />
+    <ClCompile Include="hps1x64\src\timer\src\PS1_Timer.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="common\breakpoint\src\breakpoint.h" />
+    <ClInclude Include="common\config\src\ConfigFile.h" />
+    <ClInclude Include="common\debug\src\Debug.h" />
+    <ClInclude Include="common\diskimage\cd\src\cdimage.h" />
+    <ClInclude Include="common\GeneralEmuDataStructures.h" />
+    <ClInclude Include="common\GNUAsmUtility_x64.h" />
+    <ClInclude Include="common\guicon.h" />
+    <ClInclude Include="common\json.hpp" />
+    <ClInclude Include="common\LowPassFilter.h" />
+    <ClInclude Include="common\MipsOpcode.h" />
+    <ClInclude Include="common\PS2Float.h" />
+    <ClInclude Include="common\Reciprocal.h" />
+    <ClInclude Include="common\stringutilities\GeneralUtilities.h" />
+    <ClInclude Include="common\stringutilities\StringUtils.h" />
+    <ClInclude Include="common\types.h" />
+    <ClInclude Include="common\windowsapi\breakpointwindow\src\BreakpointWindow.h" />
+    <ClInclude Include="common\windowsapi\debugmemoryviewer\src\DebugMemoryViewer.h" />
+    <ClInclude Include="common\windowsapi\debugvaluelist\src\DebugValueList.h" />
+    <ClInclude Include="common\windowsapi\disassemblyviewer\src\DisassemblyViewer.h" />
+    <ClInclude Include="common\windowsapi\guihandler\src\GNUThreading_x64.h" />
+    <ClInclude Include="common\windowsapi\guihandler\src\MultiThread.h" />
+    <ClInclude Include="common\windowsapi\guihandler\src\MultithreadComm.h" />
+    <ClInclude Include="common\windowsapi\guihandler\src\WinApiHandler.h" />
+    <ClInclude Include="common\windowsapi\infinitelistview\src\InfiniteListView.h" />
+    <ClInclude Include="common\windowsapi\inputbox\src\InputBox.h" />
+    <ClInclude Include="common\windowsapi\joystick\src\DJoySticks.h" />
+    <ClInclude Include="common\windowsapi\joystick\src\WinJoy.h" />
+    <ClInclude Include="common\windowsapi\winfile\src\WinFile.h" />
+    <ClInclude Include="common\x64encoder\src\x64Encoder.h" />
+    <ClInclude Include="common\x64encoder\src\x64Instructions.h" />
+    <ClInclude Include="hps1x64\src\cd\src\PS1_CD.h" />
+    <ClInclude Include="hps1x64\src\databus\src\PS1DataBus.h" />
+    <ClInclude Include="hps1x64\src\dma\src\PS1_Dma.h" />
+    <ClInclude Include="hps1x64\src\gpu\src\PS1_Gpu.h" />
+    <ClInclude Include="hps1x64\src\hps1x64\src\hps1x64.h" />
+    <ClInclude Include="hps1x64\src\intc\src\PS1_Intc.h" />
+    <ClInclude Include="hps1x64\src\mdec\src\PS1_MDEC.h" />
+    <ClInclude Include="hps1x64\src\pio\src\PS1_PIO.h" />
+    <ClInclude Include="hps1x64\src\r3000a\src\cache\R3000A_ICache.h" />
+    <ClInclude Include="hps1x64\src\r3000a\src\cop2\R3000A_COP2.h" />
+    <ClInclude Include="hps1x64\src\r3000a\src\execute\R3000A_Execute.h" />
+    <ClInclude Include="hps1x64\src\r3000a\src\execute\R3000A_Instruction.h" />
+    <ClInclude Include="hps1x64\src\r3000a\src\lookup\R3000A_Lookup.h" />
+    <ClInclude Include="hps1x64\src\r3000a\src\old\GenericDataPort.h" />
+    <ClInclude Include="hps1x64\src\r3000a\src\old\GNUSignExtend_x64.h" />
+    <ClInclude Include="hps1x64\src\r3000a\src\print\R3000ADebugPrint.h" />
+    <ClInclude Include="hps1x64\src\r3000a\src\R3000A.h" />
+    <ClInclude Include="hps1x64\src\r3000a\src\recompile\R3000A_Recompiler.h" />
+    <ClInclude Include="hps1x64\src\sio\src\PS1_SIO.h" />
+    <ClInclude Include="hps1x64\src\spu\src\adpcm.h" />
+    <ClInclude Include="hps1x64\src\spu\src\PS1_SPU.h" />
+    <ClInclude Include="hps1x64\src\system\src\ps1_system.h" />
+    <ClInclude Include="hps1x64\src\timer\src\PS1_Timer.h" />
+  </ItemGroup>
+  <ItemGroup>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

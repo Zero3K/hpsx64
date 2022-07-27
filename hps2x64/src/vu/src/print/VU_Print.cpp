@@ -863,7 +863,7 @@ void Print::IADDI ( stringstream &strInstString, long instruction )
 void Print::IADDIU ( stringstream &strInstString, long instruction )
 {
 	strInstString << "IADDIU";
-	AddInstArgs ( strInstString, instruction, FORMAT34 );
+	AddInstArgs ( strInstString, instruction, FORMAT57 );
 }
 
 void Print::ISUB ( stringstream &strInstString, long instruction )
@@ -875,7 +875,7 @@ void Print::ISUB ( stringstream &strInstString, long instruction )
 void Print::ISUBIU ( stringstream &strInstString, long instruction )
 {
 	strInstString << "ISUBIU";
-	AddInstArgs ( strInstString, instruction, FORMAT34 );
+	AddInstArgs ( strInstString, instruction, FORMAT57 );
 }
 
 
@@ -1407,7 +1407,8 @@ void Print::AddInstArgs ( stringstream &strMipsArgs, long Instruction, long Inst
 			//op it, is, Imm5
 			strMipsArgs << " i" << GET_IT( Instruction ) << ", i" << GET_IS( Instruction ) << ", " << GET_IMM5( Instruction );
 			break;
-			
+
+
 		case FORMAT35:
 		
 			//op.dest it, (is)
@@ -1547,6 +1548,12 @@ void Print::AddInstArgs ( stringstream &strMipsArgs, long Instruction, long Inst
 
 			//op it, Imm12
 			strMipsArgs << " i" << GET_IT( Instruction ) << ", " << GET_IMM12( Instruction );
+			break;
+
+		case FORMAT57:
+		
+			//op it, is, Imm15
+			strMipsArgs << " i" << GET_IT( Instruction ) << ", i" << GET_IS( Instruction ) << ", " << GET_IMM15( Instruction );
 			break;
 	}
 

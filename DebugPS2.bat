@@ -1,2 +1,2 @@
-@echo off
 gdb hps2x64
+pause

@@ -1398,6 +1398,8 @@ bool x64Encoder::x64EncodeRipOffset32 ( long x64InstOpcode, long x64Reg, char* D
 	// get offset to data
 	Offset = (long) ( DataAddress - ( & ( x64CodeArea [ x64NextOffset + 4 ] ) ) );
 	
+	//cout << hex << "\nDataAddress=" << (unsigned long long)DataAddress;
+	//cout << hex << "\nCodeAreaAddr=" << (unsigned long long)(&(x64CodeArea[x64NextOffset + 4]));
 	//cout << hex << "\nOffset=" << Offset << "\n";
 	
 	return x64EncodeImmediate32 ( Offset );
@@ -2343,6 +2345,7 @@ bool x64Encoder::AddMem64ImmX ( long long* DestPtr, long ImmX )
 {
 	if ( !ImmX ) return true;
 	
+	
 	if ( ImmX == 1 )
 	{
 		return IncMem64 ( DestPtr );
@@ -2352,6 +2355,7 @@ bool x64Encoder::AddMem64ImmX ( long long* DestPtr, long ImmX )
 	{
 		return DecMem64 ( DestPtr );
 	}
+	
 	
 	if ( ImmX >= -128 && ImmX <= 127 )
 	{
@@ -3379,6 +3383,22 @@ bool x64Encoder::CmovNERegMem64 ( long DestReg, long AddressReg, long IndexReg, 
 bool x64Encoder::CmovBRegMem64 ( long DestReg, long AddressReg, long IndexReg, long Scale, long Offset )
 {
 	return x64EncodeRegMem64 ( MAKE2OPCODE( X64OP1_CMOVB, X64OP2_CMOVB ), DestReg, AddressReg, IndexReg, Scale, Offset );
+}
+
+
+bool x64Encoder::CmovAERegMem16 ( long DestReg, long AddressReg, long IndexReg, long Scale, long Offset )
+{
+	return x64EncodeRegMem16 ( MAKE2OPCODE( X64OP1_CMOVAE, X64OP2_CMOVAE ), DestReg, AddressReg, IndexReg, Scale, Offset );
+}
+
+bool x64Encoder::CmovAERegMem32 ( long DestReg, long AddressReg, long IndexReg, long Scale, long Offset )
+{
+	return x64EncodeRegMem32 ( MAKE2OPCODE( X64OP1_CMOVAE, X64OP2_CMOVAE ), DestReg, AddressReg, IndexReg, Scale, Offset );
+}
+
+bool x64Encoder::CmovAERegMem64 ( long DestReg, long AddressReg, long IndexReg, long Scale, long Offset )
+{
+	return x64EncodeRegMem64 ( MAKE2OPCODE( X64OP1_CMOVAE, X64OP2_CMOVAE ), DestReg, AddressReg, IndexReg, Scale, Offset );
 }
 
 
@@ -6051,6 +6071,7 @@ bool x64Encoder::movdqa_regreg ( long sseDestReg, long sseSrcReg )
 
 bool x64Encoder::movdqa_memreg ( void* DestPtr, long sseSrcReg )
 {
+	//cout << hex << "\nDestPtr=" << (unsigned long long)DestPtr;
 	x64EncodePrefix ( 0x66 );
 	return x64EncodeRipOffset32 ( MAKE2OPCODE( 0x0f, 0x7f ), sseSrcReg, (char*) DestPtr );
 }

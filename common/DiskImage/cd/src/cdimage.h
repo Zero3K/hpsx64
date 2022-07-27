@@ -420,8 +420,6 @@ namespace DiskImage
 		// needs to remove any temp files used
 		~CDImage ();
 		
-		TCHAR* GetThisPath(TCHAR* dest, size_t destSize);
-
 		// open a disk image for reading
 		// returns true if opened successfully, returns false otherwise
 		// will only support .bin/.img/.iso/.sub/.cue/.ccd

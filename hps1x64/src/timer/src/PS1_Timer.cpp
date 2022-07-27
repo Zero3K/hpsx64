@@ -2346,7 +2346,8 @@ void Timer::UpdateTimer_Scanline ()
 {
 	bool bBlank;
 	double dOffsetCycles;
-	u64 lStartCycle, lEndCycle, lCurrentCycle, lBlankCycle;
+	//u64 lStartCycle;
+	u64 lEndCycle, lCurrentCycle, lBlankCycle;
 	u64 lInitialValue, lCompareValue, lWrapValue;	// , lOverflowValue;
 	u64 lOverflowMask;
 
@@ -2492,7 +2493,8 @@ void Timer::UpdateTimer_Scanline ()
 					case 0:
 					case 1:
 						// counts outside of blanking area //
-						StartValue += CountTicks_Scanline ( lStartCycle, lEndCycle );
+						//StartValue += CountTicks_Scanline ( lStartCycle, lEndCycle );
+						StartValue += CountTicks_Scanline( StartCycle, lEndCycle);
 						break;
 						
 					case 2:

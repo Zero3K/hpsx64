@@ -91,6 +91,12 @@ namespace Playstation2
 		static const int c_iMaxInstances = 2;
 		static VU *_VU [ c_iMaxInstances ];
 		
+		//static Vu::Recompiler* vrs [ 2 ];
+		//static Vu::Recompiler* vu_recompiler_cache [ 32 ] [ 2 ];
+
+		static u32 *pStaticInfo [ 2 ];
+		u32 *pLUT_StaticInfo;
+
 		// this variable has nothing to do with whether it will be VU0 or VU1
 		static int iInstance;
 		
@@ -196,6 +202,7 @@ namespace Playstation2
 		s32 OpLevel;
 		u32 OptimizeLevel;
 		Vu::Instruction::Format NextInstLO;
+		Vu::Instruction::Format NextInstHI;
 		u32 bStopEncodingAfter;
 		u32 bStopEncodingBefore;
 		// bitmap for branch delay slot
@@ -209,6 +216,8 @@ namespace Playstation2
 		// keep track of running checksum for code cache
 		u64 ullRunningChecksum;
 
+		// flag to continue running VU0 instead of stopping first after e-bit stops it
+		u32 bContinueVU0;
 
 		// used for VU multi-threading
 		static u32 ulThreadCount;
@@ -223,6 +232,8 @@ namespace Playstation2
 
 		static Api::Thread* VUThreads [ 2 ];
 
+
+
 		// circular command buffer for multi-threaded vu
 		static constexpr u64 c_ullCommBufSize = 1ull << 23;
 		static constexpr u64 c_ullCommBufMask = c_ullCommBufSize - 1;
@@ -235,7 +246,7 @@ namespace Playstation2
 		// target IDX for VU thread
 		static volatile u64 ullCommBuf_TargetIdx2;
 
-		static volatile u32 pCommandBuffer32 [ c_ullCommBufSize ] __attribute__ ((aligned (32)));
+		alignas(32) static volatile u32 pCommandBuffer32 [ c_ullCommBufSize ];
 
 		// circular input buffer for input to multi-threaded vu
 		//static constexpr u64 c_ullInputBufSize = 1ull << 16;
@@ -260,6 +271,8 @@ namespace Playstation2
 
 		// flag for enabling vu recompiler cache
 		int bRecompilerCacheEnabled;
+
+
 
 		/*
 		struct ControlRegs_t
@@ -379,13 +392,19 @@ namespace Playstation2
 
 		inline void UpdateQ ()
 		{
+			
 			if ( CycleCount >= QBusyUntil_Cycle )
 			{
 				// set the q register
 				SetQ ();
 			}
+			
+
 		}
-		
+
+
+
+
 		inline void UpdateP ()
 		{
 			if ( CycleCount >= PBusyUntil_Cycle )
@@ -393,9 +412,205 @@ namespace Playstation2
 				// set the p register
 				SetP ();
 			}
+
+		}
+
+		static void Perform_UnJump ( VU* v, Instruction::Format i );
+
+		static void UpdateQ_Micro2 ( VU* v );
+		inline void UpdateQ_Micro ()
+		{
+			// check if div/sqrt unit is done
+			if ( QBusyUntil_Cycle != -1ull )
+			{
+				if ( CycleCount >= QBusyUntil_Cycle )
+				{
+					// get next q value
+					vi [ VU::REG_Q ].u = NextQ.lu;
+
+					// get next q flag
+					vi [ VU::REG_STATUSFLAG ].u &= ~0x30;
+					vi [ VU::REG_STATUSFLAG ].u |= NextQ_Flag;
+
+					// clear nextq flag after it has been updated
+					//NextQ_Flag = 0;
+					QBusyUntil_Cycle = -1ull;
+				}
+			}
+		}
+		
+
+		inline void UpdateP_Micro ()
+		{
+			if ( PBusyUntil_Cycle != -1 )
+			{
+				// check if ext unit is done
+				// note: strictly greater than comparison should be correct here but just for UpdateP
+				// (since it has to be greater or equal to PBusyUntil_Cycle+1)
+				if ( CycleCount > PBusyUntil_Cycle )
+				{
+					// get next p value
+					vi [ VU::REG_P ].u = NextP.lu;
+
+					PBusyUntil_Cycle = -1ull;
+				}
+			}
+		}
+
+		static void WaitQ_Micro2 ( VU* v );
+		inline void WaitQ_Micro ()
+		{
+			// make sure there is a value in the pipeline
+			if ( QBusyUntil_Cycle != -1 )
+			{
+				// check if div/sqrt unit is done
+				if ( CycleCount < QBusyUntil_Cycle )
+				{
+					CycleCount = QBusyUntil_Cycle;
+				}
+
+				// get next q value
+				vi [ VU::REG_Q ].u = NextQ.lu;
+
+				// get next q flag
+				vi [ VU::REG_STATUSFLAG ].u &= ~0x30;
+				vi [ VU::REG_STATUSFLAG ].u |= NextQ_Flag;
+
+				// clear nextq flag after it has been updated
+				//NextQ_Flag = 0;
+				QBusyUntil_Cycle = -1ull;
+			}
+		}
+
+		inline void WaitP_Micro ()
+		{
+			// make sure there is a value in the pipeline
+			if ( PBusyUntil_Cycle != -1 )
+			{
+				// check if ext unit is done
+				if ( CycleCount < PBusyUntil_Cycle )
+				{
+					CycleCount = PBusyUntil_Cycle;
+				}
+
+				// get next p value
+				vi [ VU::REG_P ].u = NextP.lu;
+
+				PBusyUntil_Cycle = -1ull;
+			}
 		}
 
 
+		static u32 Get_MacFlag2 ( VU* v );
+		inline void Get_MacFlag ()
+		{
+			/*
+			u32 RecompileCount;
+			RecompileCount = ( PC & ulVuMem_Mask ) >> 3;
+
+			Current_MacFlag = History_MacFlag [ RecompileCount & 0x3 ];
+			if ( ( CycleCount - 4 ) >= History_CycleCount [ ( RecompileCount - 3 ) & 0x3 ] )
+			{
+				Current_MacFlag = History_MacFlag [ ( RecompileCount - 3 ) & 0x3 ];
+			}
+			if ( ( CycleCount - 4 ) >= History_CycleCount [ ( RecompileCount - 2 ) & 0x3 ] )
+			{
+				Current_MacFlag = History_MacFlag [ ( RecompileCount - 2 ) & 0x3 ];
+			}
+			if ( ( CycleCount - 4 ) >= History_CycleCount [ ( RecompileCount - 1 ) & 0x3 ] )
+			{
+				Current_MacFlag = History_MacFlag [ ( RecompileCount - 1 ) & 0x3 ];
+			}
+			*/
+
+			Current_MacFlag = History_MacStatFlag [ iMacStatIndex & 0x3 ].MacFlag;
+			if ( ( CycleCount - 4 ) >= History_MacStatCycle [ ( iMacStatIndex + 1 ) & 0x3 ] )
+			{
+				Current_MacFlag = History_MacStatFlag [ ( iMacStatIndex + 1 ) & 0x3 ].MacFlag;
+			}
+			if ( ( CycleCount - 4 ) >= History_MacStatCycle [ ( iMacStatIndex + 2 ) & 0x3 ] )
+			{
+				Current_MacFlag = History_MacStatFlag [ ( iMacStatIndex + 2 ) & 0x3 ].MacFlag;
+			}
+			if ( ( CycleCount - 4 ) >= History_MacStatCycle [ ( iMacStatIndex + 3 ) & 0x3 ] )
+			{
+				Current_MacFlag = History_MacStatFlag [ ( iMacStatIndex + 3 ) & 0x3 ].MacFlag;
+			}
+		}
+		
+		static u32 Get_StatFlag2 ( VU* v );
+		inline void Get_StatFlag ()
+		{
+			/*
+			u32 RecompileCount;
+			RecompileCount = ( PC & ulVuMem_Mask ) >> 3;
+
+			Current_StatFlag = History_StatFlag [ RecompileCount & 0x3 ];
+			if ( ( CycleCount - 4 ) >= History_CycleCount [ ( RecompileCount - 3 ) & 0x3 ] )
+			{
+				Current_StatFlag = History_StatFlag [ ( RecompileCount - 3 ) & 0x3 ];
+			}
+			if ( ( CycleCount - 4 ) >= History_CycleCount [ ( RecompileCount - 2 ) & 0x3 ] )
+			{
+				Current_StatFlag = History_StatFlag [ ( RecompileCount - 2 ) & 0x3 ];
+			}
+			if ( ( CycleCount - 4 ) >= History_CycleCount [ ( RecompileCount - 1 ) & 0x3 ] )
+			{
+				Current_StatFlag = History_StatFlag [ ( RecompileCount - 1 ) & 0x3 ];
+			}
+			*/
+
+			Current_StatFlag = History_MacStatFlag [ iMacStatIndex & 0x3 ].StatFlag;
+			if ( ( CycleCount - 4 ) >= History_MacStatCycle [ ( iMacStatIndex + 1 ) & 0x3 ] )
+			{
+				Current_StatFlag = History_MacStatFlag [ ( iMacStatIndex + 1 ) & 0x3 ].StatFlag;
+			}
+			if ( ( CycleCount - 4 ) >= History_MacStatCycle [ ( iMacStatIndex + 2 ) & 0x3 ] )
+			{
+				Current_StatFlag = History_MacStatFlag [ ( iMacStatIndex + 2 ) & 0x3 ].StatFlag;
+			}
+			if ( ( CycleCount - 4 ) >= History_MacStatCycle [ ( iMacStatIndex + 3 ) & 0x3 ] )
+			{
+				Current_StatFlag = History_MacStatFlag [ ( iMacStatIndex + 3 ) & 0x3 ].StatFlag;
+			}
+		}
+
+		static u32 Get_ClipFlag2 ( VU* v );
+		inline void Get_ClipFlag ()
+		{
+			/*
+			u32 RecompileCount;
+			RecompileCount = ( PC & ulVuMem_Mask ) >> 3;
+
+			Current_ClipFlag = History_ClipFlag [ RecompileCount & 0x3 ];
+			if ( ( CycleCount - 4 ) >= History_CycleCount [ ( RecompileCount - 3 ) & 0x3 ] )
+			{
+				Current_ClipFlag = History_ClipFlag [ ( RecompileCount - 3 ) & 0x3 ];
+			}
+			if ( ( CycleCount - 4 ) >= History_CycleCount [ ( RecompileCount - 2 ) & 0x3 ] )
+			{
+				Current_ClipFlag = History_ClipFlag [ ( RecompileCount - 2 ) & 0x3 ];
+			}
+			if ( ( CycleCount - 4 ) >= History_CycleCount [ ( RecompileCount - 1 ) & 0x3 ] )
+			{
+				Current_ClipFlag = History_ClipFlag [ ( RecompileCount - 1 ) & 0x3 ];
+			}
+			*/
+
+			Current_ClipFlag = History_ClipFlag [ iClipIndex & 0x3 ];
+			if ( ( CycleCount - 4 ) >= History_ClipCycle [ ( iClipIndex + 1 ) & 0x3 ] )
+			{
+				Current_ClipFlag = History_ClipFlag [ ( iClipIndex + 1 ) & 0x3 ];
+			}
+			if ( ( CycleCount - 4 ) >= History_ClipCycle [ ( iClipIndex + 2 ) & 0x3 ] )
+			{
+				Current_ClipFlag = History_ClipFlag [ ( iClipIndex + 2 ) & 0x3 ];
+			}
+			if ( ( CycleCount - 4 ) >= History_ClipCycle [ ( iClipIndex + 3 ) & 0x3 ] )
+			{
+				Current_ClipFlag = History_ClipFlag [ ( iClipIndex + 3 ) & 0x3 ];
+			}
+		}
 
 
 		// check if P register is done processing and set if so
@@ -434,6 +649,7 @@ namespace Playstation2
 		}
 		
 		
+		
 		// check if Q register is done processing and set if so
 		inline void CheckQ ()
 		{
@@ -460,68 +676,7 @@ namespace Playstation2
 		}
 		
 		
-		/*
-		// read and write index for the vu flags circular buffer
-		u64 ullFlagReadIndex, ullFlagWriteIndex;
 		
-		inline void UpdateNextFlag ()
-		{
-			int iFlagIdx;
-			
-			// check if there are any flags to process
-			if ( ullFlagReadIndex < ullFlagWriteIndex )
-			{
-				iFlagIdx = ullFlagReadIndex & c_lFlag_Delay_Mask;
-				
-				// update the read index to the next item for next time
-				ullFlagReadIndex++;
-				
-				// check if it is time to apply the flag yet
-				if ( FlagSave [ iFlagIdx ].ullBusyUntil_Cycle <= CycleCount )
-				{
-					switch ( FlagSave [ iFlagIdx ].FlagsAffected )
-					{
-						case RF_SET_MACSTAT:
-							// set status flag
-							vi [ 16 ].uLo &= ~0xf;
-							vi [ 16 ].uLo |= FlagSave [ iFlagIdx ].StatusFlag;
-							
-							// set MAC flag
-							vi [ 17 ].uLo = FlagSave [ iFlagIdx ].MACFlag;
-							
-							break;
-
-						case RF_SET_MACSTICKY:
-							// set sticky status flag
-							vi [ REG_STATUSFLAG ].uLo &= 0x3f;
-							vi [ REG_STATUSFLAG ].uLo |= FlagSave [ iFlagIdx ].StatusFlag;
-							
-							// set MAC flag
-							vi [ 17 ].uLo = FlagSave [ iFlagIdx ].MACFlag;
-							break;
-							
-						case RF_SET_STICKY:
-							// set status flag
-							vi [ REG_STATUSFLAG ].uLo &= 0x3f;
-							vi [ REG_STATUSFLAG ].uLo |= FlagSave [ iFlagIdx ].StatusFlag;
-							break;
-							
-						// *TODO* clip instructions can be handled on a different pipeline
-						case RF_SET_CLIP:
-							// set clipping flag
-							vi [ REG_CLIPFLAG ].u = FlagSave [ iFlagIdx ].ClippingFlag;
-							break;
-							
-						// *TODO* clip instructions can be handled on a different pipeline
-						case RF_UPDATE_CLIP:
-							// update clipping flag
-							vi [ REG_CLIPFLAG ].u = ( ( vi [ REG_CLIPFLAG ].u << 6 ) | ( FlagSave [ iFlagIdx ].ClippingFlag & 0x3f ) ) & 0xffffff;
-							break;
-					}
-				}
-			}
-		}
-		*/
 
 
 		// flag get/set instructions will need the current flags up to date
@@ -553,77 +708,6 @@ namespace Playstation2
 			FlagSave [ FlagIndex ].StatusFlag = vi [ REG_STATUSFLAG ].u;
 			FlagSave [ FlagIndex ].MACFlag = vi [ REG_MACFLAG ].u;
 			FlagSave [ FlagIndex ].ClipFlag = vi [ REG_CLIPFLAG ].u;
-#else			
-			// MAC and status flags
-			if ( FlagSave [ FlagIndex ].FlagsAffected )
-			{
-				switch ( FlagSave [ FlagIndex ].FlagsAffected )
-				{
-#ifndef ENABLE_NEW_FLAG_BUFFER
-					case RF_SET_MACSTAT:
-						// set status flag
-						vi [ 16 ].uLo &= ~0xf;
-						vi [ 16 ].uLo |= FlagSave [ FlagIndex ].StatusFlag;
-						
-						// set MAC flag
-						vi [ 17 ].uLo = FlagSave [ FlagIndex ].MACFlag;
-						
-						break;
-						
-					case RF_SET_STICKY:
-						// set status flag
-						vi [ REG_STATUSFLAG ].uLo &= 0x3f;
-						vi [ REG_STATUSFLAG ].uLo |= FlagSave [ FlagIndex ].StatusFlag;
-						break;
-#endif
-						
-#ifndef ENABLE_NEW_CLIP_BUFFER
-					case RF_SET_CLIP:
-						// set clipping flag
-						vi [ REG_CLIPFLAG ].u = FlagSave [ FlagIndex ].ClippingFlag;
-						break;
-						
-					case RF_UPDATE_CLIP:
-						// update clipping flag
-						vi [ REG_CLIPFLAG ].u = ( ( vi [ REG_CLIPFLAG ].u << 6 ) | ( FlagSave [ FlagIndex ].ClippingFlag & 0x3f ) ) & 0xffffff;
-						break;
-#endif
-						
-					default:
-						break;
-				}
-				
-				
-				// disable flag entry
-				FlagSave [ FlagIndex ].FlagsAffected = 0;
-			}
-
-			if ( FlagSave [ FlagIndex ].FlagsAffected_Lower )
-			{
-				switch ( FlagSave [ FlagIndex ].FlagsAffected_Lower )
-				{
-						
-#ifndef ENABLE_NEW_FLAG_BUFFER
-					case RF_SET_STICKY:
-						// set status flag
-						vi [ REG_STATUSFLAG ].uLo &= 0x3f;
-						vi [ REG_STATUSFLAG ].uLo |= FlagSave [ FlagIndex ].FlagsSet_Lower;
-						break;
-#endif
-						
-#ifndef ENABLE_NEW_CLIP_BUFFER
-					case RF_SET_CLIP:
-						// set clipping flag
-						vi [ REG_CLIPFLAG ].u = FlagSave [ FlagIndex ].FlagsSet_Lower;
-						break;
-#endif
-						
-					default:
-						break;
-				}
-				
-				FlagSave [ FlagIndex ].FlagsAffected_Lower = 0;
-			}
 #endif
 
 
@@ -642,16 +726,6 @@ namespace Playstation2
 			FlagSave [ FlagIndex ].Int_Bitmap = 0;
 
 #endif
-
-
-#ifdef CYCLE_SKIP_FLAGS
-			// if the cycle number for the flags is greater, then update
-			if ( CycleCount < FlagSave [ FlagIndex ].ullBusyUntil_Cycle )
-			{
-				CycleCount = FlagSave [ FlagIndex ].ullBusyUntil_Cycle;
-			}
-#endif
-
 
 		}
 		
@@ -782,13 +856,13 @@ namespace Playstation2
 		
 		
 		// testing registers
-		Reg128 test1_src1;
-		Reg128 test1_src2;
-		Reg128 test1_result1;
+		alignas(16) Reg128 test1_src1;
+		alignas(16) Reg128 test1_src2;
+		alignas(16) Reg128 test1_result1;
 		
-		Reg128 test2_src1;
-		Reg128 test2_src2;
-		Reg128 test2_result1;
+		alignas(16) Reg128 test2_src1;
+		alignas(16) Reg128 test2_src2;
+		alignas(16) Reg128 test2_result1;
 		
 		// note: these should be mapped to VI registers
 		//Reg32 I, P, Q, R;
@@ -797,11 +871,11 @@ namespace Playstation2
 		// accumulator
 		// make just float for now
 		//DoubleLong dACC [ 4 ];
-		FloatLong dACC [ 4 ];
+		alignas(16) FloatLong dACC [ 4 ];
 		
 		// flags ??
-		Reg128 zero_flag, sign_flag, overflow_flag, underflow_flag;
-		Reg128 zero_stickyflag, sign_stickyflag, overflow_stickyflag, underflow_stickyflag;
+		alignas(16) Reg128 zero_flag, sign_flag, overflow_flag, underflow_flag;
+		alignas(16) Reg128 zero_stickyflag, sign_stickyflag, overflow_stickyflag, underflow_stickyflag;
 		
 		u32 divide_flag, invalid_negative_flag, invalid_zero_flag;
 		u32 divide_stickyflag, invalid_negative_stickyflag, invalid_zero_stickyflag;
@@ -844,7 +918,7 @@ namespace Playstation2
 			u64 Value1;
 		};
 		
-		VFlags_t CurrentVFlags;
+		alignas(16) VFlags_t CurrentVFlags;
 		
 		
 		u32 Recompiler_BranchDelayAddress;
@@ -907,7 +981,9 @@ namespace Playstation2
 		u32 Last_WriteAddress;
 		u32 Last_ReadWriteAddress;
 		
-		volatile u64 CycleCount ALIGN16;
+		alignas(16) volatile u64 CycleCount;
+
+		alignas(16) volatile u64 InstrCount;
 
 		// externally viewable CycleCount to facilitate multi-threading
 		volatile u64 eCycleCount;
@@ -1119,20 +1195,20 @@ namespace Playstation2
 		// this is the vu program memory
 		union
 		{
-			u8 MicroMem8 [ c_iMaxMemSize ] ALIGN16;
-			u16 MicroMem16 [ c_iMaxMemSize >> 1 ] ALIGN16;
-			u32 MicroMem32 [ c_iMaxMemSize >> 2 ] ALIGN16;
-			u64 MicroMem64 [ c_iMaxMemSize >> 3 ] ALIGN16;
-		} ALIGN16;
+			alignas(16) u8 MicroMem8 [ c_iMaxMemSize ];
+			alignas(16) u16 MicroMem16 [ c_iMaxMemSize >> 1 ];
+			alignas(16) u32 MicroMem32 [ c_iMaxMemSize >> 2 ];
+			alignas(16) u64 MicroMem64 [ c_iMaxMemSize >> 3 ];
+		};
 		
 		// this is the vu data memory
 		union
 		{
-			u8 VuMem8 [ c_iMaxMemSize ] ALIGN16;
-			u16 VuMem16 [ c_iMaxMemSize >> 1 ] ALIGN16;
-			u32 VuMem32 [ c_iMaxMemSize >> 2 ] ALIGN16;
-			u64 VuMem64 [ c_iMaxMemSize >> 3 ] ALIGN16;
-		} ALIGN16;
+			alignas(16) u8 VuMem8 [ c_iMaxMemSize ];
+			alignas(16) u16 VuMem16 [ c_iMaxMemSize >> 1 ];
+			alignas(16) u32 VuMem32 [ c_iMaxMemSize >> 2 ];
+			alignas(16) u64 VuMem64 [ c_iMaxMemSize >> 3 ];
+		};
 
 
 		// vu registers
@@ -1161,11 +1237,11 @@ namespace Playstation2
 		// while VU1 is stopped, writing to here starts it at address that is written
 		
 		// COP2 registers (for now)
-		Reg128 vf [ 32 ];
+		alignas(16) Reg128 vf [ 32 ];
 		
 		// these map as 128-bit registers
 		//Reg32 vi [ 32 ];
-		Reg128x vi [ 32 ];
+		alignas(16) Reg128x vi [ 32 ];
 		
 		u8 padding [ 0x8000 - 0x4000 ];
 
@@ -1306,10 +1382,10 @@ namespace Playstation2
 			};
 		};
 		
-		VifRegs_t VifRegs;
+		alignas(16) VifRegs_t VifRegs;
 
 		// a copy of the vif regs for multi-threading
-		VifRegs_t iVifRegs;
+		alignas(16) VifRegs_t iVifRegs;
 		
 		static const int c_iRowRegStartIdx = 16;
 		static const int c_iColRegStartIdx = 20;
@@ -1358,7 +1434,7 @@ namespace Playstation2
 		//u32 XgKick_Instruction;
 		u32 XgKick_Address;
 		
-		static u64 ReadData128 [ 2 ];
+		alignas(16) static u64 ReadData128 [ 2 ];
 		
 		// the number of cycle head start for multi-threading
 		// change this number to optimize performance
@@ -1473,7 +1549,7 @@ namespace Playstation2
 		// also need a copy of the value to store from delay slot since it can change while we are waiting, like in the case of MOVE instruction
 		//u64 LoadMove_Value0;
 		//u64 LoadMove_Value1;
-		Reg128 LoadMoveDelayReg;
+		alignas(16) Reg128 LoadMoveDelayReg;
 	
 		// also need a bitmap that says what register is being modified, so instruction can be cancelled if needed
 		// bits 0-31, float registers, the rest will represent the integer registers including flags..
@@ -1523,7 +1599,7 @@ namespace Playstation2
 		{
 			u64 b0;
 			u64 b1;
-		} ALIGN16;
+		};
 		
 		// it looks like flag results don't appear for four cycles on most instructions??
 		union ResultFlags
@@ -1572,7 +1648,7 @@ namespace Playstation2
 			u64 Value1;
 			u64 Value2;
 			u64 Value3;
-		} ALIGN16;
+		};
 		
 		
 		
@@ -1580,364 +1656,56 @@ namespace Playstation2
 		u16 Temp_MacFlag;
 		//static Bitmap128 Temp_Bitmap;
 		
-		struct ClipFlags
+		
+		struct MacStatFlag
 		{
-			u64 BusyUntil_Cycle;
-			
-			union
+			union 
 			{
 				struct
 				{
-					u32 ClipFlag;
-					u32 ClipShift;
+					u32 MacFlag;
+					u32 StatFlag;
 				};
-				
-				// can use this to clear the data quickly when needed
-				u64 ClipData;
+
+				u64 Value;
 			};
 		};
-		
-		// for the clip flags buffer, can just keep dumping data
-		// if slot is emptied, then set BusyUntil_Cycle to zero
-		u32 iCFBufIndex;
-		ClipFlags CFBuffer [ 4 ];
 
-		inline void Get_CFBuffer ( u32 Offset )
-		{
-			// want to update index before setting sticky flag because the lower instruction can still set the sticky flag and mask
-			
-			u32 iIndex;
-			iIndex = ( iCFBufIndex + Offset ) & c_lFlag_Delay_Mask;
-			if ( CycleCount >= CFBuffer [ iIndex ].BusyUntil_Cycle )
-			{
-				// update clip flag
-				vi [ REG_CLIPFLAG ].u = ( vi [ REG_CLIPFLAG ].u << CFBuffer [ iIndex ].ClipShift ) | CFBuffer [ iIndex ].ClipFlag;
-				vi [ REG_CLIPFLAG ].u &= 0xffffff;
-				
-				// clear the data
-				CFBuffer [ iIndex ].ClipData = 0;
-				
-				// clear the shift
-				CFBuffer [ iIndex ].ClipShift = 0;
-				
-				// set to update far in the future since entry is emptied now
-				CFBuffer [ iIndex ].BusyUntil_Cycle = -1LL;
-			}
-		}
+		// need history of flags for recompiler
+		alignas(16) u32 History_ClipFlag [ 4 ];
 
-		
-		inline void Get_CFBuffer_Force ( u32 Offset )
-		{
-			// want to update index before setting sticky flag because the lower instruction can still set the sticky flag and mask
-			
-			u32 iIndex;
-			iIndex = ( iCFBufIndex + Offset ) & c_lFlag_Delay_Mask;
-			
-			if ( CFBuffer [ iIndex ].BusyUntil_Cycle != -1LL )
-			{
-				// update clip flag
-				vi [ REG_CLIPFLAG ].u = ( vi [ REG_CLIPFLAG ].u << CFBuffer [ iIndex ].ClipShift ) | CFBuffer [ iIndex ].ClipFlag;
-				vi [ REG_CLIPFLAG ].u &= 0xffffff;
-				
-				// clear the data
-				//CFBuffer [ iIndex ].ClipData = 0;
-				
-				// clear the shift
-				//CFBuffer [ iIndex ].ClipShift = 0;
-				
-				// set to update far in the future since entry is emptied now
-				CFBuffer [ iIndex ].BusyUntil_Cycle = -1LL;
-			}
-		}
+		//u32 History_MacFlag [ 4 ] ALIGN16;
+		//u32 History_StatFlag [ 4 ] ALIGN16;
+		alignas(16) MacStatFlag History_MacStatFlag [ 4 ];
 
+		alignas(16) u32 History_WaitHazardDelay [ 4 ];
+		alignas(16) u64 History_CycleCount [ 4 ];
 
-		inline void Set_CFBuffer ( u32 Value, u32 Shift )
-		{
-			// want to update index before setting sticky flag because the lower instruction can still set the sticky flag and mask
+		//u32 History_IntDelayReg [ 4 ] ALIGN16;
+		//u32 History_IntDelayValue [ 4 ] ALIGN16;
 
-			CFBuffer [ iCFBufIndex ].ClipFlag = Value;
-			CFBuffer [ iCFBufIndex ].ClipShift = Shift;
-			
-			// set cycle value is valid at
-			CFBuffer [ iCFBufIndex ].BusyUntil_Cycle = CycleCount + c_ullFloatPipeline_Cycles;
-			
-			// update index
-			iCFBufIndex++;
-			
-			// mask index
-			iCFBufIndex &= c_lFlag_Delay_Mask;
-		}
+		// store the move data temporily if needed
+		alignas(16) u64 History_MoveData [ 2 ];
 
-		inline void Update_CFBuffer ()
-		{
-			Get_CFBuffer ( 0 );
-			Get_CFBuffer ( 1 );
-			Get_CFBuffer ( 2 );
-			Get_CFBuffer ( 3 );
-		}
+		// the current flag calculated
+		u32 Current_MacFlag;
+		u32 Current_StatFlag;
+		u32 Current_ClipFlag;
 
-		
-		inline void Reset_CFBuffer ()
-		{
-			CFBuffer [ 0 ].BusyUntil_Cycle = -1LL;
-			CFBuffer [ 1 ].BusyUntil_Cycle = -1LL;
-			CFBuffer [ 2 ].BusyUntil_Cycle = -1LL;
-			CFBuffer [ 3 ].BusyUntil_Cycle = -1LL;
-		}
+		// current index for the flag
+		u32 iClipIndex;
+		u32 iMacStatIndex;
 
+		// current cycle for the flag
+		alignas(16) u64 History_ClipCycle [ 4 ];
+		alignas(16) u64 History_MacStatCycle [ 4 ];
 
-		
-		struct SFlags
-		{
-			u64 BusyUntil_Cycle;
-			
-			u32 StatusFlag;
-			u32 StatusMask;
-		};
-
-
-		struct MFlags
-		{
-			u64 BusyUntil_Cycle;
-			
-			u32 MACFlag;
-			
-			// for padding to make an even 128-bits
-			u32 Dummy0;
-		};
-
-
-		struct BFlags
-		{
-			u64 BusyUntil_Cycle;
-			
-			Bitmap128 BFlags;
-			
-			// for padding to make an even 128-bits
-			u64 Dummy0;
-		};
-		
-		
-		// must set the sticky flags when advancing
-		// but the other flags only need to be set if it was the last value that was set (when requested)
-		// when setting, can take the value of the 4 that has the highest cycle less than or equal to current
-		u32 iSFBufIndex;
-		SFlags SFBuffer [ 4 ];
-
-		u32 iMFBufIndex;
-		MFlags MFBuffer [ 4 ];
-		
-		u32 iBFBufIndex;
-		BFlags BFBuffer [ 4 ];
+		// for new branch handling
+		Vu::Instruction::Format Branch_Instruction;
+		u32 Branch_Data;
+		u32 Branch_DelayEnabled;
 		
 
-		//inline u16* Get_MFBuffer_Ptr ()
-		//{
-		//	// want to update index before setting sticky flag because the lower instruction can still set the sticky flag and mask
-		//	
-		//	return (u16*) ( & MFBuffer [ iMFBufIndex ].MACFlag );
-		//}
-		
-		// no need to get the MAC flag, since it is not like the clip flag or sticky status flag bits
-		inline void Get_MFBuffer ( u32 Offset )
-		{
-			// want to update index before setting sticky flag because the lower instruction can still set the sticky flag and mask
-			
-			u32 iIndex;
-			iIndex = ( iMFBufIndex + Offset ) & c_lFlag_Delay_Mask;
-			if ( CycleCount >= MFBuffer [ iIndex ].BusyUntil_Cycle )
-			{
-				// update clip flag
-				vi [ REG_MACFLAG ].u = MFBuffer [ iIndex ].MACFlag;
-				
-				// set to update far in the future since entry is emptied now
-				MFBuffer [ iIndex ].BusyUntil_Cycle = -1LL;
-			}
-		}
-
-
-		inline void Get_MFBuffer_Force ( u32 Offset )
-		{
-			// want to update index before setting sticky flag because the lower instruction can still set the sticky flag and mask
-			
-			u32 iIndex;
-			iIndex = ( iMFBufIndex + Offset ) & c_lFlag_Delay_Mask;
-			
-			if ( MFBuffer [ iIndex ].BusyUntil_Cycle != -1LL )
-			{
-				// update MAC flag
-				vi [ REG_MACFLAG ].u = MFBuffer [ iIndex ].MACFlag;
-				
-				// set to update far in the future since entry is emptied now
-				MFBuffer [ iIndex ].BusyUntil_Cycle = -1LL;
-			}
-		}
-		
-
-		inline void Set_MFBuffer ( u32 Value )
-		{
-			// want to update index before setting sticky flag because the lower instruction can still set the sticky flag and mask
-
-			MFBuffer [ iMFBufIndex ].MACFlag = Value;
-			
-			// set cycle value is valid at
-			MFBuffer [ iMFBufIndex ].BusyUntil_Cycle = CycleCount + c_ullFloatPipeline_Cycles;
-			
-			// update index
-			iMFBufIndex++;
-			
-			// mask index
-			iMFBufIndex &= c_lFlag_Delay_Mask;
-		}
-
-		inline void Update_MFBuffer ()
-		{
-			Get_MFBuffer ( 0 );
-			Get_MFBuffer ( 1 );
-			Get_MFBuffer ( 2 );
-			Get_MFBuffer ( 3 );
-		}
-
-		
-		inline void Reset_MFBuffer ()
-		{
-			MFBuffer [ 0 ].BusyUntil_Cycle = -1LL;
-			MFBuffer [ 1 ].BusyUntil_Cycle = -1LL;
-			MFBuffer [ 2 ].BusyUntil_Cycle = -1LL;
-			MFBuffer [ 3 ].BusyUntil_Cycle = -1LL;
-		}
-
-		
-		//inline u16* Get_SFBuffer_Ptr ()
-		//{
-		//	// want to update index before setting sticky flag because the lower instruction can still set the sticky flag and mask
-		//	
-		//	return (u16*) ( & SFBuffer [ iSFBufIndex ].StatusFlag );
-		//}
-
-		
-		inline void Get_SFBuffer ( u32 Offset )
-		{
-			// want to update index before setting sticky flag because the lower instruction can still set the sticky flag and mask
-			
-			u32 iIndex;
-			iIndex = ( iSFBufIndex + Offset ) & c_lFlag_Delay_Mask;
-			if ( CycleCount >= SFBuffer [ iIndex ].BusyUntil_Cycle )
-			{
-				// update clip flag
-				vi [ REG_STATUSFLAG ].u = ( vi [ REG_STATUSFLAG ].u & SFBuffer [ iIndex ].StatusMask ) | SFBuffer [ iIndex ].StatusFlag;
-				
-				// set to update far in the future since entry is emptied now
-				SFBuffer [ iIndex ].BusyUntil_Cycle = -1LL;
-			}
-		}
-
-		inline void Get_SFBuffer_Force ( u32 Offset )
-		{
-			// want to update index before setting sticky flag because the lower instruction can still set the sticky flag and mask
-			
-			u32 iIndex;
-			iIndex = ( iSFBufIndex + Offset ) & c_lFlag_Delay_Mask;
-			if ( SFBuffer [ iIndex ].BusyUntil_Cycle != -1LL )
-			{
-				// update clip flag
-				vi [ REG_STATUSFLAG ].u = ( vi [ REG_STATUSFLAG ].u & SFBuffer [ iIndex ].StatusMask ) | SFBuffer [ iIndex ].StatusFlag;
-				
-				// set to update far in the future since entry is emptied now
-				SFBuffer [ iIndex ].BusyUntil_Cycle = -1LL;
-			}
-		}
-
-
-		inline void Set_SFBuffer ( u32 Value, u32 Mask )
-		{
-			// want to update index before setting sticky flag because the lower instruction can still set the sticky flag and mask
-
-			SFBuffer [ iSFBufIndex ].StatusFlag = Value;
-			SFBuffer [ iSFBufIndex ].StatusMask = Mask;
-			
-			// set cycle value is valid at
-			SFBuffer [ iSFBufIndex ].BusyUntil_Cycle = CycleCount + c_ullFloatPipeline_Cycles;
-			
-			// update index
-			iSFBufIndex++;
-			
-			// mask index
-			iSFBufIndex &= c_lFlag_Delay_Mask;
-		}
-
-		inline void Update_SFBuffer ()
-		{
-			Get_SFBuffer ( 0 );
-			Get_SFBuffer ( 1 );
-			Get_SFBuffer ( 2 );
-			Get_SFBuffer ( 3 );
-		}
-
-		
-		inline void Reset_SFBuffer ()
-		{
-			SFBuffer [ 0 ].BusyUntil_Cycle = -1LL;
-			SFBuffer [ 1 ].BusyUntil_Cycle = -1LL;
-			SFBuffer [ 2 ].BusyUntil_Cycle = -1LL;
-			SFBuffer [ 3 ].BusyUntil_Cycle = -1LL;
-		}
-
-		
-		inline void Get_BFBuffer ( u32 Offset )
-		{
-			// want to update index before setting sticky flag because the lower instruction can still set the sticky flag and mask
-			
-			
-			// update bitmap
-			//vi [ REG_MACFLAG ].u = BFBuffer [ iBFBufIndex ].MACFlag;
-			RemoveBitmap ( Pipeline_Bitmap, BFBuffer [ iBFBufIndex ].BFlags );
-			
-			// set to update far in the future since entry is emptied now
-			if ( BFBuffer [ iBFBufIndex ].BusyUntil_Cycle > CycleCount )
-			{
-				CycleCount = BFBuffer [ iBFBufIndex ].BusyUntil_Cycle;
-			}
-			
-			// clear the entry
-			ClearBitmap ( BFBuffer [ iBFBufIndex ].BFlags );
-			BFBuffer [ iBFBufIndex ].BusyUntil_Cycle = 0;
-			
-			iBFBufIndex++;
-			iBFBufIndex &= c_lFlag_Delay_Mask;
-		}
-		
-
-		inline void Set_BFBuffer ( Bitmap128 bm )
-		{
-			// want to update index before setting sticky flag because the lower instruction can still set the sticky flag and mask
-
-			//BFBuffer [ iBFBufIndex ].MACFlag = Value;
-			CombineBitmap ( Pipeline_Bitmap, bm );
-			CombineBitmap ( BFBuffer [ iBFBufIndex ].BFlags, bm );
-			
-			// set cycle value is valid at
-			BFBuffer [ iBFBufIndex ].BusyUntil_Cycle = CycleCount + c_ullFloatPipeline_Cycles;
-			
-			// update index
-			iBFBufIndex++;
-			
-			// mask index
-			iBFBufIndex &= c_lFlag_Delay_Mask;
-		}
-		
-		inline void Reset_BFBuffer ()
-		{
-			BFBuffer [ 0 ].BusyUntil_Cycle = 0;
-			BFBuffer [ 1 ].BusyUntil_Cycle = 0;
-			BFBuffer [ 2 ].BusyUntil_Cycle = 0;
-			BFBuffer [ 3 ].BusyUntil_Cycle = 0;
-			
-			ClearBitmap( BFBuffer [ 0 ].BFlags );
-			ClearBitmap( BFBuffer [ 1 ].BFlags );
-			ClearBitmap( BFBuffer [ 2 ].BFlags );
-			ClearBitmap( BFBuffer [ 3 ].BFlags );
-		}
 
 		
 		
@@ -1957,8 +1725,8 @@ namespace Playstation2
 		static const int c_lFlag_Delay_Mask = c_lFlag_Delay - 1;
 		
 		u32 iFlagSave_Index;
-		ResultFlags FlagSave [ c_lFlag_Delay ] ALIGN16;
-		VFlags_t vFlagSave [ c_lFlag_Delay ] ALIGN16;
+		alignas(16) ResultFlags FlagSave [ c_lFlag_Delay ];
+		alignas(16) VFlags_t vFlagSave [ c_lFlag_Delay ];
 		
 		FloatLong NextQ, NextP;
 		u16 NextQ_Flag;
@@ -1971,16 +1739,16 @@ namespace Playstation2
 		Instruction::Format CurInstLO;
 		Instruction::Format CurInstHI;
 		
-		Instruction::Format2 CurInstLOHI;
+		Instruction::Format64 CurInstLOHI;
 		
 		// bitmap setting for the source registers needed for the current instruction
-		Bitmap128 SrcRegs_Bitmap;
+		alignas(16) Bitmap128 SrcRegs_Bitmap;
 		u64 Int_SrcRegs_Bitmap;
 		
 		
 		// looks like the vu needs to be cycle accurate, so must watch the pipeline closely
 		// vu in micro mode has granularity at x,y,z,w but macro mode uses the whole register
-		Bitmap128 Pipeline_Bitmap ALIGN16;
+		alignas(16) Bitmap128 Pipeline_Bitmap;
 		
 		// integer pipleline bitmap
 		// since integer instructions may need to wait for integer registers to finish loading
@@ -1988,10 +1756,10 @@ namespace Playstation2
 
 		
 		// recompiler bitmaps
-		Bitmap128 FSrcBitmap;
+		alignas(16) Bitmap128 FSrcBitmap;
 		u64 ISrcBitmap;
 
-		Bitmap128 FDstBitmap;
+		alignas(16) Bitmap128 FDstBitmap;
 		u64 IDstBitmap;
 		
 		

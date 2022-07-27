@@ -1,2 +1,2 @@
-@echo off
-mingw32-make -B -f MakefilePS1.txt
+mingw32-make -f MakefilePS1.txt
+pause

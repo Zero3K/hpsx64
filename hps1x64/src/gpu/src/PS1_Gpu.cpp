@@ -59,6 +59,8 @@ using namespace Math::Reciprocal;
 #endif
 
 
+#ifdef ALLOW_OPENCL_PS1
+
 GLuint GPU::computeProgram;
 //GLuint buffers[NUM_BUFS];       //SSBO objects, one for IMG_0, one for IMG_1, and one for commands/response
 //static GLchar* computeSource;
@@ -84,6 +86,8 @@ GLuint GPU::fboId = 0;
 const char* GPU::computeSource =
 #include "compute.comp"
 ;
+
+#endif
 
 // templates take too long too compile and won't be needed in later versions
 
@@ -148,7 +152,7 @@ const char* GPU::computeSource =
 
 //#define INLINE_DEBUG_SPLIT
 
-
+/*
 #define INLINE_DEBUG_WRITE
 #define INLINE_DEBUG_DMA_WRITE
 #define INLINE_DEBUG_EXECUTE
@@ -166,7 +170,7 @@ const char* GPU::computeSource =
 //#define INLINE_DEBUG_VARS
 #define INLINE_DEBUG_EXECUTE_NAME
 //#define INLINE_DEBUG_DRAW_SCREEN
-
+*/
 
 /*
 //#define INLINE_DEBUG_DISPLAYAREA
@@ -282,7 +286,7 @@ Api::Thread* GPU::GPUThreads [ GPU::c_iMaxThreads ];
 
 volatile u64 GPU::ullInputBuffer_Index;
 volatile u32 GPU::ulInputBuffer_Count;
-u32 GPU::inputdata [ ( 1 << GPU::c_ulInputBuffer_Shift ) * GPU::c_ulInputBuffer_Size ] __attribute__ ((aligned (32)));
+alignas(32) u32 GPU::inputdata [ ( 1 << GPU::c_ulInputBuffer_Shift ) * GPU::c_ulInputBuffer_Size ];
 u32 *GPU::p_uHwInputData32;
 u32 *GPU::p_uHwOutputData32;
 
@@ -294,7 +298,7 @@ volatile u64 GPU::ulInputBuffer_ReadIndex;
 volatile u64 GPU::ullPixelInBuffer_WriteIndex;
 volatile u64 GPU::ullPixelInBuffer_TargetIndex;
 volatile u64 GPU::ullPixelInBuffer_ReadIndex;
-u32 GPU::ulPixelInBuffer32 [ GPU::c_ullPixelInBuffer_Size ] __attribute__ ((aligned (32)));
+alignas(32) u32 GPU::ulPixelInBuffer32 [ GPU::c_ullPixelInBuffer_Size ];
 u32 *GPU::p_ulHwPixelInBuffer32;
 
 
@@ -336,15 +340,15 @@ const s64 GPU::c_iDitherValues24 [] = { -4LL << 24, 0LL << 24, -3LL << 24, 1LL <
 									-3LL << 24, 1LL << 24, -4LL << 24, 0LL << 24,
 									3LL << 24, -1LL << 24, 2LL << 24, -2LL << 24 };
 
-const s32 GPU::c_iDitherValues16 [] = { -4LL << 16, 0LL << 16, -3LL << 16, 1LL << 16,
-									2LL << 16, -2LL << 16, 3LL << 16, -1LL << 16,
-									-3LL << 16, 1LL << 16, -4LL << 16, 0LL << 16,
-									3LL << 16, -1LL << 16, 2LL << 16, -2LL << 16 };
+const s32 GPU::c_iDitherValues16 [] = { -4 << 16, 0 << 16, -3 << 16, 1 << 16,
+									2 << 16, -2 << 16, 3 << 16, -1 << 16,
+									-3 << 16, 1 << 16, -4 << 16, 0 << 16,
+									3 << 16, -1 << 16, 2 << 16, -2 << 16 };
 
-const s32 GPU::c_iDitherValues4 [] = { -4LL << 4, 0LL << 4, -3LL << 4, 1LL << 4,
-									2LL << 4, -2LL << 4, 3LL << 4, -1LL << 4,
-									-3LL << 4, 1LL << 4, -4LL << 4, 0LL << 4,
-									3LL << 4, -1LL << 4, 2LL << 4, -2LL << 4 };
+const s32 GPU::c_iDitherValues4 [] = { -4 << 4, 0 << 4, -3 << 4, 1 << 4,
+									2 << 4, -2 << 4, 3 << 4, -1 << 4,
+									-3 << 4, 1 << 4, -4 << 4, 0 << 4,
+									3 << 4, -1 << 4, 2 << 4, -2 << 4 };
 
 const s16 GPU::c_viDitherValues16_add [] = { 0<<8, 0<<8, 0<<8, 1<<8, 0<<8, 0<<8, 0<<8, 1<<8, 0<<8, 0<<8, 0<<8, 1<<8, 0<<8, 0<<8, 0<<8, 1<<8,
 											2<<8, 0<<8, 3<<8, 0<<8, 2<<8, 0<<8, 3<<8, 0<<8, 2<<8, 0<<8, 3<<8, 0<<8, 2<<8, 0<<8, 3<<8, 0<<8,
@@ -1379,7 +1383,11 @@ void GPU::draw_screen_th( DATA_Write_Format* inputdata, u32 ulThreadNum )
 	
 	if ( _GPU->bEnable_OpenCL )
 	{
+#ifdef ALLOW_OPENCL_PS1
+
 		glBlitFramebuffer( 0, 0, VisibleArea_Width, VisibleArea_Height, 0, 0, MainProgramWindow_Width, MainProgramWindow_Height, GL_COLOR_BUFFER_BIT, GL_NEAREST );
+
+#endif
 	}
 	else
 	{
@@ -10510,7 +10518,11 @@ void GPU::Draw_Screen ()
 	
 	if ( bEnable_OpenCL )
 	{
+#ifdef ALLOW_OPENCL_PS1
+
 		glBlitFramebuffer( 0, 0, VisibleArea_Width, VisibleArea_Height, 0, 0, MainProgramWindow_Width, MainProgramWindow_Height, GL_COLOR_BUFFER_BIT, GL_NEAREST );
+
+#endif
 	}
 	else
 	{
@@ -10948,6 +10960,8 @@ void GPU::Draw_Screen ()
 // copies gpu copy of vram to local copy of vram
 void GPU::Copy_FrameData ()
 {
+#ifdef ALLOW_OPENCL_PS1
+
 	u32 *pBuf32;
 
 	DisplayOutput_Window->OpenGL_MakeCurrentWindow ();
@@ -10979,15 +10993,16 @@ void GPU::Copy_FrameData ()
 
 	//glUnmapBuffer( GL_SHADER_STORAGE_BUFFER );
 
-
+#endif
 
 }
 
 void GPU::Copy_VRAM_toGPU ()
 {
+#ifdef ALLOW_OPENCL_PS1
+
 	u32 *pBuf32;
 	int iIdx;
-
 
 	DisplayOutput_Window->OpenGL_MakeCurrentWindow ();
 
@@ -11018,13 +11033,15 @@ void GPU::Copy_VRAM_toGPU ()
 
 	DisplayOutput_Window->OpenGL_ReleaseWindow ();
 
+#endif
 }
 
 void GPU::Copy_VRAM_toCPU ()
 {
+#ifdef ALLOW_OPENCL_PS1
+
 	u32 *pBuf32;
 	int iIdx;
-
 
 	DisplayOutput_Window->OpenGL_MakeCurrentWindow ();
 
@@ -11054,6 +11071,7 @@ void GPU::Copy_VRAM_toCPU ()
 
 	DisplayOutput_Window->OpenGL_ReleaseWindow ();
 
+#endif
 }
 
 
@@ -11070,6 +11088,8 @@ void GPU::Draw_FrameBuffer ()
 
 	if ( bEnable_OpenCL )
 	{
+
+#ifdef ALLOW_OPENCL_PS1
 
 		DisplayOutput_Window->OpenGL_MakeCurrentWindow ();
 
@@ -11091,6 +11111,9 @@ void GPU::Draw_FrameBuffer ()
 
 
 		DisplayOutput_Window->OpenGL_ReleaseWindow ();
+
+#endif
+
 	}
 	else
 	{
@@ -15319,6 +15342,8 @@ u32 GPU::TransferPixelPacketIn ( u32* pData, s32 BS )
 
 void GPU::PreTransferPixelPacketOut ()
 {
+#ifdef ALLOW_OPENCL_PS1
+
 	u32 *pBuf32;
 	u32 ulOffset;
 
@@ -15356,6 +15381,7 @@ void GPU::PreTransferPixelPacketOut ()
 
 	DisplayOutput_Window->OpenGL_ReleaseWindow ();
 
+#endif
 }
 
 
@@ -22118,6 +22144,8 @@ int GPU::Flush_TransferMove ( u64 ullReadIdx )
 //#endif
 void GPU::FlushToHardware ( u64 ullReadIdx, u64 ullWriteIdx, u64 ullReadPixelIdx, u64 ullWritePixelIdx )
 {
+#ifdef ALLOW_OPENCL_PS1
+
 	u64 ullCircularBufferEdge;
 	u64 ullSourceIndex;
 	u64 ullSourceIndex2;
@@ -22225,6 +22253,8 @@ void GPU::FlushToHardware ( u64 ullReadIdx, u64 ullWriteIdx, u64 ullReadPixelIdx
 
 
 	DisplayOutput_Window->OpenGL_ReleaseWindow ();
+
+#endif
 }
 
 /*

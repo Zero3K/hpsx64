@@ -166,7 +166,7 @@ namespace Playstation1
 		u64 BusyUntil_Cycle;
 
 		// used to buffer pixels before drawing to the screen
-		u32 PixelBuffer [ 1024 * 512 ] __attribute__ ((aligned (32)));
+		alignas(32) u32 PixelBuffer [ 1024 * 512 ];
 		
 		// size of the main program window
 		static u32 MainProgramWindow_Width;
@@ -778,7 +778,7 @@ namespace Playstation1
 		static const u32 c_VRAM_Size = 1048576;
 		
 		// VRAM is 1MB with a pixel size of 16-bits
-		u16 VRAM [ c_VRAM_Size / 2 ] __attribute__ ((aligned (32)));
+		alignas(32) u16 VRAM [ c_VRAM_Size / 2 ];
 		
 		/*
 		// GPU input buffer is 64 bytes (16 32-bit words)
@@ -1144,7 +1144,8 @@ namespace Playstation1
 		static const u32 FrameBuffer_XMask = FrameBuffer_Width - 1;
 		static const u32 FrameBuffer_YMask = FrameBuffer_Height - 1;
 		
-		
+#ifdef ALLOW_OPENCL_PS1
+
 		static GLuint computeProgram;
 		//GLuint buffers[NUM_BUFS];       //SSBO objects, one for IMG_0, one for IMG_1, and one for commands/response
 		//static GLchar* computeSource;
@@ -1166,6 +1167,7 @@ namespace Playstation1
 		static GLuint fboId;
 
 		static const char* computeSource;
+#endif
 		
 		
 		//instead of OpenCL, which obviously has issues for them to work out
@@ -1185,7 +1187,7 @@ namespace Playstation1
 		//volatile u32 ulThreads_Idle;
 		static volatile u64 ullInputBuffer_Index;
 		static volatile u32 ulInputBuffer_Count;
-		static u32 inputdata [ ( 1 << c_ulInputBuffer_Shift ) * c_ulInputBuffer_Size ] __attribute__ ((aligned (32)));
+		alignas(32) static u32 inputdata [ ( 1 << c_ulInputBuffer_Shift ) * c_ulInputBuffer_Size ];
 		u32 Dummy;
 
 
@@ -1204,7 +1206,7 @@ namespace Playstation1
 		static volatile u64 ullPixelInBuffer_WriteIndex;
 		static volatile u64 ullPixelInBuffer_TargetIndex;
 		static volatile u64 ullPixelInBuffer_ReadIndex;
-		static u32 ulPixelInBuffer32 [ c_ullPixelInBuffer_Size ] __attribute__ ((aligned (32)));
+		alignas(32) static u32 ulPixelInBuffer32 [ c_ullPixelInBuffer_Size ];
 		static u32 *p_ulHwPixelInBuffer32;
 
 

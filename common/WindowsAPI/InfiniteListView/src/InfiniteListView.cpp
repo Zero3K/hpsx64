@@ -127,7 +127,7 @@ void InfiniteListView::AddColumn ( string Caption, int Width )
 
 
 
-static void InfiniteListView::Event_ListBoxUpdate ( HWND hCtrl, int idCtrl, unsigned int message, WPARAM wParam, LPARAM lParam )
+void InfiniteListView::Event_ListBoxUpdate ( HWND hCtrl, int idCtrl, unsigned int message, WPARAM wParam, LPARAM lParam )
 {
 	int i;
 	NMLVDISPINFO *nmlvd;

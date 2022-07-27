@@ -128,7 +128,105 @@ namespace Vu
 		// need to calculate the checksum
 		static u64 Calc_Checksum( VU *v );
 
+
+		// static analysis data //
 		
+		// up to 2k instructions (16k bytes / 8 bytes per instruction)
+		// up to 64 possibilities per instruction (instr count,q/p wait1,q/p wait2)
+		// 8-bits/1-byte per possibility
+		//u8 LUT_StaticDelay [ 2048 * 256 ];
+		//u8 LUT_StaticDelay [ 2048 * 64 ];
+
+		// also need to know where to pull the flags from if instruction needs them
+		//u8 LUT_StaticFlags [ 2048 * 4 ];
+
+		// analysis flags
+		// bit 0 - upper/lower register hazard (calc wait/delay unless zero, then no need to calc wait/delay)
+		// bit 1 - output mac flag registers to history buffer at instruction end
+		// bit 2 - output stat flag registers to history buffer at instruction end
+		// bit 3 - output clip flag registers to history buffer at instruction end
+		// bit 4 - both upper and lower instruction output to mac/stat or clip flag or register, ignore lower instruction
+		// bit 5 - complete move instruction at end (store from temporary location, unless cancelled)
+		// bit 6 - conditional branch instruction
+		// bit 7 - unconditional branch instruction
+		// bit 8 - conditional branch delay slot (branch after instruction if instr# not zero)
+		// bit 9 - unconditional branch delay slot (branch after instruction if instr# not zero)
+		// bit 10 - output int to current delay4 slot (conditional branch next that uses previous int dest reg)
+		// bit 11 - load int from previous delay4 slot if instr# count set after conditional branch at end
+		// bit 12 - lower register hazard detected
+		// bit 13 - experimental int delay4 slot detected (load/store with inc/dec with inc/dec reg used later)
+		// bit 14/15 - last conflict count (for float or int load conflict/wait)
+		// bit 16 - bit0 has a simple hazard, not a complex one
+		// bit 17 - e-bit delay slot
+		// bit 18 - output CycleCount to history buffer at instruction end
+		// bit 19 - update q (NOT waitq) before upper instruction
+		// bit 20 - reverse order of lower/upper execution (execute upper first, then lower)
+		// bit 21 - mac flag check
+		// bit 22 - stat flag check
+		// bit 23 - clip flag check
+		// bit 24 - output mac flag data
+		// bit 25 - output stat flag data
+		// bit 26 - output clip flag data
+		// bit 27 - implicit waitq
+		// bit 28 - implicit waitp
+		// bit 29 - implicit updatep (not waitp) (for mfp instruction)
+		// bit 30 - xgkick delay slot
+
+		// todo: *note* don't forget to make sure q/p set at very end of vu process run (unless a vu0 continue)
+		u32 LUT_StaticInfo [ 2048 ];
+
+		// perform static analysis
+		void StaticAnalysis ( VU *v );
+
+
+		bool isBranch ( Vu::Instruction::Format64 i );
+		bool isConditionalBranch ( Vu::Instruction::Format64 i );
+		bool isUnconditionalBranch ( Vu::Instruction::Format64 i );
+		bool isMacFlagCheck ( Vu::Instruction::Format64 i );
+		bool isStatFlagCheck ( Vu::Instruction::Format64 i );
+		bool isClipFlagCheck ( Vu::Instruction::Format64 i );
+		bool isStatFlagSetLo ( Vu::Instruction::Format64 i );
+		bool isClipFlagSetLo ( Vu::Instruction::Format64 i );
+		bool isLowerImmediate ( Vu::Instruction::Format64 i );
+		bool isClipFlagSetHi ( Vu::Instruction::Format64 i );
+		bool isMacStatFlagSetHi ( Vu::Instruction::Format64 i );
+
+		u64 getSrcRegMapHi ( Vu::Instruction::Format64 i );
+		u64 getDstRegMapHi ( Vu::Instruction::Format64 i );
+		void getDstFieldMapHi ( VU::Bitmap128 &Bm, Vu::Instruction::Format64 i );
+		void getSrcFieldMapHi ( VU::Bitmap128 &Bm, Vu::Instruction::Format64 i );
+		void getDstFieldMapLo ( VU::Bitmap128 &Bm, Vu::Instruction::Format64 i );
+		void getSrcFieldMapLo ( VU::Bitmap128 &Bm, Vu::Instruction::Format64 i );
+		u64 getDstRegMapLo ( Vu::Instruction::Format64 i );
+		u64 getSrcRegMapLo ( Vu::Instruction::Format64 i );
+
+		bool isMoveToFloatLo ( Vu::Instruction::Format64 i );
+		bool isMoveToFloatFromFloatLo ( Vu::Instruction::Format64 i );
+
+		bool isIntLoad ( Vu::Instruction::Format64 i );
+
+		bool isFloatLoadStore ( Vu::Instruction::Format64 i );
+
+		bool isQWait ( Vu::Instruction::Format64 i );
+		bool isPWait ( Vu::Instruction::Format64 i );
+
+		bool isQUpdate ( Vu::Instruction::Format64 i );
+		bool isPUpdate ( Vu::Instruction::Format64 i );
+
+		bool isXgKick ( Vu::Instruction::Format64 i );
+		bool isIntCalc ( Vu::Instruction::Format64 i );
+
+
+		static bool Perform_GetMacFlag ( x64Encoder *e, VU* v, u32 Address );
+		static bool Perform_GetStatFlag ( x64Encoder *e, VU* v, u32 Address );
+		static bool Perform_GetClipFlag ( x64Encoder *e, VU* v, u32 Address );
+
+		static bool Perform_WaitQ ( x64Encoder *e, VU* v, u32 Address );
+		static bool Perform_WaitP ( x64Encoder *e, VU* v, u32 Address );
+
+		static bool Perform_UpdateQ ( x64Encoder *e, VU* v, u32 Address );
+		static bool Perform_UpdateP ( x64Encoder *e, VU* v, u32 Address );
+
 		// the optimization level
 		// 0 means no optimization at all, anything higher means to optimize
 		//s32 OpLevel;
@@ -164,7 +262,7 @@ namespace Vu
 		// note: this should be part of the recompiler, since the constants apply to that recompiler instance
 		u32 CountOfVConsts;
 		u32 LastVConstCount;
-		Reg128 VectorConstants [ 4096 ];
+		alignas(64) Reg128 VectorConstants [ 4096 ];
 
 
 		static void AdvanceCycle ( VU* v );
@@ -289,7 +387,7 @@ namespace Vu
 		static long Generate_VMINp ( x64Encoder *e, VU* v, Vu::Instruction::Format i, u32 *pFt = NULL, u32 FtComponent = 4 );
 		static long Generate_VFTOIXp ( x64Encoder *e, VU* v, Vu::Instruction::Format i, u32 IX );
 		static long Generate_VITOFXp ( x64Encoder *e, VU* v, Vu::Instruction::Format i, u64 FX );
-		static long Generate_VMOVEp ( x64Encoder *e, VU* v, Vu::Instruction::Format i );
+		static long Generate_VMOVEp ( x64Encoder *e, VU* v, Vu::Instruction::Format i, u32 Address );
 		static long Generate_VMR32p ( x64Encoder *e, VU* v, Vu::Instruction::Format i );
 		static long Generate_VMFIRp ( x64Encoder *e, VU* v, Vu::Instruction::Format i );
 		static long Generate_VMTIRp ( x64Encoder *e, VU* v, Vu::Instruction::Format i );
@@ -425,6 +523,11 @@ namespace Vu
 
 		// *** todo *** do not recompile more than one instruction if currently in a branch delay slot or load delay slot!!
 		u32 Recompile ( VU* v, u32 StartAddress );
+
+		// new recompile code using static analysis data
+		u32 Recompile2 ( VU* v, u32 StartAddress );
+
+
 		//void Invalidate ( u32 Address );
 		void Invalidate ( u32 Address, u32 Count );
 		

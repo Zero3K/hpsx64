@@ -2299,8 +2299,8 @@ namespace Playstation1
 		//static const int c_iPlaySize = 262144;
 		static const int c_iPlayBuffer_MaxSize = 131072;	//c_iPlaySize * 4;
 		//u16 PlayBuffer [ c_iPlayBuffer_Size ] __attribute__ ((aligned (32)));
-		s16 PlayBuffer0 [ c_iPlayBuffer_MaxSize ] __attribute__ ((aligned (32)));
-		s16 PlayBuffer1 [ c_iPlayBuffer_MaxSize ] __attribute__ ((aligned (32)));
+		alignas(32) s16 PlayBuffer0 [ c_iPlayBuffer_MaxSize ];
+		alignas(32) s16 PlayBuffer1 [ c_iPlayBuffer_MaxSize ];
 		
 		// dynamic size of sound buffer
 		s32 NextPlayBuffer_Size;

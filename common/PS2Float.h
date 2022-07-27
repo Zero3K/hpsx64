@@ -28,6 +28,10 @@ using namespace std;
 #define PSFLOAT_H
 
 
+
+
+
+
 #define ENABLE_FLAG_CHECK
 //#define USE_DOUBLE
 //#define CALC_WITH_INF
@@ -630,8 +634,9 @@ namespace PS2Float
 
 		
 		// get new shift amount
-		ed = 8 - __builtin_clz( md );
-		
+		//ed = 8 - __builtin_clz( md );
+		ed = 8 - clz32(md);
+
 		
 		
 		
@@ -653,7 +658,8 @@ namespace PS2Float
 		else
 		{
 			// get rid of the leading one (hidden bit)
-			md <<= ( __builtin_clz( md ) + 1 );
+			//md <<= ( __builtin_clz( md ) + 1 );
+			md <<= (clz32(md) + 1);
 			md = ( (unsigned long) md ) >> 9;
 		}
 		
@@ -1023,8 +1029,9 @@ namespace PS2Float
 
 		
 		// get new shift amount
-		ed = 8 - __builtin_clz( md );
-		
+		//ed = 8 - __builtin_clz( md );
+		ed = 8 - clz32(md);
+
 		
 		
 		
@@ -1046,7 +1053,8 @@ namespace PS2Float
 		else
 		{
 			// get rid of the leading one (hidden bit)
-			md <<= ( __builtin_clz( md ) + 1 );
+			//md <<= ( __builtin_clz( md ) + 1 );
+			md <<= (clz32(md) + 1);
 			md = ( (unsigned long) md ) >> 9;
 		}
 		

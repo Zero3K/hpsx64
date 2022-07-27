@@ -782,6 +782,10 @@ public:
 	bool CmovNERegMem64 ( long DestReg, long AddressReg, long IndexReg, long Scale, long Offset );
 	bool CmovBRegMem64 ( long DestReg, long AddressReg, long IndexReg, long Scale, long Offset );
 
+	bool CmovAERegMem16 ( long DestReg, long AddressReg, long IndexReg, long Scale, long Offset );
+	bool CmovAERegMem32 ( long DestReg, long AddressReg, long IndexReg, long Scale, long Offset );
+	bool CmovAERegMem64 ( long DestReg, long AddressReg, long IndexReg, long Scale, long Offset );
+
 	bool CmovERegMem16 ( long DestReg, short* Mem16 );
 	bool CmovNERegMem16 ( long DestReg, short* Mem16 );
 	bool CmovBRegMem16 ( long DestReg, short* Mem16 );

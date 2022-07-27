@@ -22,10 +22,30 @@
 #define _TYPES_H_
 
 
+#define GCC_COMPILER (defined(__GNUC__) && !defined(__clang__))
+
+
+#if GCC_COMPILER
+
+#define ALIGN2		__attribute__ ((aligned (2)))
+#define ALIGN4		__attribute__ ((aligned (4)))
+#define ALIGN8		__attribute__ ((aligned (8)))
 #define ALIGN16		__attribute__ ((aligned (16)))
 #define ALIGN32		__attribute__ ((aligned (32)))
 #define ALIGN64		__attribute__ ((aligned (64)))
 #define ALIGN128	__attribute__ ((aligned (128)))
+
+#else
+
+#define ALIGN2		__declspec(align(2))
+#define ALIGN4		__declspec(align(4))
+#define ALIGN8		__declspec(align(8))
+#define ALIGN16		__declspec(align(16))
+#define ALIGN32		__declspec(align(32))
+#define ALIGN64		__declspec(align(64))
+#define ALIGN128	__declspec(align(128))
+
+#endif
 
 
 // function interfaces
@@ -44,23 +64,23 @@ typedef unsigned long u32;
 typedef unsigned long long u64;
 
 typedef char s8;
-typedef short s16 __attribute__ ((aligned (2)));
-typedef long s32 __attribute__ ((aligned (4)));
-typedef long long s64 __attribute__ ((aligned (8)));
+typedef short s16;
+typedef long s32;
+typedef long long s64;
 
 union FloatLong
 {
 	float f;
 	long l;
 	unsigned long lu;
-} __attribute__ ((aligned (4)));
+} ALIGN4;
 
 union DoubleLong
 {
 	double d;
 	long long l;
 	unsigned long long lu;
-} __attribute__ ((aligned (8)));
+} ALIGN8;
 
 
 struct Reg32
@@ -101,7 +121,7 @@ struct Reg32
 		};
 		
 	};
-} __attribute__ ((aligned (4)));
+} ALIGN4;
 
 
 struct Reg64
@@ -126,7 +146,7 @@ struct Reg64
 		u32 uArray [ 2 ];
 		s32 sArray [ 2 ];
 	};
-} __attribute__ ((aligned (8)));
+} ALIGN8;
 
 
 struct Reg128
@@ -225,7 +245,7 @@ struct Reg128
 		
 		
 	};
-} __attribute__ ((aligned (16)));
+} ALIGN16;
 
 
 
@@ -338,7 +358,7 @@ struct Reg128x
 		
 		
 	};
-} __attribute__ ((aligned (16)));
+} ALIGN16;
 
 
 
@@ -348,7 +368,73 @@ union MultiPtr
 	u16* b16;
 	u32* b32;
 	u64* b64;
-} __attribute__ ((aligned (8)));
+} ALIGN8;
+
+
+#define GCC_OR_CLANG_COMPILER (defined(__GNUC__) || defined(__clang__))
+
+#if GCC_OR_CLANG_COMPILER
+
+#define clz32(x) __builtin_clz(x)
+#define ctz32(x) __builtin_ctz(x)
+#define clz64(x) __builtin_clz(x)
+#define ctz64(x) __builtin_ctz(x)
+#define popcnt32(x) __builtin_popcount(x)
+#define popcnt64(x) __builtin_popcount(x)
+
+#else
+
+#include <intrin.h>
+
+static unsigned long __inline popcnt32(unsigned long x)
+{
+	return _mm_popcnt_u32(x);
+	//x -= ((x >> 1) & 0x55555555);
+	//x = (((x >> 2) & 0x33333333) + (x & 0x33333333));
+	//x = (((x >> 4) + x) & 0x0f0f0f0f);
+	//x += (x >> 8);
+	//x += (x >> 16);
+	//return x & 0x0000003f;
+}
+static unsigned long __inline popcnt64(unsigned long long x)
+{
+	return _mm_popcnt_u64(x);
+	//x -= ((x >> 1) & 0x55555555);
+	//x = (((x >> 2) & 0x33333333) + (x & 0x33333333));
+	//x = (((x >> 4) + x) & 0x0f0f0f0f);
+	//x += (x >> 8);
+	//x += (x >> 16);
+	//return x & 0x0000003f;
+}
+static unsigned long __inline clz32(unsigned long x)
+{
+	x |= (x >> 1);
+	x |= (x >> 2);
+	x |= (x >> 4);
+	x |= (x >> 8);
+	x |= (x >> 16);
+	return 32 - popcnt32(x);
+}
+static unsigned long __inline clz64(unsigned long long x)
+{
+	x |= (x >> 1);
+	x |= (x >> 2);
+	x |= (x >> 4);
+	x |= (x >> 8);
+	x |= (x >> 16);
+	x |= (x >> 32);
+	return 64 - popcnt64(x);
+}
+static unsigned long __inline ctz32(unsigned long x)
+{
+	return popcnt32((x & -x) - 1);
+}
+static unsigned long __inline ctz64(unsigned long long x)
+{
+	return popcnt64((x & -x) - 1);
+}
+
+#endif
 
 
 // this is for any code used from mame/mess
@@ -365,7 +451,7 @@ union MultiPtr
 typedef unsigned long uint;
 #define __fi inline
 #define __ri inline
-#define __aligned16 __attribute__ ((aligned (16)))
+#define __aligned16 ALIGN16
 
 
 #endif

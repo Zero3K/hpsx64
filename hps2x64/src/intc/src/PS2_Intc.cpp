@@ -265,7 +265,10 @@ void Intc::UpdateInts ()
 	
 	// update I_STAT
 	//_INTC->I_STAT_Reg.Value &= _INTC->I_MASK_Reg.Value;
-	
+
+
+
+
 	// if interrupts are still set, then set them back when cleared
 	if ( _INTC->I_STAT_Reg.Value & _INTC->I_MASK_Reg.Value )
 	{

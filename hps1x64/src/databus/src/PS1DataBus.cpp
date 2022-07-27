@@ -140,8 +140,8 @@ DataBus::PS1_BusInterface_Read DataBus::LUT_RegRead [ DataBus::c_LUT_Reg_Size ];
 DataBus::PS1_BusInterface_Write DataBus::LUT_RegWrite [ DataBus::c_LUT_Reg_Size ];
 
 
-DataBus::DataBusEntry DataBus::LUT_DataBus_Read [ DataBus::c_LUT_Bus_Size ] __attribute__ ((aligned (16)));
-DataBus::DataBusEntry DataBus::LUT_DataBus_Write [ DataBus::c_LUT_Bus_Size ] __attribute__ ((aligned (16)));
+alignas(16) DataBus::DataBusEntry DataBus::LUT_DataBus_Read [ DataBus::c_LUT_Bus_Size ];
+alignas(16) DataBus::DataBusEntry DataBus::LUT_DataBus_Write [ DataBus::c_LUT_Bus_Size ];
 
 
 bool DataBus::DebugWindow_Enabled;

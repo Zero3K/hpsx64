@@ -3674,7 +3674,7 @@ void COP2_Device::OP ( Cpu* r, Instruction::Format i )
 
 void COP2_Device::MVMVA ( Cpu* r, Instruction::Format i )
 {
-	static const u32 InputCPCRegs [] = { };
+	//static const u32 InputCPCRegs [] = { };
 	
 	static const u32 InputCPRRegs [] = { INDEX_IR1, INDEX_IR2, INDEX_IR3 };
 

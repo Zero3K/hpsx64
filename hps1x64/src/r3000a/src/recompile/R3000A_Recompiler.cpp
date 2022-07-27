@@ -19,6 +19,8 @@
 #include "R3000A_Recompiler.h"
 #include "ps1_system.h"
 
+
+
 using namespace R3000A;
 
 
@@ -321,7 +323,7 @@ const int Recompiler::iRegStackSave [ 13 ] = { 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 
 
 
 
-u32 recompiler_r3000a_temp [ 4 ] __attribute__ ((aligned (16)));
+alignas(16) u32 recompiler_r3000a_temp [ 4 ];
 
 
 
@@ -977,8 +979,9 @@ cout << " iRet=" << dec << iRet;
 			ullBitmap &= -ullBitmap;
 			
 			// get its index
-			iRegIdx = __builtin_ctz( ullBitmap );
-			
+			//iRegIdx = __builtin_ctz( ullBitmap );
+			iRegIdx = ctz64(ullBitmap);
+
 			// remove it and remove from bitmap
 			DisposeReg( iRegIdx );
 			ullCurAlloc &= ~( 1ull << iRegIdx );
@@ -1300,7 +1303,8 @@ int Recompiler::SelectAlloc ( int iSrcRegIdx1, int iSrcRegIdx2 )
 	ullBitmap = ( 1ull << iSrcRegIdx1 ) | ( 1ull << iSrcRegIdx2 );
 	ullBitmap &= ( ullSrcRegAlloc | ullSrcConstAlloc );
 	ullBitmap &= -ullBitmap;
-	return __builtin_ctz( ullBitmap );
+	//return __builtin_ctz( ullBitmap );
+	return ctz64(ullBitmap);
 }
 
 int Recompiler::SelectConst ( int iSrcRegIdx1, int iSrcRegIdx2 )
@@ -1309,7 +1313,8 @@ int Recompiler::SelectConst ( int iSrcRegIdx1, int iSrcRegIdx2 )
 	ullBitmap = ( 1ull << iSrcRegIdx1 ) | ( 1ull << iSrcRegIdx2 );
 	ullBitmap &= ullSrcConstAlloc;
 	ullBitmap &= -ullBitmap;
-	return __builtin_ctz( ullBitmap );
+	//return __builtin_ctz( ullBitmap );
+	return ctz64(ullBitmap);
 }
 
 int Recompiler::SelectReg ( int iSrcRegIdx1, int iSrcRegIdx2 )
@@ -1318,7 +1323,8 @@ int Recompiler::SelectReg ( int iSrcRegIdx1, int iSrcRegIdx2 )
 	ullBitmap = ( 1ull << iSrcRegIdx1 ) | ( 1ull << iSrcRegIdx2 );
 	ullBitmap &= ullSrcRegAlloc;
 	ullBitmap &= -ullBitmap;
-	return __builtin_ctz( ullBitmap );
+	//return __builtin_ctz( ullBitmap );
+	return ctz64(ullBitmap);
 }
 
 int Recompiler::SelectDisposable( int iSrcRegIdx1, int iSrcRegIdx2 )
@@ -1327,7 +1333,8 @@ int Recompiler::SelectDisposable( int iSrcRegIdx1, int iSrcRegIdx2 )
 	ullBitmap = ( 1ull << iSrcRegIdx1 ) | ( 1ull << iSrcRegIdx2 );
 	ullBitmap &= ~ullNeededLater;
 	ullBitmap &= -ullBitmap;
-	return __builtin_ctz( ullBitmap );
+	//return __builtin_ctz( ullBitmap );
+	return ctz64(ullBitmap);
 }
 
 
@@ -1337,7 +1344,8 @@ int Recompiler::SelectNotAlloc ( int iSrcRegIdx1, int iSrcRegIdx2 )
 	ullBitmap = ( 1ull << iSrcRegIdx1 ) | ( 1ull << iSrcRegIdx2 );
 	ullBitmap &= ~( ullSrcRegAlloc | ullSrcConstAlloc );
 	ullBitmap &= -ullBitmap;
-	return __builtin_ctz( ullBitmap );
+	//return __builtin_ctz( ullBitmap );
+	return ctz64(ullBitmap);
 }
 
 int Recompiler::SelectNotDisposable( int iSrcRegIdx1, int iSrcRegIdx2 )
@@ -1346,7 +1354,8 @@ int Recompiler::SelectNotDisposable( int iSrcRegIdx1, int iSrcRegIdx2 )
 	ullBitmap = ( 1ull << iSrcRegIdx1 ) | ( 1ull << iSrcRegIdx2 );
 	ullBitmap &= ullNeededLater;
 	ullBitmap &= -ullBitmap;
-	return __builtin_ctz( ullBitmap );
+	//return __builtin_ctz( ullBitmap );
+	return ctz64(ullBitmap);
 }
 
 
@@ -1397,8 +1406,9 @@ int Recompiler::Alloc_SrcReg ( int iSrcRegIdx )
 	
 	// get the index it is allocated to on target
 	// *** gcc specific code *** //
-	iIdx = __builtin_ctz( ullBitmap );
-	
+	//iIdx = __builtin_ctz( ullBitmap );
+	iIdx = ctz64(ullBitmap);
+
 	// set that register as allocated to a variable reg
 	ullSrcRegAlloc |= ( 1ull << iSrcRegIdx );
 	
@@ -1494,8 +1504,9 @@ int Recompiler::Alloc_DstReg ( int iSrcRegIdx )
 	
 	// get the index it is allocated to on target
 	// *** gcc specific code *** //
-	iIdx = __builtin_ctz( ullBitmap );
-	
+	//iIdx = __builtin_ctz( ullBitmap );
+	iIdx = ctz64(ullBitmap);
+
 	// set the register as modified, since it is a destination register
 	ullSrcRegsModified |= ( 1ull << iSrcRegIdx );
 	
@@ -1619,7 +1630,8 @@ void Recompiler::WriteBackModifiedRegs ()
 		ullBitmap = ullSrcRegsModified2 & -ullSrcRegsModified2;
 		
 		// get the next register on source device
-		iSrcRegIdx = __builtin_ctz( ullBitmap );
+		//iSrcRegIdx = __builtin_ctz( ullBitmap );
+		iSrcRegIdx = ctz64(ullBitmap);
 
 #ifdef INLINE_DEBUG_RECOMPILE2
 	debug << " iSrcRegIdx=" << dec << iSrcRegIdx;
@@ -1688,7 +1700,8 @@ void Recompiler::RestoreRegsFromStack ()
 		
 		// get it's target device index
 		//iRegIdx = __builtin_ctz( ullBitmap );
-		iRegIdx = __builtin_clz( ullRegsOnStack2 );
+		//iRegIdx = __builtin_clz( ullRegsOnStack2 );
+		iRegIdx = clz64(ullRegsOnStack2);
 		iRegIdx = 31 - iRegIdx;
 		
 

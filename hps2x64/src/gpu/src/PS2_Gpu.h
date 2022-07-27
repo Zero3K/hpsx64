@@ -40,10 +40,11 @@
 //#define ENABLE_READ_CIRCUIT_BLEND
 
 
-//#define _ENABLE_SSE2
+#define _ENABLE_SSE2
 #define _ENABLE_SSE41
 //#define _ENABLE_AVX2
 
+//#define _ENABLE_AVX2_GPU
 
 //#define _ENABLE_SSE2_TRIANGLE_MONO
 //#define _ENABLE_SSE2_TRIANGLE_GRADIENT
@@ -57,6 +58,15 @@
 #include <smmintrin.h>
 
 #endif
+
+
+
+//#include <immintrin.h>
+//#define _ENABLE_AVX2_PLOTPIXEL_MONO
+//#define _ENABLE_AVX2_CVT
+//#define _ENABLE_AVX2_ALPHAABCD
+//#define _ENABLE_AVX2_TEXTUREFUNC
+//#define _ENABLE_AVX2_FOGFUNC
 
 
 #ifdef _ENABLE_AVX2
@@ -195,10 +205,13 @@
 
 
 
+
+
 // functions for alpha test and ztest, and alpha fail
 //typedef u32 (*AlphaTest) ( u32, u32 );
 //typedef u32 (*ZTest) ( u32*, u32 );
 typedef void (*AlphaFail) ( u32*, u32*, u32, u32, u32 );
+typedef void (*AlphaFailx8) (u32*, u32*, u32, u32, u32);
 //typedef u32 (*TexturePixel) ( u32*, u32, u32, u32, u16*, u64 );
 //typedef u32 (*TextureFunc) ( u32, u32, u32, u32, u32 );
 
@@ -206,6 +219,11 @@ typedef __m128i (*AlphaTest) ( __m128i, __m128i );
 typedef __m128i (*ZTest) ( __m128i, __m128i );
 typedef __m128i (*TexturePixel) ( u32*, __m128i, __m128i, __m128i, u16*, __m128i, __m128i, __m128i );
 typedef __m128i (*TextureFunc) ( __m128i, __m128i, __m128i, __m128i, __m128i );
+
+typedef __m256i (*AlphaTestx8) (__m256i, __m256i);
+typedef __m256i (*ZTestx8) (__m256i, __m256i);
+typedef __m256i (*TexturePixelx8) (u32*, __m256i, __m256i, __m256i, u16*, __m256i, __m256i, __m256i);
+typedef __m256i (*TextureFuncx8) (__m256i, __m256i, __m256i, __m256i, __m256i);
 
 
 namespace Playstation2
@@ -324,6 +342,8 @@ namespace Playstation2
 		{
 			return ( Value >> 24 ) | ( Value << 24 ) | ( ( Value << 8 ) & 0xff0000 ) | ( ( Value >> 8 ) & 0xff00 );
 		}
+
+
 		
 		
 		// this lookup table is used for gpu compute lookup
@@ -343,15 +363,15 @@ namespace Playstation2
 		static u32 LUT_CvtAddrZBuf16s [ 64 * 64 ];
 		
 		
-		static u32 ulLUT_OffsetPix32x [ 4096 ] __attribute__ ((aligned (32)));
-		static u32 ulLUT_OffsetPix16x [ 4096 ] __attribute__ ((aligned (32)));
-		static u32 ulLUT_OffsetPix16Sx [ 4096 ] __attribute__ ((aligned (32)));
-		static u32 ulLUT_OffsetPix8x [ 4096 ] __attribute__ ((aligned (32)));
-		static u32 ulLUT_OffsetPix4x [ 4096 ] __attribute__ ((aligned (32)));
+		alignas(32) static u32 ulLUT_OffsetPix32x [ 4096 ];
+		alignas(32) static u32 ulLUT_OffsetPix16x [ 4096 ];
+		alignas(32) static u32 ulLUT_OffsetPix16Sx [ 4096 ];
+		alignas(32) static u32 ulLUT_OffsetPix8x [ 4096 ];
+		alignas(32) static u32 ulLUT_OffsetPix4x [ 4096 ];
 		
-		static u32 ulLUT_OffsetZ32x [ 4096 ] __attribute__ ((aligned (32)));
-		static u32 ulLUT_OffsetZ16x [ 4096 ] __attribute__ ((aligned (32)));
-		static u32 ulLUT_OffsetZ16Sx [ 4096 ] __attribute__ ((aligned (32)));
+		alignas(32) static u32 ulLUT_OffsetZ32x [ 4096 ];
+		alignas(32) static u32 ulLUT_OffsetZ16x [ 4096 ];
+		alignas(32) static u32 ulLUT_OffsetZ16Sx [ 4096 ];
 		
 		void InitCvtLUTs ();
 		
@@ -490,7 +510,7 @@ namespace Playstation2
 		}
 		
 		
-#ifdef _ENABLE_AVX2
+#ifdef _ENABLE_AVX2_CVT
 		static inline __m256i CvtAddrPix32x8 ( __m256i x, __m256i y, __m256i width, __m256i vEnable )
 		{
 			//u32 Offset;
@@ -680,7 +700,7 @@ namespace Playstation2
 		}
 
 
-#ifdef _ENABLE_AVX2
+#ifdef _ENABLE_AVX2_CVT
 		static inline __m256i CvtAddrPix16x8 ( __m256i x, __m256i y, __m256i width, __m256i vEnable )
 		{
 			//u32 Offset;
@@ -822,7 +842,7 @@ namespace Playstation2
 			return vTemp;
 		}
 		
-#ifdef _ENABLE_AVX2
+#ifdef _ENABLE_AVX2_CVT
 		static inline __m256i CvtAddrPix16Sx8 ( __m256i x, __m256i y, __m256i width, __m256i vEnable )
 		{
 			
@@ -960,7 +980,7 @@ namespace Playstation2
 			return vTemp;
 		}
 		
-#ifdef _ENABLE_AVX2
+#ifdef _ENABLE_AVX2_CVT
 		static inline __m256i CvtAddrPix8x8 ( __m256i x, __m256i y, __m256i width, __m256i vEnable )
 		{
 			
@@ -1099,7 +1119,7 @@ namespace Playstation2
 			return vTemp;
 		}
 		
-#ifdef _ENABLE_AVX2
+#ifdef _ENABLE_AVX2_CVT
 		static inline __m256i CvtAddrPix4x8 ( __m256i x, __m256i y, __m256i width, __m256i vEnable )
 		{
 			
@@ -1235,7 +1255,7 @@ namespace Playstation2
 			return vTemp;
 		}
 		
-#ifdef _ENABLE_AVX2
+#ifdef _ENABLE_AVX2_CVT
 		static inline __m256i CvtAddrZBuf32x8 ( __m256i x, __m256i y, __m256i width, __m256i vEnable )
 		{
 			//u32 Offset;
@@ -1373,7 +1393,7 @@ namespace Playstation2
 			return vTemp;
 		}
 		
-#ifdef _ENABLE_AVX2
+#ifdef _ENABLE_AVX2_CVT
 		static inline __m256i CvtAddrZBuf16x8 ( __m256i x, __m256i y, __m256i width, __m256i vEnable )
 		{
 			__m256i vBit, vBit2, vTemp, vTempX, vTempY, vTempXY;
@@ -1509,7 +1529,7 @@ namespace Playstation2
 			return vTemp;
 		}
 		
-#ifdef _ENABLE_AVX2
+#ifdef _ENABLE_AVX2_CVT
 		static inline __m256i CvtAddrZBuf16Sx8 ( __m256i x, __m256i y, __m256i width, __m256i vEnable )
 		{
 			
@@ -1659,7 +1679,7 @@ namespace Playstation2
 			return _mm_or_si128 ( _mm_or_si128 ( sC1, sC2 ), sC3 );
 		}
 		
-#ifdef _ENABLE_AVX2
+#ifdef _ENABLE_AVX2_ALPHAABCD
 		inline __m256i AlphaABCD_32x8 ( __m256i A, __m256i B, __m256i C, __m256i D )
 		{
 			//s32 cA, cB, cC, cD, sC1, sC2, sC3;
@@ -1814,7 +1834,7 @@ namespace Playstation2
 		static const int c_iScreen_MaxHeight = 1024;
 		
 		// used to buffer pixels before drawing to the screen
-		static u32 PixelBuffer [ c_iScreen_MaxWidth * c_iScreen_MaxHeight ] __attribute__ ((aligned (32)));
+		alignas(32) static u32 PixelBuffer [ c_iScreen_MaxWidth * c_iScreen_MaxHeight ];
 		
 		//static const int c_iRamSize = 4194304;
 		//u64 RAM [ c_iRamSize >> 3 ] __attribute__ ((aligned (32)));
@@ -1828,10 +1848,10 @@ namespace Playstation2
 		// ***todo*** also show the frame buffers in 1024x1024 windows, but showing the frame buffers with correct size
 		union
 		{
-			u8 RAM8 [ c_iRAM_Size ] __attribute__ ((aligned (32)));
-			u16 RAM16 [ c_iRAM_Size >> 1 ] __attribute__ ((aligned (32)));
-			u32 RAM32 [ c_iRAM_Size >> 2 ] __attribute__ ((aligned (32)));
-			u64 RAM64 [ c_iRAM_Size >> 3 ] __attribute__ ((aligned (32)));
+			alignas(32) u8 RAM8 [ c_iRAM_Size ];
+			alignas(32) u16 RAM16 [ c_iRAM_Size >> 1 ];
+			alignas(32) u32 RAM32 [ c_iRAM_Size >> 2 ];
+			alignas(32) u64 RAM64 [ c_iRAM_Size >> 3 ];
 		};
 		
 		// temporary fix for disabled buffer updates
@@ -1841,10 +1861,10 @@ namespace Playstation2
 		// buffer cache - cached copies of frame buffer and z-buffer
 		union
 		{
-			u8 BUF8 [ c_iRAM_Size ] __attribute__ ((aligned (32)));
-			u16 BUF16 [ c_iRAM_Size >> 1 ] __attribute__ ((aligned (32)));
-			u32 BUF32 [ c_iRAM_Size >> 2 ] __attribute__ ((aligned (32)));
-			u64 BUF64 [ c_iRAM_Size >> 3 ] __attribute__ ((aligned (32)));
+			alignas(32) u8 BUF8 [ c_iRAM_Size ];
+			alignas(32) u16 BUF16 [ c_iRAM_Size >> 1 ];
+			alignas(32) u32 BUF32 [ c_iRAM_Size >> 2 ];
+			alignas(32) u64 BUF64 [ c_iRAM_Size >> 3 ];
 		};
 		
 		static const u32 c_iNumCachedBuffers = 512;
@@ -1914,11 +1934,11 @@ namespace Playstation2
 
 		// the circular buffer
 		// first element is the cycle# and optionally the count, next is the data
-		static volatile u64 ullPath1Buffer [ c_iPath1BufSize << 1 ] __attribute__ ((aligned (32)));
+		alignas(32) static volatile u64 ullPath1Buffer [ c_iPath1BufSize << 1 ];
 
 		// buffer to hold the current data to render screen from buffer
 		// only one frame is in-flight at a time, so just need one buffer
-		static volatile u64 display_inputbuffer [ 16 ] __attribute__ ((aligned (32)));
+		alignas(32) static volatile u64 display_inputbuffer [ 16 ];
 		
 		// output the path 1 data at cycle# to the path 1 buffer
 		void OutputTo_P1Buffer ( u64* pMemDevice, u32 Address, u64 CycleCount );
@@ -3277,6 +3297,8 @@ namespace Playstation2
 			u32* ptr_texture;
 			
 			TexturePixel pd;
+			//TexturePixelx8 pdx8;
+
 			
 			u32 FIX;
 			u32 uA, uB, uC, uD;
@@ -3289,7 +3311,9 @@ namespace Playstation2
 			u32 TEST_DATE, TEST_DATM;
 			AlphaTest at;
 			ZTest zt;
-			
+			//AlphaTestx8 atx8;
+			//ZTestx8 ztx8;
+
 			u32* buf32;
 			u32 FRAME_FBP, FRAME_FBW, FRAME_PSM, FRAME_FBMSK;
 			
@@ -3308,6 +3332,7 @@ namespace Playstation2
 			u32 TEXCLUT_WIDTH, TEXCLUT_X, TEXCLUT_Y;
 			
 			TextureFunc tf;
+			//TextureFuncx8 tfx8;
 		};
 		
 		static GPUDrawingVars GpDrawVars [ 2 ];
@@ -3592,7 +3617,8 @@ static void Refresh_TEX0 ( u32 lContext, u64 ullValue )
 	gd->ptr_clut16 = & ( _GPU->InternalCLUT [ gd->CLUTOffset ] );
 
 	
-	gd->pd = Select_TexturePixel_t ( gd->PixelFormat, gd->CLUTPixelFormat, gd->TEXA_AEM );
+	gd->pd = Select_TexturePixel_t(gd->PixelFormat, gd->CLUTPixelFormat, gd->TEXA_AEM);
+	//gd->pdx8 = Select_TexturePixel_tx8 ( gd->PixelFormat, gd->CLUTPixelFormat, gd->TEXA_AEM );
 
 	
 	Refresh_CLAMP( lContext, gd->CLAMP );
@@ -3668,38 +3694,47 @@ static void Refresh_TEST ( u32 lContext, u64 ullValue )
 		{
 			case 0:
 				gd->at = & Playstation2::GPU::TestSrcAlpha32_t<0>;
+				//gd->atx8 = &Playstation2::GPU::TestSrcAlpha32_tx8<0>;
 				break;
 			case 1:
 				gd->at = & Playstation2::GPU::TestSrcAlpha32_t<1>;
+				//gd->atx8 = &Playstation2::GPU::TestSrcAlpha32_tx8<1>;
 				break;
 			case 2:
 				//aref = ( aref << 24 );
 				gd->at = & Playstation2::GPU::TestSrcAlpha32_t<2>;
+				//gd->atx8 = &Playstation2::GPU::TestSrcAlpha32_tx8<2>;
 				break;
 			case 3:
 				//aref = ( aref << 24 ) | 0xffffff;
 				gd->at = & Playstation2::GPU::TestSrcAlpha32_t<3>;
+				//gd->atx8 = &Playstation2::GPU::TestSrcAlpha32_tx8<3>;
 				break;
 			case 4:
 				//aref = ( (u32) TEST_X.AREF );
 				gd->at = & Playstation2::GPU::TestSrcAlpha32_t<4>;
+				//gd->atx8 = &Playstation2::GPU::TestSrcAlpha32_tx8<4>;
 				break;
 			case 5:
 				//aref = ( aref << 24 );
 				gd->at = & Playstation2::GPU::TestSrcAlpha32_t<5>;
+				//gd->atx8 = &Playstation2::GPU::TestSrcAlpha32_tx8<5>;
 				break;
 			case 6:
 				//aref = ( aref << 24 ) | 0xffffff;
 				gd->at = & Playstation2::GPU::TestSrcAlpha32_t<6>;
+				//gd->atx8 = &Playstation2::GPU::TestSrcAlpha32_tx8<6>;
 				break;
 			case 7:
 				gd->at = & Playstation2::GPU::TestSrcAlpha32_t<7>;
+				//gd->atx8 = &Playstation2::GPU::TestSrcAlpha32_tx8<7>;
 				break;
 		}
 	}
 	else
 	{
 		gd->at = & Playstation2::GPU::TestSrcAlpha32_t<1>;
+		//gd->atx8 = &Playstation2::GPU::TestSrcAlpha32_tx8<1>;
 	}
 
 
@@ -3708,15 +3743,19 @@ static void Refresh_TEST ( u32 lContext, u64 ullValue )
 	{
 		case 0:
 			gd->zt = & Playstation2::GPU::PerformZDepthTest32_t<0>;
+			//gd->ztx8 = &Playstation2::GPU::PerformZDepthTest32_tx8<0>;
 			break;
 		case 1:
 			gd->zt = & Playstation2::GPU::PerformZDepthTest32_t<1>;
+			//gd->ztx8 = &Playstation2::GPU::PerformZDepthTest32_tx8<1>;
 			break;
 		case 2:
 			gd->zt = & Playstation2::GPU::PerformZDepthTest32_t<2>;
+			//gd->ztx8 = &Playstation2::GPU::PerformZDepthTest32_tx8<2>;
 			break;
 		case 3:
 			gd->zt = & Playstation2::GPU::PerformZDepthTest32_t<3>;
+			//gd->ztx8 = &Playstation2::GPU::PerformZDepthTest32_tx8<3>;
 			break;
 	}
 	
@@ -4231,7 +4270,7 @@ static void Refresh_FRAME ( u32 lContext, u64 ullValue )
 		static const u64 c_ulHwInputBuffer_Shift = 5;
 		static u64 ullHwInputBuffer_Index;
 		static u32 ulHwInputBuffer_Count;
-		static u64 pHwInputBuffer64 [ ( 1 << c_ulHwInputBuffer_Shift ) * c_ulHwInputBuffer_Size ] __attribute__ ((aligned (32)));
+		alignas(32) static u64 pHwInputBuffer64 [ ( 1 << c_ulHwInputBuffer_Shift ) * c_ulHwInputBuffer_Size ];
 		static u32 *p_uHwInputData32;
 		static u32 *p_uHwClutData32;
 		static u32 *p_uHwCbpxData32;
@@ -4247,7 +4286,7 @@ static void Refresh_FRAME ( u32 lContext, u64 ullValue )
 		static volatile u64 ullPixelInBuffer_WriteIndex;
 		static volatile u64 ullPixelInBuffer_TargetIndex;
 		static volatile u64 ullPixelInBuffer_ReadIndex;
-		static u32 ulPixelInBuffer32 [ c_ullPixelInBuffer_Size ] __attribute__ ((aligned (32)));
+		alignas(32) static u32 ulPixelInBuffer32 [ c_ullPixelInBuffer_Size ];
 		static u32 *p_ulHwPixelInBuffer32;
 
 
@@ -4279,7 +4318,7 @@ static void Refresh_FRAME ( u32 lContext, u64 ullValue )
 		//volatile u32 ulThreads_Idle;
 		static u64 ullInputBuffer_Index;
 		static u32 ulInputBuffer_Count;
-		static volatile u64 inputdata [ ( 1 << c_ulInputBuffer_Shift ) * c_ulInputBuffer_Size ] __attribute__ ((aligned (32)));
+		alignas(32) static volatile u64 inputdata [ ( 1 << c_ulInputBuffer_Shift ) * c_ulInputBuffer_Size ];
 		
 		static u64 ulInputBuffer_WriteIndex;
 		static u64 ulInputBuffer_TargetIndex;
@@ -4412,8 +4451,12 @@ static void Refresh_FRAME ( u32 lContext, u64 ullValue )
 		u32 InternalBufferWidth [ 1 << c_lBufCheckBits ];
 		
 		// internal CLUT is 1KB
-		u16 InternalCLUT [ 512 ];
-		
+		alignas(64) u16 InternalCLUT [ 512 ];
+
+		// pre-calc cluts
+		alignas(64) u32 InternalCLUT16[512];
+		alignas(64) u32 InternalCLUT32[256];
+
 		// need to function to write CLUT into internal CLUT
 		void WriteInternalCLUT ( TEX0_t TEX02 );
 		
@@ -4496,6 +4539,9 @@ static void Refresh_FRAME ( u32 lContext, u64 ullValue )
 		
 		
 		// global drawing variables //
+
+		// number of pixels to draw at once, either 1,4,8,16
+		static int iDrawVectorSize;
 		
 		// note: could make these static, but may want to set them later when registers get set?
 		// or could allow for configuring both ways for testing?
@@ -4559,29 +4605,39 @@ static void Refresh_FRAME ( u32 lContext, u64 ullValue )
 		__m128i vTA0;
 		__m128i vTA1;
 
+
+#ifdef _ENABLE_AVX2_GPU
+		// 256-bit variables //
+
+		static __m256i vvCOLCLAMP;
+		static __m256i vvDATE;
+		static __m256i vvDATM;
+		static __m256i vvZTST_GREATER, vvZTST_EQUAL, vvZTST_LESS;
+		static __m256i vvATST_MASK, vvATST_OFFSET, vvATST_AREF;
+		static __m256i vvAFAIL_PIXEL, vvAFAIL_ZPIXEL;
+		static __m256i vvAEM;
+
+		__m256i vvDestAlpha24, vvDestMask24;
+		__m256i vvDA_Enable, vvDA_Test;
+		__m256i vvFrameBuffer_WriteMask32;
+		__m256i vvPixelOr32;
+		__m256i vvFrameBufferStartOffset32;
+		__m256i vvFrameBufferWidth_Pixels;
+		__m256i vvARef_SrcAlpha;
+		__m256i vvAlphaXor32;
+		__m256i vvAlphaSelect[4];
+
+		__m256i vvFOGCOLR;
+		__m256i vvFOGCOLG;
+		__m256i vvFOGCOLB;
+
+		__m256i vvTA0;
+		__m256i vvTA1;
+#endif
+
 #endif
 
 
-#ifdef _ENABLE_AVX2
-		__m256i vCOLCLAMP;
-		__m256i vDestAlpha24, vDestMask24;
-		__m256i vDA_Enable, vDA_Test;
-		__m256i vFrameBuffer_WriteMask32;
-		__m256i vPixelOr32;
-		__m256i vFrameBufferStartOffset32;
-		__m256i vFrameBufferWidth_Pixels;
-		__m256i vARef_SrcAlpha;
-		__m256i vAlphaXor32;
-		__m256i vAlphaSelect [ 4 ];
-
-		__m256i vFOGCOLR;
-		__m256i vFOGCOLG;
-		__m256i vFOGCOLB;
-		
-		__m256i vTA0;
-		__m256i vTA1;
-
-#endif
 
 		
 		// pointer to end of draw buffer (on ps2 it is easy to draw outside of buffer)
@@ -4635,6 +4691,8 @@ static void Refresh_FRAME ( u32 lContext, u64 ullValue )
 		void TransferDataOut32_DS ( u32* Data, u32 WordCount32 );
 		void TransferDataIn32_DS ( u32* Data, u32 WordCount32 );
 
+		u64 RenderLine_Mono_DSx4(u32 Coord0, u32 Coord1);
+		u64 RenderLine_Gradient_DSx4(u32 Coord0, u32 Coord1);
 		void RenderRectangle_DSx4 ( u32 Coord0, u32 Coord1 );
 		void RenderSprite_DSx4 ( u32 Coord0, u32 Coord1 );
 		void DrawTriangle_Mono32_DSx4 ( u32 Coord0, u32 Coord1, u32 Coord2 );
@@ -4642,6 +4700,8 @@ static void Refresh_FRAME ( u32 lContext, u64 ullValue )
 		void DrawTriangle_Texture32_DSx4 ( u32 Coord0, u32 Coord1, u32 Coord2 );
 		void DrawTriangle_GradientTexture32_DSx4 ( u32 Coord0, u32 Coord1, u32 Coord2 );
 		
+		u64 RenderLine_Mono_DSx8(u32 Coord0, u32 Coord1);
+		u64 RenderLine_Gradient_DSx8(u32 Coord0, u32 Coord1);
 		void RenderRectangle_DSx8 ( u32 Coord0, u32 Coord1 );
 		void RenderSprite_DSx8 ( u32 Coord0, u32 Coord1 );
 		void DrawTriangle_Mono32_DSx8 ( u32 Coord0, u32 Coord1, u32 Coord2 );
@@ -5704,21 +5764,21 @@ inline __m128i TextureFunc32x4 ( __m128i bgr, __m128i shade1, __m128i shade2, __
 
 #endif
 
-#ifdef _ENABLE_AVX2
+#ifdef _ENABLE_AVX2_TEXTUREFUNC
 
-//inline __m256i & TextureFunc32x8 ( __m256i & bgr, __m256i & shade1, __m256i & shade2, __m256i & shade3, __m256i & shade_a )
-inline void TextureFunc32x8 ()
+inline __m256i & TextureFunc32x8 ( __m256i & bgr, __m256i & shade1, __m256i & shade2, __m256i & shade3, __m256i & shade_a )
+//inline void TextureFunc32x8 ()
 {
-	static __m256i bgr, shade1, shade2, shade3, shade_a;
+	//static __m256i bgr, shade1, shade2, shade3, shade_a;
 	
 	static __m256i c1, c2, c3, ca;
 	static __m256i vResult;
 	
-	bgr = avx2_arg0;
-	shade1 = avx2_arg1;
-	shade2 = avx2_arg2;
-	shade3 = avx2_arg3;
-	shade_a = avx2_arg4;
+	//bgr = avx2_arg0;
+	//shade1 = avx2_arg1;
+	//shade2 = avx2_arg2;
+	//shade3 = avx2_arg3;
+	//shade_a = avx2_arg4;
 	
 	// get components from pixel
 	//ca = ( bgr >> 24 ) & 0xff;
@@ -5857,8 +5917,8 @@ inline void TextureFunc32x8 ()
 	// return the pixel
 	//return ( c1 ) | ( c2 << 8 ) | ( c3 << 16 ) | ( ca << 24 );
 	vResult = _mm256_or_si256 ( _mm256_or_si256 ( _mm256_or_si256 ( c1, c2 ), c3 ), ca );
-	//return vResult;
-	avx2_result = vResult;
+	return vResult;
+	//avx2_result = vResult;
 }
 
 #endif
@@ -6028,17 +6088,17 @@ inline __m128i FogFunc32x4 ( __m128i bgr, __m128i FogCoef )
 
 #endif
 
-#ifdef _ENABLE_AVX2
+#ifdef _ENABLE_AVX2_FOGFUNC
 
-inline void FogFunc32x8 ()
+inline __m256i FogFunc32x8 (__m256i bgr, __m256i FogCoef)
 {
-	static __m256i bgr, FogCoef;
+	//static __m256i bgr, FogCoef;
 	
 	static __m256i cr, cg, cb, ca, rf, fogr, fogg, fogb;
 	static __m256i vResult;
 	
-	bgr = avx2_arg1;
-	FogCoef = avx2_arg2;
+	//bgr = avx2_arg1;
+	//FogCoef = avx2_arg2;
 	
 	//rf = 0xff - FogCoef;
 	rf = _mm256_sub_epi8 ( _mm256_set1_epi8 ( 0xff ), FogCoef );
@@ -6062,9 +6122,9 @@ inline void FogFunc32x8 ()
 	//cr = ColClamp8 ( ( ( FogCoef * cr ) >> 8 ) + ( ( rf * fogr ) >> 8 ) );
 	//cg = ColClamp8 ( ( ( FogCoef * cg ) >> 8 ) + ( ( rf * fogg ) >> 8 ) );
 	//cb = ColClamp8 ( ( ( FogCoef * cb ) >> 8 ) + ( ( rf * fogb ) >> 8 ) );
-	cr = _mm256_add_epi32 ( _mm256_srli_epi32 ( _mm256_mullo_epi32 ( FogCoef, cr ), 8 ), _mm256_srli_epi32 ( _mm256_mullo_epi32 ( rf, vFOGCOLR ), 8 ) );
-	cg = _mm256_add_epi32 ( _mm256_srli_epi32 ( _mm256_mullo_epi32 ( FogCoef, cg ), 8 ), _mm256_srli_epi32 ( _mm256_mullo_epi32 ( rf, vFOGCOLG ), 8 ) );
-	cb = _mm256_add_epi32 ( _mm256_srli_epi32 ( _mm256_mullo_epi32 ( FogCoef, cb ), 8 ), _mm256_srli_epi32 ( _mm256_mullo_epi32 ( rf, vFOGCOLB ), 8 ) );
+	cr = _mm256_add_epi32 ( _mm256_srli_epi32 ( _mm256_mullo_epi32 ( FogCoef, cr ), 8 ), _mm256_srli_epi32 ( _mm256_mullo_epi32 ( rf, vvFOGCOLR ), 8 ) );
+	cg = _mm256_add_epi32 ( _mm256_srli_epi32 ( _mm256_mullo_epi32 ( FogCoef, cg ), 8 ), _mm256_srli_epi32 ( _mm256_mullo_epi32 ( rf, vvFOGCOLG ), 8 ) );
+	cb = _mm256_add_epi32 ( _mm256_srli_epi32 ( _mm256_mullo_epi32 ( FogCoef, cb ), 8 ), _mm256_srli_epi32 ( _mm256_mullo_epi32 ( rf, vvFOGCOLB ), 8 ) );
 	if ( GPURegsGp.COLCLAMP & 1 )
 	{
 		cr = _mm256_packus_epi16 ( cr, cr );
@@ -6084,8 +6144,8 @@ inline void FogFunc32x8 ()
 	// return the pixel
 	//return ( cr ) | ( cg << 8 ) | ( cb << 16 ) | ( ca << 24 );
 	vResult = _mm256_or_si256 ( _mm256_or_si256 ( cr, cg ), _mm256_or_si256 ( cb, ca ) );
-	//return vResult;
-	avx2_result = vResult;
+	return vResult;
+	//avx2_result = vResult;
 }
 
 #endif
@@ -7185,7 +7245,13 @@ debug << hex << " " << _mm_extract_epi32 ( vAlphaSelect [ 3 ], 0 );
 				
 				// write pixels
 				// *ptr32 = bgr_temp;
-				
+
+
+//cout << "\nvControl_Pixel=" << dec << vControl_Pixel.m128i_i32[0] << " " << vControl_Pixel.m128i_i32[1] << " " << vControl_Pixel.m128i_i32[2] << " " << vControl_Pixel.m128i_i32[3];
+//cout << "\nvOffset32=" << dec << vOffset32.m128i_i32[0] << " " << vOffset32.m128i_i32[1] << " " << vOffset32.m128i_i32[2] << " " << vOffset32.m128i_i32[3];
+//cout << "\nbgr_temp=" << hex << bgr_temp.m128i_i32[0] << " " << bgr_temp.m128i_i32[1] << " " << bgr_temp.m128i_i32[2] << " " << bgr_temp.m128i_i32[3];
+//cout << "\nFrameBuffer_PixelFormat=" << FrameBuffer_PixelFormat;
+
 				switch ( FrameBuffer_PixelFormat & 3 )
 				{
 					// PSMCT32
@@ -7193,7 +7259,9 @@ debug << hex << " " << _mm_extract_epi32 ( vAlphaSelect [ 3 ], 0 );
 					
 					// PSMZ32
 					//case 0x30:
-					
+
+//cout << "\nPSMCT32";
+
 						if ( _mm_extract_epi32 ( vControl_Pixel, 0 ) ) buf32 [ _mm_extract_epi32 ( vOffset32, 0 ) ] = _mm_extract_epi32 ( bgr_temp, 0 );
 						if ( _mm_extract_epi32 ( vControl_Pixel, 1 ) ) buf32 [ _mm_extract_epi32 ( vOffset32, 1 ) ] = _mm_extract_epi32 ( bgr_temp, 1 );
 						if ( _mm_extract_epi32 ( vControl_Pixel, 2 ) ) buf32 [ _mm_extract_epi32 ( vOffset32, 2 ) ] = _mm_extract_epi32 ( bgr_temp, 2 );
@@ -7207,7 +7275,9 @@ debug << hex << " " << _mm_extract_epi32 ( vAlphaSelect [ 3 ], 0 );
 					
 					// PSMZ24
 					//case 0x31:
-					
+
+//cout << "\nPSMCT24";
+
 						// only copy the rgb, not the alpha component
 						bgr_temp = _mm_blendv_epi8 ( vDestPixel, bgr_temp, _mm_srli_epi32 ( _mm_set1_epi32 ( -1 ), 8 ) );
 						
@@ -7230,7 +7300,9 @@ debug << hex << " " << _mm_extract_epi32 ( vAlphaSelect [ 3 ], 0 );
 					
 					// PSMZ16S
 					//case 0x3a:
-					
+
+//cout << "\nPSMCT16";
+
 						// convert pixels from 32-bit to 16-bit
 						vRed = _mm_srli_epi32 ( _mm_slli_epi32 ( bgr_temp, 24 ), 24 + 3 );
 						vGreen = _mm_slli_epi32 ( _mm_srli_epi32 ( _mm_slli_epi32 ( bgr_temp, 16 ), 24 + 3 ), 5 );
@@ -7353,17 +7425,17 @@ debug << hex << " " << _mm_extract_epi32 ( vAlphaSelect [ 3 ], 0 );
 
 #endif
 
-#ifdef _ENABLE_AVX2
+#ifdef _ENABLE_AVX2_PLOTPIXEL_MONO
 
-//inline void PlotPixel_Monox8 ( __m256i & x0, __m256i & y0, __m256i & z0, __m256i & bgr, __m256i & vEnable )
-inline void PlotPixel_Monox8 ()
+inline void PlotPixel_Monox8 ( __m256i & x0, __m256i & y0, __m256i & z0, __m256i & bgr, __m256i & vEnable )
+//inline void PlotPixel_Monox8 ()
 {
 	//u32 DestPixel;
 	//u32 bgr_temp;
 	//u32 SrcAlphaTest_Pass;
 	//u32 ZDepthTest_Pass;
 	
-	static __m256i x0 y0, z0, bgr, vEnable;
+	//static __m256i x0 y0, z0, bgr, vEnable;
 	
 	static __m256i vDestPixel, vZDestPixel, vOffset32, vZOffset32;
 	static __m256i vControl_Pixel, vControl_ZPixel;
@@ -7373,11 +7445,11 @@ inline void PlotPixel_Monox8 ()
 	static __m256i vTest_Depth, vTest_DstAlpha, vTest_SrcAlpha;
 	static __m256i vTest_AlphaXor;
 	
-	x0 = avx2_arg0;
-	y0 = avx2_arg1;
-	z0 = avx2_arg2;
-	bgr = avx2_arg3;
-	vEnable = avx2_arg4;
+	//x0 = avx2_arg0;
+	//y0 = avx2_arg1;
+	//z0 = avx2_arg2;
+	//bgr = avx2_arg3;
+	//vEnable = avx2_arg4;
 
 
 		// get pointer into frame buffer //
@@ -7391,17 +7463,17 @@ inline void PlotPixel_Monox8 ()
 			// PSMCT24
 			case 1:
 				//ptr32 = & ( buf32 [ CvtAddrPix32 ( x0, y0, FrameBufferWidth_Pixels ) ] );
-				vOffset32 = CvtAddrPix32x8 ( x0, y0, vFrameBufferWidth_Pixels, vEnable );
+				vOffset32 = CvtAddrPix32x8 ( x0, y0, vvFrameBufferWidth_Pixels, vEnable );
 				break;
 				
 			// PSMCT16
 			case 2:
-				vOffset32 = CvtAddrPix16x8 ( x0, y0, vFrameBufferWidth_Pixels, vEnable );
+				vOffset32 = CvtAddrPix16x8 ( x0, y0, vvFrameBufferWidth_Pixels, vEnable );
 				break;
 				
 			// PSMCT16S
 			case 0xa:
-				vOffset32 = CvtAddrPix16x8 ( x0, y0, vFrameBufferWidth_Pixels, vEnable );
+				vOffset32 = CvtAddrPix16x8 ( x0, y0, vvFrameBufferWidth_Pixels, vEnable );
 				break;
 				
 				
@@ -7412,17 +7484,17 @@ inline void PlotPixel_Monox8 ()
 			// PSMZ24
 			case 0x31:
 				//ptr32 = & ( buf32 [ CvtAddrZBuf32 ( x0, y0, FrameBufferWidth_Pixels ) ] );
-				vOffset32 = CvtAddrZBuf32x8 ( x0, y0, vFrameBufferWidth_Pixels, vEnable );
+				vOffset32 = CvtAddrZBuf32x8 ( x0, y0, vvFrameBufferWidth_Pixels, vEnable );
 				break;
 				
 			// PSMZ16
 			case 0x32:
-				vOffset32 = CvtAddrZBuf16x8 ( x0, y0, vFrameBufferWidth_Pixels, vEnable );
+				vOffset32 = CvtAddrZBuf16x8 ( x0, y0, vvFrameBufferWidth_Pixels, vEnable );
 				break;
 				
 			// PSMZ16S
 			case 0x3a:
-				vOffset32 = CvtAddrZBuf16Sx8 ( x0, y0, vFrameBufferWidth_Pixels, vEnable );
+				vOffset32 = CvtAddrZBuf16Sx8 ( x0, y0, vvFrameBufferWidth_Pixels, vEnable );
 				break;
 				
 		}
@@ -7444,21 +7516,21 @@ inline void PlotPixel_Monox8 ()
 				// PSMZ24
 				case 1:
 					//return (u32*) ( & ( zbuf32 [ CvtAddrZBuf32 ( x, y, FrameBufferWidthInPixels ) ] ) );
-					vZOffset32 = CvtAddrZBuf32x8 ( x0, y0, vFrameBufferWidth_Pixels, vEnable );
+					vZOffset32 = CvtAddrZBuf32x8 ( x0, y0, vvFrameBufferWidth_Pixels, vEnable );
 					break;
 					
 				// PSMZ16
 				case 2:
 					// not valid for a 32-bit frame buffer
 					//return (u32*) ( & ( ((u16*) zbuf32) [ CvtAddrZBuf16 ( x, y, FrameBufferWidthInPixels ) ] ) );
-					vZOffset32 = CvtAddrZBuf16x8 ( x0, y0, vFrameBufferWidth_Pixels, vEnable );
+					vZOffset32 = CvtAddrZBuf16x8 ( x0, y0, vvFrameBufferWidth_Pixels, vEnable );
 			
 					break;
 			
 				// PSMZ16S
 				case 0xa:
 					//return (u32*) ( & ( ((u16*) zbuf32) [ CvtAddrZBuf16S ( x, y, FrameBufferWidthInPixels ) ] ) );
-					vZOffset32 = CvtAddrZBuf16Sx8 ( x0, y0, vFrameBufferWidth_Pixels, vEnable );
+					vZOffset32 = CvtAddrZBuf16Sx8 ( x0, y0, vvFrameBufferWidth_Pixels, vEnable );
 					break;
 					
 				// OTHER
@@ -7644,7 +7716,7 @@ inline void PlotPixel_Monox8 ()
 			//if ( !( ( DestPixel ^ DA_Test ) & DA_Enable ) )
 			//{
 				// result of this test needs to be zero
-				vTest_DstAlpha = _mm256_xor_si256 ( _mm256_and_si256 ( _mm256_xor_si256 ( vDestPixel, vDA_Test ), vDA_Enable ), _mm256_set1_epi32 ( -1 ) );
+				vTest_DstAlpha = _mm256_xor_si256 ( _mm256_and_si256 ( _mm256_xor_si256 ( vDestPixel, vvDA_Test ), vvDA_Enable ), _mm256_set1_epi32 ( -1 ) );
 				
 				
 				
@@ -7666,18 +7738,18 @@ inline void PlotPixel_Monox8 ()
 
 				//AlphaSelect [ 0 ] = bgr_temp;
 				//AlphaSelect [ 1 ] = ( DestPixel & DestMask24 ) | DestAlpha24;
-				vAlphaSelect [ 1 ] = _mm256_or_si256 ( _mm256_and_si256 ( vDestPixel, vDestMask24 ), vDestAlpha24 );
+				vvAlphaSelect [ 1 ] = _mm256_or_si256 ( _mm256_and_si256 ( vDestPixel, vvDestMask24 ), vvDestAlpha24 );
 
 				
 				// need to keep the source alpha
-				bgr_temp = AlphaABCD_32x8 ( vAlphaSelect [ uA ], vAlphaSelect [ uB ], vAlphaSelect [ uC ], vAlphaSelect [ uD ] );
+				bgr_temp = AlphaABCD_32x8 ( vvAlphaSelect [ uA ], vvAlphaSelect [ uB ], vvAlphaSelect [ uC ], vvAlphaSelect [ uD ] );
 				
 				// re-add source alpha
 				//bgr_temp |= ( bgr & 0xff000000 );
 				bgr_temp = _mm256_or_si256 ( bgr_temp, _mm256_slli_epi32 ( _mm256_srli_epi32 ( bgr, 24 ), 24 ) );
 				
 				// if ( !( ( bgr ^ AlphaXor32 ) & AlphaXor32 ) )
-				vTest_AlphaXor = _mm256_srai_epi32 ( _mm256_and_si256 ( _mm256_xor_si256 ( bgr, vAlphaXor32 ), vAlphaXor32 ), 31 );
+				vTest_AlphaXor = _mm256_srai_epi32 ( _mm256_and_si256 ( _mm256_xor_si256 ( bgr, vvAlphaXor32 ), vvAlphaXor32 ), 31 );
 				bgr_temp = _mm256_blendv_epi8 ( bgr_temp, bgr, vTest_AlphaXor );
 				
 			}
@@ -7720,21 +7792,21 @@ inline void PlotPixel_Monox8 ()
 							// bottom 24 bits of SrcAlpha_ARef need to be cleared out first
 							//if ( bgr < SrcAlpha_ARef ) return 1;
 							//vTest_SrcAlpha = _mm256_cmplt_epi32 ( _mm256_xor_si256 ( bgr_temp, _mm256_set1_epi32 ( 0x80000000 ) ), _mm256_xor_si256 ( vARef_SrcAlpha, _mm256_set1_epi32 ( 0x80000000 ) ) );
-							vTest_SrcAlpha = _mm256_cmpgt_epi32 ( _mm256_xor_si256 ( vARef_SrcAlpha, _mm256_set1_epi32 ( 0x80000000 ) ), _mm256_xor_si256 ( bgr_temp, _mm256_set1_epi32 ( 0x80000000 ) ) );
+							vTest_SrcAlpha = _mm256_cmpgt_epi32 ( _mm256_xor_si256 ( vvARef_SrcAlpha, _mm256_set1_epi32 ( 0x80000000 ) ), _mm256_xor_si256 ( bgr_temp, _mm256_set1_epi32 ( 0x80000000 ) ) );
 							break;
 							
 						// LESS OR EQUAL
 						case 3:
 							// bottom 24 bits of SrcAlpha_ARef need to be set first
 							//if ( bgr <= SrcAlpha_ARef ) return 1;
-							vTest_SrcAlpha = _mm256_xor_si256 ( _mm256_cmpgt_epi32 ( _mm256_xor_si256 ( bgr_temp, _mm256_set1_epi32 ( 0x80000000 ) ), _mm256_xor_si256 ( vARef_SrcAlpha, _mm256_set1_epi32 ( 0x80000000 ) ) ), _mm256_set1_epi32 ( -1 ) );
+							vTest_SrcAlpha = _mm256_xor_si256 ( _mm256_cmpgt_epi32 ( _mm256_xor_si256 ( bgr_temp, _mm256_set1_epi32 ( 0x80000000 ) ), _mm256_xor_si256 ( vvARef_SrcAlpha, _mm256_set1_epi32 ( 0x80000000 ) ) ), _mm256_set1_epi32 ( -1 ) );
 							break;
 							
 						// EQUAL
 						case 4:
 							// SrcAlpha_ARef need to be shifted right 24 first
 							//if ( ( bgr >> 24 ) == SrcAlpha_ARef ) return 1;
-							vTest_SrcAlpha = _mm256_cmpeq_epi32 ( _mm256_srli_epi32 ( bgr_temp, 24 ), vARef_SrcAlpha );
+							vTest_SrcAlpha = _mm256_cmpeq_epi32 ( _mm256_srli_epi32 ( bgr_temp, 24 ), vvARef_SrcAlpha );
 							break;
 							
 						// GREATER OR EQUAL
@@ -7742,21 +7814,21 @@ inline void PlotPixel_Monox8 ()
 							// bottom 24 bits of SrcAlpha_ARef need to be cleared out first
 							//if ( bgr >= SrcAlpha_ARef ) return 1;
 							//vTest_SrcAlpha = _mm256_xor_si256 ( _mm256_cmplt_epi32 ( _mm256_xor_si256 ( bgr_temp, _mm256_set1_epi32 ( 0x80000000 ) ), _mm256_xor_si256 ( vARef_SrcAlpha, _mm256_set1_epi32 ( 0x80000000 ) ) ), _mm256_set1_epi32 ( -1 ) );
-							vTest_SrcAlpha = _mm256_xor_si256 ( _mm256_cmpgt_epi32 ( _mm256_xor_si256 ( vARef_SrcAlpha, _mm256_set1_epi32 ( 0x80000000 ) ), _mm256_xor_si256 ( bgr_temp, _mm256_set1_epi32 ( 0x80000000 ) ) ), _mm256_set1_epi32 ( -1 ) );
+							vTest_SrcAlpha = _mm256_xor_si256 ( _mm256_cmpgt_epi32 ( _mm256_xor_si256 ( vvARef_SrcAlpha, _mm256_set1_epi32 ( 0x80000000 ) ), _mm256_xor_si256 ( bgr_temp, _mm256_set1_epi32 ( 0x80000000 ) ) ), _mm256_set1_epi32 ( -1 ) );
 							break;
 							
 						// GREATER
 						case 6:
 							// bottom 24 bits of SrcAlpha_ARef need to be set first
 							//if ( bgr > SrcAlpha_ARef ) return 1;
-							vTest_SrcAlpha = _mm256_cmpgt_epi32 ( _mm256_xor_si256 ( bgr_temp, _mm256_set1_epi32 ( 0x80000000 ) ), _mm256_xor_si256 ( vARef_SrcAlpha, _mm256_set1_epi32 ( 0x80000000 ) ) );
+							vTest_SrcAlpha = _mm256_cmpgt_epi32 ( _mm256_xor_si256 ( bgr_temp, _mm256_set1_epi32 ( 0x80000000 ) ), _mm256_xor_si256 ( vvARef_SrcAlpha, _mm256_set1_epi32 ( 0x80000000 ) ) );
 							break;
 							
 						// NOT EQUAL
 						case 7:
 							// SrcAlpha_ARef need to be shifted right 24 first
 							//if ( ( bgr >> 24 ) != SrcAlpha_ARef ) return 1;
-							vTest_SrcAlpha = _mm256_xor_si256 ( _mm256_cmpeq_epi32 ( _mm256_srli_epi32 ( bgr_temp, 24 ), vARef_SrcAlpha ), _mm256_set1_epi32 ( -1 ) );
+							vTest_SrcAlpha = _mm256_xor_si256 ( _mm256_cmpeq_epi32 ( _mm256_srli_epi32 ( bgr_temp, 24 ), vvARef_SrcAlpha ), _mm256_set1_epi32 ( -1 ) );
 							break;
 					}
 					
@@ -7774,13 +7846,13 @@ inline void PlotPixel_Monox8 ()
 
 				// this should go AFTER the source alpha test?
 				//bgr_temp |= PixelOr32;
-				bgr_temp = _mm256_or_si256 ( bgr_temp, vPixelOr32 );
+				bgr_temp = _mm256_or_si256 ( bgr_temp, vvPixelOr32 );
 				
 				
 				// draw pixel //
 				
 				//bgr_temp = ( bgr_temp & FrameBuffer_WriteMask32 ) | ( DestPixel & ~FrameBuffer_WriteMask32 );
-				bgr_temp = _mm256_or_si256 ( _mm256_and_si256 ( bgr_temp, vFrameBuffer_WriteMask32 ), _mm256_andnot_si256 ( vFrameBuffer_WriteMask32, vDestPixel ) );
+				bgr_temp = _mm256_or_si256 ( _mm256_and_si256 ( bgr_temp, vvFrameBuffer_WriteMask32 ), _mm256_andnot_si256 ( vvFrameBuffer_WriteMask32, vDestPixel ) );
 				
 				
 				// check if pixel is controlled
@@ -10656,6 +10728,112 @@ void Select_RenderSprite_t ( u64* p_inputbuffer, u32 ulThreadNum )
 #endif
 
 
+#ifdef _ENABLE_AVX2
+
+inline static __m256i AlphaABCD_32_tx8(__m256i A, __m256i B, __m256i C, __m256i D)
+{
+
+	//s32 cA, cB, cC, cD, sC1, sC2, sC3;
+	__m256i cA, cB, cC, cD, sC1, sC2, sC3;
+	//__m256i A, B, C, D;
+	__m256i vZero;
+	__m256i vMask;
+	vMask = _mm256_srli_epi16(_mm256_set1_epi32(-1), 8);
+	vZero = _mm256_setzero_si256();
+
+	// get alpha value
+	//cC = ( C >> 24 ) & 0xff;
+	cC = _mm256_srli_epi32(C, 24);
+	cC = _mm256_or_si256(cC, _mm256_slli_epi32(cC, 16));
+
+	// get component 1
+	//cA = ( A >> 0 ) & 0xff;
+	//cB = ( B >> 0 ) & 0xff;
+	//cD = ( D >> 0 ) & 0xff;
+	cA = _mm256_and_si256(A, vMask);
+	cB = _mm256_and_si256(B, vMask);
+	cD = _mm256_and_si256(D, vMask);
+
+
+	// the blending does not clamp anything actually, and the result here actually does not get clamped until after dithering
+	//sC1 = ( ( ( cA - cB ) * cC ) >> 7 );
+	//sC1 = _mm256_srai_epi16 ( _mm256_mullo_epi16( _mm256_sub_epi16 ( cA, cB ), cC ), 7 );
+	sC1 = _mm256_sub_epi16(cA, cB);
+	sC3 = _mm256_slli_epi16(_mm256_mulhi_epi16(sC1, cC), 9);
+	sC1 = _mm256_srli_epi16(_mm256_mullo_epi16(sC1, cC), 7);
+	sC1 = _mm256_or_si256(sC1, sC3);
+
+	// add with D color
+	//sC1 += cD;
+	sC1 = _mm256_add_epi16(sC1, cD);
+
+	// colclamp
+	sC1 = _mm256_and_si256(sC1, vvCOLCLAMP);
+
+	// if COLCLAMP then clamp, otherwise just mask to 8-bits
+	//if ( COLCLAMP & 1 )
+	//{
+	sC1 = _mm256_min_epi16(_mm256_max_epi16(sC1, vZero), vMask);
+	//}
+	//else
+	//{
+	//	//sC1 &= 0xff;
+	//	//sC1 = _mm256_srli_epi32 ( _mm256_slli_epi32 ( sC1, 24 ), 24 );
+	//	sC1 = _mm256_and_si128 ( sC1, vMask );
+	//}
+
+
+	// get component 2
+	//cA = ( A >> 8 ) & 0xff;
+	//cB = ( B >> 8 ) & 0xff;
+	//cD = ( D >> 8 ) & 0xff;
+	//cA = _mm256_srli_epi32 ( _mm256_slli_epi32 ( A, 16 ), 24 );
+	//cB = _mm256_srli_epi32 ( _mm256_slli_epi32 ( B, 16 ), 24 );
+	//cD = _mm256_srli_epi32 ( _mm256_slli_epi32 ( D, 16 ), 24 );
+	cA = _mm256_srli_epi16(A, 8);
+	cB = _mm256_srli_epi16(B, 8);
+	cD = _mm256_srli_epi16(D, 8);
+
+	//sC2 = SignedClamp<s32,8>( ( ( cA - cB ) * cC ) >> 7 );
+	//sC2 = ( ( ( cA - cB ) * cC ) >> 7 );
+	//sC2 = _mm256_srai_epi16 ( _mm256_mullo_epi16( _mm256_sub_epi16 ( cA, cB ), cC ), 7 );
+	sC2 = _mm256_sub_epi16(cA, cB);
+	sC3 = _mm256_slli_epi16(_mm256_mulhi_epi16(sC2, cC), 9);
+	sC2 = _mm256_srli_epi16(_mm256_mullo_epi16(sC2, cC), 7);
+	sC2 = _mm256_or_si256(sC2, sC3);
+
+	// add with D color
+	//sC2 += cD;
+	sC2 = _mm256_add_epi16(sC2, cD);
+
+	// colclamp
+	sC2 = _mm256_and_si256(sC2, vvCOLCLAMP);
+
+	// if COLCLAMP then clamp, otherwise just mask to 8-bits
+	//if ( COLCLAMP & 1 )
+	//{
+		//sC2 = SignedClamp<s32,8> ( sC2 );
+		//sC2 = _mm256_packus_epi16 ( sC2, sC2 );
+		//sC2 = _mm256_srli_epi32 ( _mm256_slli_epi32 ( _mm256_unpacklo_epi16 ( sC2, sC2 ), 24 ), 16 );
+	sC2 = _mm256_min_epi16(_mm256_max_epi16(sC2, vZero), vMask);
+	//}
+	//else
+	//{
+	//	//sC2 &= 0xff;
+	//	//sC2 = _mm256_srli_epi32 ( _mm256_slli_epi32 ( sC2, 24 ), 16 );
+	//	sC2 = _mm256_and_si128 ( sC2, vMask );
+	//}
+
+	//sC2 = _mm256_slli_epi16 ( sC2, 8 );
+	sC2 = _mm256_srli_epi32(_mm256_slli_epi32(sC2, 24), 16);
+
+
+	//return sC1 | ( sC2 << 8 ) | ( sC3 << 16 );
+	//return _mm256_or_si128 ( _mm256_or_si128 ( sC1, sC2 ), sC3 );
+	return _mm256_or_si256(sC1, sC2);
+}
+
+#endif
 
 
 //template<const long COLCLAMP>
@@ -10764,6 +10942,81 @@ inline static __m128i AlphaABCD_32_t ( __m128i A, __m128i B, __m128i C, __m128i 
 
 
 
+#ifdef _ENABLE_AVX2
+
+template<const long TEST_ATST>
+static __m256i TestSrcAlpha32_tx8(__m256i bgr, __m256i vARef_SrcAlpha)
+{
+	// needs local variable: bgr_temp
+	// returns: SrcAlphaTest_Pass
+
+
+
+	switch (TEST_ATST)
+	{
+		// NEVER
+	case 0:
+		//return 0;
+		return _mm256_setzero_si256();
+		break;
+
+		// ALWAYS
+	case 1:
+		//return 1;
+		return _mm256_set1_epi32(-1);
+		break;
+
+		// LESS
+	case 2:
+		// bottom 24 bits of SrcAlpha_ARef need to be cleared out first
+		//if ( bgr < SrcAlpha_ARef ) return 1;
+		//vTest_SrcAlpha = _mm256_cmplt_epi32 ( _mm256_xor_si256 ( bgr, _mm256_set1_epi32 ( 0x80000000 ) ), _mm256_xor_si256 ( vARef_SrcAlpha, _mm256_set1_epi32 ( 0x80000000 ) ) );
+		//return _mm256_cmpgt_epi32 ( _mm256_xor_si256 ( vARef_SrcAlpha, _mm256_set1_epi32 ( 0x80000000 ) ), _mm256_xor_si256 ( bgr, _mm256_set1_epi32 ( 0x80000000 ) ) );
+		return _mm256_cmpgt_epi32(vARef_SrcAlpha, _mm256_srli_epi32(bgr, 24));
+		break;
+
+		// LESS OR EQUAL
+	case 3:
+		// bottom 24 bits of SrcAlpha_ARef need to be set first
+		//if ( bgr <= SrcAlpha_ARef ) return 1;
+		return _mm256_xor_si256(_mm256_cmpgt_epi32(_mm256_srli_epi32(bgr, 24), vARef_SrcAlpha), _mm256_set1_epi32(-1));
+		break;
+
+		// EQUAL
+	case 4:
+		// SrcAlpha_ARef need to be shifted right 24 first
+		//if ( ( bgr >> 24 ) == SrcAlpha_ARef ) return 1;
+		return _mm256_cmpeq_epi32(_mm256_srli_epi32(bgr, 24), vARef_SrcAlpha);
+		break;
+
+		// GREATER OR EQUAL
+	case 5:
+		// bottom 24 bits of SrcAlpha_ARef need to be cleared out first
+		//if ( bgr >= SrcAlpha_ARef ) return 1;
+		//vTest_SrcAlpha = _mm256_xor_si256 ( _mm256_cmplt_epi32 ( _mm256_xor_si256 ( bgr, _mm256_set1_epi32 ( 0x80000000 ) ), _mm256_xor_si256 ( vARef_SrcAlpha, _mm256_set1_epi32 ( 0x80000000 ) ) ), _mm256_set1_epi32 ( -1 ) );
+		return _mm256_xor_si256(_mm256_cmpgt_epi32(vARef_SrcAlpha, _mm256_srli_epi32(bgr, 24)), _mm256_set1_epi32(-1));
+		break;
+
+		// GREATER
+	case 6:
+		// bottom 24 bits of SrcAlpha_ARef need to be set first
+		//if ( bgr > SrcAlpha_ARef ) return 1;
+		return _mm256_cmpgt_epi32(_mm256_srli_epi32(bgr, 24), vARef_SrcAlpha);
+		break;
+
+		// NOT EQUAL
+	case 7:
+		// SrcAlpha_ARef need to be shifted right 24 first
+		//if ( ( bgr >> 24 ) != SrcAlpha_ARef ) return 1;
+		return _mm256_xor_si256(_mm256_cmpeq_epi32(_mm256_srli_epi32(bgr, 24), vARef_SrcAlpha), _mm256_set1_epi32(-1));
+		break;
+	}
+
+
+}
+
+#endif
+
 
 template<const long TEST_ATST>
 //static u32 TestSrcAlpha32_t ( u32 bgr, u32 SrcAlpha_ARef )
@@ -10839,6 +11092,52 @@ static __m128i TestSrcAlpha32_t ( __m128i bgr, __m128i vARef_SrcAlpha )
 
 
 
+#ifdef _ENABLE_AVX2
+
+template<const long TEST_ZTST>
+static __m256i PerformZDepthTest32_tx8(__m256i vZValues32, __m256i z0)
+{
+	//u32 z1;
+
+
+	switch (TEST_ZTST)
+	{
+		// NEVER pass
+	case 0:
+		//return 0;
+		return _mm256_setzero_si256();
+		break;
+
+		// ALWAYS pass
+	case 1:
+		//return 1;
+		return _mm256_set1_epi32(-1);
+		break;
+
+		// GREATER OR EQUAL pass
+	case 2:
+		//if ( ZValue32 >= GetZBufValue32 ( zptr32 ) ) return 1;
+		//return 0;
+		//vTest_Depth = _mm256_xor_si256 ( _mm256_cmplt_epi32( _mm256_xor_si256 ( z0, _mm256_set1_epi32 ( 0x80000000 ) ), _mm256_xor_si256 ( vZValues32,  _mm256_set1_epi32 ( 0x80000000 ) ) ), _mm256_set1_epi32 ( -1 ) );
+		return _mm256_xor_si256(_mm256_cmpgt_epi32(_mm256_xor_si256(vZValues32, _mm256_set1_epi32(0x80000000)), _mm256_xor_si256(z0, _mm256_set1_epi32(0x80000000))), _mm256_set1_epi32(-1));
+		break;
+
+		// GREATER
+	case 3:
+		//if ( ZValue32 > GetZBufValue32 ( zptr32 ) ) return 1;
+		//return 0;
+		return _mm256_cmpgt_epi32(_mm256_xor_si256(z0, _mm256_set1_epi32(0x80000000)), _mm256_xor_si256(vZValues32, _mm256_set1_epi32(0x80000000)));
+		break;
+	} // switch ( TEST_ZTST )
+
+
+	//return 0;
+}
+
+#endif
+
+
+
 //template<const long TEST_ZTST,const long ZBUF_PSM>
 template<const long TEST_ZTST>
 //static u32 PerformZDepthTest32_t ( u32 *zptr32, u32 ZValue32 )
@@ -10880,6 +11179,767 @@ static __m128i PerformZDepthTest32_t ( __m128i vZValues32, __m128i z0 )
 	
 	//return 0;
 }
+
+
+
+#ifdef _ENABLE_AVX2
+
+template<const long DTHE, const long ABE, const long ZMSK, const long FBPSM, const long ZBPSM, const long bDRAWLINE = 0>
+inline static void PlotPixel_Gradient_tx8(u32* buf32, u32* zbuf32, __m256i x0, __m256i y0, __m256i z0, __m256i bgr, __m256i vPixelOr32, __m256i vFrameBufferWidth_Pixels, __m256i vDA_Test, __m256i vAlphaXor32, __m256i vFrameBuffer_WriteMask32, __m256i vAREF, AlphaTestx8 at, ZTestx8 zt, u32 TEST_AFAIL, __m256i* vAlphaSelect, u32 uA, u32 uB, u32 uC, u32 uD, __m256i vEnable, __m256i vYOffset_add, s32 ulStartX)
+{
+
+	__m256i vDestPixel, vZDestPixel, vOffset32, vZOffset32;
+	__m256i vControl_Pixel, vControl_ZPixel;
+	__m256i bgr_temp;
+	__m256i vRed, vGreen, vBlue, vAlpha;
+	__m256i vZValues32;
+	__m256i vTest_Depth, vTest_DstAlpha, vTest_SrcAlpha;
+	__m256i vTest_AlphaXor;
+	__m256i salpha;
+
+	__m256i zl, zr;
+
+	union
+	{
+		u32* ptr32;
+		u16* ptr16;
+	};
+
+	union
+	{
+		u32* zptr32;
+		u16* zptr16;
+	};
+
+	//cout << "\ndrawing pixel" << " x0=" << dec << x0 << " y0=" << y0 << " CvtAddrPix32=" << CvtAddrPix32 ( x0, y0, FrameBufferWidthInPixels ) ];
+
+	switch (FBPSM)
+	{
+		// PSMCT32
+	case 0:
+
+		// PSMCT24
+	case 1:
+		//ptr32 = & ( buf32 [ CvtAddrPix32 ( x0, y0, FrameBufferWidth_Pixels ) ] );
+#ifdef ENABLE_CALC_FULL_PIX_ADDR
+		vOffset32 = CvtAddrPix32x8(x0, y0, vFrameBufferWidth_Pixels, vEnable);
+#else
+		if (bDRAWLINE)
+		{
+			vOffset32 = CvtAddrPix32x8(x0, y0, vFrameBufferWidth_Pixels, vEnable);
+		}
+		else
+		{
+			vOffset32 = _mm256_loadu_si256((__m256i*) & ulLUT_OffsetPix32x[ulStartX]);
+			//vOffset32 = _mm_xor_si128 ( vOffset32, vYOffset_xor );
+			vOffset32 = _mm256_add_epi32(vOffset32, vYOffset_add);
+		}
+		vOffset32 = _mm256_and_si256(vOffset32, vEnable);
+#endif
+		break;
+
+		// PSMCT16
+	case 2:
+#ifdef ENABLE_CALC_FULL_PIX_ADDR
+		vOffset32 = CvtAddrPix16x8(x0, y0, vFrameBufferWidth_Pixels, vEnable);
+#else
+		if (bDRAWLINE)
+		{
+			vOffset32 = CvtAddrPix16x8(x0, y0, vFrameBufferWidth_Pixels, vEnable);
+		}
+		else
+		{
+			vOffset32 = _mm256_loadu_si256((__m256i*) & ulLUT_OffsetPix16x[ulStartX]);
+			//vOffset32 = _mm_xor_si128 ( vOffset32, vYOffset_xor );
+			vOffset32 = _mm256_add_epi32(vOffset32, vYOffset_add);
+		}
+		vOffset32 = _mm256_and_si256(vOffset32, vEnable);
+#endif
+		break;
+
+		// PSMCT16S
+	case 0xa:
+#ifdef ENABLE_CALC_FULL_PIX_ADDR
+		vOffset32 = CvtAddrPix16Sx8(x0, y0, vFrameBufferWidth_Pixels, vEnable);
+#else
+		if (bDRAWLINE)
+		{
+			vOffset32 = CvtAddrPix16Sx8(x0, y0, vFrameBufferWidth_Pixels, vEnable);
+		}
+		else
+		{
+			vOffset32 = _mm256_loadu_si256((__m256i*) & ulLUT_OffsetPix16Sx[ulStartX]);
+			//vOffset32 = _mm_xor_si128 ( vOffset32, vYOffset_xor );
+			vOffset32 = _mm256_add_epi32(vOffset32, vYOffset_add);
+		}
+		vOffset32 = _mm256_and_si256(vOffset32, vEnable);
+#endif
+		break;
+
+
+
+		// PSMZ32
+	case 0x30:
+
+		// PSMZ24
+	case 0x31:
+#ifdef ENABLE_CALC_FULL_ZPIX_ADDR
+		vOffset32 = CvtAddrZBuf32x8(x0, y0, vFrameBufferWidth_Pixels, vEnable);
+#else
+		if (bDRAWLINE)
+		{
+			vOffset32 = CvtAddrZBuf32x8(x0, y0, vFrameBufferWidth_Pixels, vEnable);
+		}
+		else
+		{
+			vOffset32 = _mm256_loadu_si256((__m256i*) & ulLUT_OffsetZ32x[ulStartX]);
+			vOffset32 = _mm256_xor_si256(vOffset32, vYOffset_xor);
+			vOffset32 = _mm256_add_epi32(vOffset32, vYOffset_add);
+		}
+		vOffset32 = _mm256_and_si256(vOffset32, vEnable);
+#endif
+		break;
+
+		// PSMZ16
+	case 0x32:
+#ifdef ENABLE_CALC_FULL_ZPIX_ADDR
+		vOffset32 = CvtAddrZBuf16x8(x0, y0, vFrameBufferWidth_Pixels, vEnable);
+#else
+		if (bDRAWLINE)
+		{
+			vOffset32 = CvtAddrZBuf16x8(x0, y0, vFrameBufferWidth_Pixels, vEnable);
+		}
+		else
+		{
+			vOffset32 = _mm256_loadu_si256((__m256i*) & ulLUT_OffsetZ16x[ulStartX]);
+			vOffset32 = _mm256_xor_si256(vOffset32, vYOffset_xor);
+			vOffset32 = _mm256_add_epi32(vOffset32, vYOffset_add);
+		}
+		vOffset32 = _mm256_and_si256(vOffset32, vEnable);
+#endif
+		break;
+
+		// PSMZ16S
+	case 0x3a:
+#ifdef ENABLE_CALC_FULL_ZPIX_ADDR
+		vOffset32 = CvtAddrZBuf16Sx8(x0, y0, vFrameBufferWidth_Pixels, vEnable);
+#else
+		if (bDRAWLINE)
+		{
+			vOffset32 = CvtAddrZBuf16Sx8(x0, y0, vFrameBufferWidth_Pixels, vEnable);
+		}
+		else
+		{
+			vOffset32 = _mm256_loadu_si256((__m256i*) & ulLUT_OffsetZ16Sx[ulStartX]);
+			vOffset32 = _mm256_xor_si256(vOffset32, vYOffset_xor);
+			vOffset32 = _mm256_add_epi32(vOffset32, vYOffset_add);
+		}
+		vOffset32 = _mm256_and_si256(vOffset32, vEnable);
+#endif
+		break;
+
+	default:
+		cout << "\nhps2x64: GPU: ALERT: invalid frame-buffer format! FBBUF PSM=" << hex << FBPSM << "\n";
+		break;
+	}
+
+
+	//if ( ( ZTST != 1 ) || ( !ZMSK ) )
+	{
+
+		switch (ZBPSM)
+		{
+			// PSMZ32
+		case 0:
+
+			// PSMZ24
+		case 1:
+#ifdef ENABLE_CALC_FULL_ZPIX_ADDR
+			vZOffset32 = CvtAddrZBuf32x8(x0, y0, vFrameBufferWidth_Pixels, vEnable);
+#else
+			if (bDRAWLINE)
+			{
+				vZOffset32 = CvtAddrZBuf32x8(x0, y0, vFrameBufferWidth_Pixels, vEnable);
+			}
+			else
+			{
+				vZOffset32 = _mm256_loadu_si256((__m128i*) & ulLUT_OffsetZ32x[ulStartX & 2047]);
+				vZOffset32 = _mm256_xor_si256(vZOffset32, vZYOffset_xor);
+				vZOffset32 = _mm256_add_epi32(vZOffset32, vZYOffset_add);
+			}
+#endif
+			break;
+
+			// PSMZ16
+		case 2:
+			// not valid for a 32-bit frame buffer
+#ifdef ENABLE_CALC_FULL_ZPIX_ADDR
+			vZOffset32 = CvtAddrZBuf16x8(x0, y0, vFrameBufferWidth_Pixels, vEnable);
+#else
+			if (bDRAWLINE)
+			{
+				vZOffset32 = CvtAddrZBuf16x8(x0, y0, vFrameBufferWidth_Pixels, vEnable);
+			}
+			else
+			{
+				vZOffset32 = _mm256_loadu_si256((__m256i*) & ulLUT_OffsetZ16x[ulStartX & 2047]);
+				vZOffset32 = _mm256_xor_si256(vZOffset32, vZYOffset_xor);
+				vZOffset32 = _mm256_add_epi32(vZOffset32, vZYOffset_add);
+			}
+#endif
+			break;
+
+			// PSMZ16S
+		case 0xa:
+#ifdef ENABLE_CALC_FULL_ZPIX_ADDR
+			vZOffset32 = CvtAddrZBuf16Sx8(x0, y0, vFrameBufferWidth_Pixels, vEnable);
+#else
+			if (bDRAWLINE)
+			{
+				vZOffset32 = CvtAddrZBuf16Sx8(x0, y0, vFrameBufferWidth_Pixels, vEnable);
+			}
+			else
+			{
+				vZOffset32 = _mm256_loadu_si256((__m128i*) & ulLUT_OffsetZ16Sx[ulStartX & 2047]);
+				vZOffset32 = _mm256_xor_si256(vZOffset32, vZYOffset_xor);
+				vZOffset32 = _mm256_add_epi32(vZOffset32, vZYOffset_add);
+			}
+#endif
+			break;
+
+			// OTHER
+		default:
+			//#ifdef VERBOSE_ZBUFFER_H
+			cout << "\nhps2x64: GPU: ALERT: invalid z-buffer format! ZBUF PSM=" << hex << ZBPSM << "\n";
+			//#endif
+			break;
+		}
+
+	} // end if ( ( ZTST != 1 ) || ( !ZMSK ) )
+
+
+//cout << "\ngot pointers";
+//cout << "\nptr32=" << hex << ptr32 << " zptr32=" << zptr32 << " PtrEnd=" << PtrEnd << " buf32=" << buf32 << " zbuf32=" << zbuf32 << " FrameBufferWidthInPixels=" << dec << FrameBufferWidthInPixels;
+
+	//if ( ptr32 < PtrEnd )
+	//{
+//cout << "\nwithin PtrEnd";
+
+
+
+
+	// only need destination pixel for:
+	// 1. destination alpha
+	// 2. alpha (abe/pabe)
+	// 3. fbpsm=1 (24-bit pixels)
+	//if ( DATE || ABE || ( FBPSM == 1 ) )
+	//{
+
+	switch (FBPSM & 2)
+	{
+
+	case 0:
+
+		vDestPixel = _mm256_mask_i32gather_epi32(vDestPixel, (int const*)buf32, vOffset32, vEnable, 4);
+		break;
+
+	case 2:
+
+		vDestPixel = _mm256_mask_i32gather_epi32(vDestPixel, (int const*)buf32, vOffset32, vEnable, 2);
+
+		// convert 16-bit pixels to 32-bit pixels
+		vRed = _mm256_srli_epi32(_mm256_slli_epi32(vDestPixel, 24 + 3), 24);
+		vGreen = _mm256_srli_epi32(_mm256_slli_epi32(vDestPixel, 16 + 6), 24 + 3);
+		vBlue = _mm256_srli_epi32(_mm256_slli_epi32(vDestPixel, 8 + 9), 24 + 3);
+		vAlpha = _mm256_slli_epi32(_mm256_srli_epi32(vDestPixel, 15), 31);
+
+		vDestPixel = _mm256_or_si256(_mm256_or_si256(_mm256_or_si256(vRed, vAlpha), _mm256_slli_epi32(vGreen, 8 + 3)), _mm256_slli_epi32(vBlue, 16 + 3));
+
+		break;
+
+	default:
+		cout << "\nhps2x64: GPU: ALERT: invalid frame-buffer format! FBBUF PSM=" << hex << FBPSM << "\n";
+		break;
+	}
+
+	//} // end if ( DATE || ABE || ( FBPSM == 1 ) )
+
+
+
+	//if ( ( ZTST != 1 ) || ( !ZMSK ) )
+	{
+
+		switch (ZBPSM & 2)
+		{
+			// PSMZ32
+		case 0:
+			//vZDestPixel = _mm_mask_i32gather_epi32 ( vZDestPixel, (int const*) zbuf32, vZOffset32, vEnable, 4 );
+			//break;
+
+		// PSMZ24
+		//case 1:
+
+			vZDestPixel = _mm256_mask_i32gather_epi32(vZDestPixel, (int const*)zbuf32, vZOffset32, vEnable, 4);
+
+			break;
+
+			// PSMZ16
+		case 2:
+
+			// PSMZ16S
+			//case 0xa:
+
+			vZDestPixel = _mm256_mask_i32gather_epi32(vZDestPixel, (int const*)zbuf32, vZOffset32, vEnable, 2);
+
+			vZDestPixel = _mm256_srli_epi32(_mm256_slli_epi32(vZDestPixel, 16), 16);
+			break;
+
+		}
+
+
+		//debug << " ZBPSM=" << hex << ZBPSM;
+
+
+				// determine z-buffer format
+				// and test against the value in the z-buffer
+				//ZDepthTest_Pass = PerformZDepthTest32 ( zptr32, z0 );
+		switch (ZBPSM)
+		{
+			// PSMZ32
+		case 0:
+			//return ( *zptr32 );
+			vZValues32 = vZDestPixel;
+			break;
+
+			// PSMZ24
+		case 1:
+			//return ( ( *zptr32 ) & 0xffffff );
+			vZValues32 = _mm256_srli_epi32(_mm256_slli_epi32(vZDestPixel, 8), 8);
+			break;
+
+			// PSMZ16
+		case 2:
+
+			// PSMZ16S
+		case 0xa:
+			//return ( ( (u32) ( *((u16*)zptr32) ) ) );
+			vZValues32 = _mm256_srli_epi32(_mm256_slli_epi32(vZDestPixel, 16), 16);
+			break;
+
+		default:
+			cout << "\nhps2x64: GPU: ALERT: Invalid z-buffer pixel format: " << hex << ZBPSM << "\n";
+			break;
+		}
+
+	} // end if ( ( ZTST != 1 ) || ( !ZMSK ) )
+
+
+	if (FBPSM == 1)
+	{
+		vTest_DstAlpha = _mm256_set1_epi32(-1);
+	}
+	else
+	{
+
+		//if ( DATE )
+		//{
+			// perform destination alpha test
+
+			//vTest_DstAlpha = _mm_xor_si128 ( _mm_and_si128 ( _mm_xor_si128 ( vDestPixel, vDA_Test ), vDA_Enable ), _mm_set1_epi32 ( -1 ) );
+			//vTest_DstAlpha = _mm_xor_si128 ( _mm_xor_si128 ( vDestPixel, vDA_Test ), _mm_set1_epi32 ( -1 ) );
+			//vTest_DstAlpha = _mm_srai_epi32 ( _mm_xor_si128 ( vDestPixel, vDA_Test ), 31 );
+		vTest_DstAlpha = _mm256_srai_epi32(_mm256_xor_si256(_mm256_and_si256(_mm256_xor_si256(vDestPixel, vvDATM), vvDATE), _mm256_set1_epi32(-1)), 31);
+		//}
+		//else
+		//{
+		//	vTest_DstAlpha = _mm_set1_epi32 ( -1 );
+		//}
+
+	} // end if ( FBPSM == 1 )
+
+
+	// destination alpha test passed //
+//cout << "\ndate passed";
+
+
+		// perform z-test //
+		//if ( ZTST != 1 )
+		//{
+			// perform z-test //
+
+			//vTest_Depth = zt ( vZValues32, z0 );
+
+	zl = _mm256_xor_si256(vZValues32, _mm256_set1_epi32(-0x80000000));
+	zr = _mm256_xor_si256(z0, _mm256_set1_epi32(-0x80000000));
+	vTest_Depth = _mm256_or_si256(_mm256_or_si256(_mm256_and_si256(_mm256_cmpeq_epi32(zr, zl), vvZTST_EQUAL), _mm256_and_si256(_mm256_cmpgt_epi32(zr, zl), vvZTST_GREATER)), vvZTST_LESS);
+
+	//debug << " zl=" << hex << _mm_extract_epi32( vZValues32, 0 ) << " " << _mm_extract_epi32( vZValues32, 1 ) << " " << _mm_extract_epi32( vZValues32, 2 ) << " " << _mm_extract_epi32( vZValues32, 3 );
+	//debug << " zr=" << hex << _mm_extract_epi32( z0, 0 ) << " " << _mm_extract_epi32( z0, 1 ) << " " << _mm_extract_epi32( z0, 2 ) << " " << _mm_extract_epi32( z0, 3 );
+	//debug << " depthtest=" << _mm_extract_epi32( vTest_Depth, 0 ) << " " << _mm_extract_epi32( vTest_Depth, 1 ) << " " << _mm_extract_epi32( vTest_Depth, 2 ) << " " << _mm_extract_epi32( vTest_Depth, 3 );
+
+
+			//}
+			//else
+			//{
+			//	vTest_Depth = _mm_set1_epi32 ( -1 );
+			//}
+
+
+			// z-test passed //
+	//cout << "\nztst passed";
+
+
+			// get the source alpha value for source alpha test
+	salpha = bgr;
+	bgr_temp = bgr;
+
+	// perform alpha //
+	if (ABE)
+	{
+
+
+		vAlphaSelect[0] = bgr;
+
+		if (FBPSM == 1)
+		{
+			// 24-bit pixel //
+			vAlphaSelect[1] = _mm256_or_si256(_mm256_and_si256(vDestPixel, _mm256_set1_epi32(0x00ffffff)), _mm256_set1_epi32(0x80000000));
+		}
+		else
+		{
+			vAlphaSelect[1] = vDestPixel;
+		}
+
+		// need to keep the source alpha
+		//bgr_temp = AlphaABCD_32x8 ( vAlphaSelect [ uA ], vAlphaSelect [ uB ], vAlphaSelect [ uC ], vAlphaSelect [ uD ] );
+		bgr_temp = AlphaABCD_32_tx8(vAlphaSelect[uA], vAlphaSelect[uB], vAlphaSelect[uC], vAlphaSelect[uD]);
+
+		// re-add source alpha
+		//bgr_temp |= ( bgr & 0xff000000 );
+		bgr_temp = _mm256_or_si256(bgr_temp, _mm256_slli_epi32(_mm256_srli_epi32(bgr, 24), 24));
+
+		// if ( !( ( bgr ^ AlphaXor32 ) & AlphaXor32 ) )
+		vTest_AlphaXor = _mm256_srai_epi32(_mm256_and_si256(_mm256_xor_si256(bgr, vAlphaXor32), vAlphaXor32), 31);
+		bgr_temp = _mm256_blendv_epi8(bgr_temp, bgr, vTest_AlphaXor);
+	}
+
+
+	// source alpha test passed //
+//cout << "\nabe passed";
+
+
+
+		// set pixel mask //
+		// this should go AFTER the source alpha test?
+		//bgr_temp |= PixelOr32;
+	bgr_temp = _mm256_or_si256(bgr_temp, vPixelOr32);
+
+
+
+	// frame buffer write mask //
+	//bgr_temp = ( bgr_temp & FrameBuffer_WriteMask32 ) | ( DestPixel & ~FrameBuffer_WriteMask32 );
+	bgr_temp = _mm256_or_si256(_mm256_and_si256(bgr_temp, vFrameBuffer_WriteMask32), _mm256_andnot_si256(vFrameBuffer_WriteMask32, vDestPixel));
+
+
+	//debug << " pixel=" << hex << _mm_extract_epi32( bgr_temp, 0 ) << " " << _mm_extract_epi32( bgr_temp, 1 ) << " " << _mm_extract_epi32( bgr_temp, 2 ) << " " << _mm_extract_epi32( bgr_temp, 3 );
+
+
+			// perform source alpha test first //
+			//if ( ATST != 1 )
+			//{
+				// perform source alpha test
+
+				//vTest_SrcAlpha = at ( salpha, vAREF );
+
+	vTest_SrcAlpha = _mm256_srai_epi32(_mm256_add_epi32(_mm256_and_si256(_mm256_sign_epi32(_mm256_set1_epi32(-1), _mm256_sub_epi32(_mm256_srli_epi32(salpha, 24), vvATST_AREF)), vvATST_MASK), vvATST_OFFSET), 31);
+
+	vControl_Pixel = _mm256_or_si256(vTest_SrcAlpha, vvAFAIL_PIXEL);
+	vControl_ZPixel = _mm256_or_si256(vTest_SrcAlpha, vvAFAIL_ZPIXEL);
+
+	// testing
+	//vControl_Pixel = _mm_set1_epi32( -1 );
+	//vControl_ZPixel = _mm_set1_epi32( -1 );
+
+	// only need the next step for 32-bit pixels
+	if (!FBPSM)
+	{
+		// an extra step incase of RGB-ONLY for AFAIL
+		bgr_temp = _mm256_blendv_epi8(vDestPixel, bgr_temp, vControl_Pixel);
+	}
+
+
+	/*
+	switch ( TEST_AFAIL )
+	{
+		case 0:
+
+			// don't write anything if test failed
+			vControl_Pixel = _mm_setzero_si128 ();
+			vControl_ZPixel = _mm_setzero_si128 ();
+			break;
+
+		// update frame buffer ONLY
+		case 1:
+
+			vControl_Pixel = _mm_set1_epi32 ( -1 );
+
+			// updating pixel is no problem
+			// do not update Z if alpha test failed
+			vControl_ZPixel = _mm_setzero_si128 ();
+
+			break;
+
+		// *todo* update z-buffer ONLY
+		case 2:
+
+			vControl_ZPixel = _mm_set1_epi32 ( -1 );
+
+			// updating z-value is no problem
+			// do not update pixel if alpha test failed
+			vControl_Pixel = _mm_setzero_si128 ();
+
+			break;
+
+		// update RGB ONLY (only available for 32-bit pixels)
+		case 3:
+
+			// if src alpha failed then bring in alpha from dst pixel
+			bgr_temp = _mm_blendv_epi8 ( bgr_temp, vDestPixel, _mm_slli_epi32 ( _mm_xor_si128 ( vTest_SrcAlpha, _mm_set1_epi32 ( -1 ) ), 24 ) );
+
+			// write pixels
+			vControl_Pixel = _mm_set1_epi32 ( -1 );
+
+			// don't write z-values if test failed
+			vControl_ZPixel = _mm_setzero_si128 ();
+			break;
+	}
+	*/
+
+
+
+
+
+	//}
+	//else
+	//{
+	//	vTest_SrcAlpha = _mm_set1_epi32 ( -1 );
+	//}
+
+
+
+
+
+	// pixel writer //
+
+
+/*
+debug << " x0=" << dec << _mm_extract_epi32 ( x0, 0 );
+debug << " y0=" << dec << _mm_extract_epi32 ( y0, 0 );
+debug << " z0=" << dec << _mm_extract_epi32 ( z0, 0 );
+debug << " px=" << hex << _mm_extract_epi32 ( salpha, 0 );
+debug << " ar=" << hex << _mm_extract_epi32 ( vAREF, 0 );
+debug << " da=" << dec << _mm_extract_epi32 ( vTest_DstAlpha, 0 );
+debug << " td=" << dec << _mm_extract_epi32 ( vTest_Depth, 0 );
+debug << " sa=" << dec << _mm_extract_epi32 ( vTest_SrcAlpha, 0 );
+debug << " e=" << dec << _mm_extract_epi32 ( vEnable, 0 );
+*/
+
+// mark what pixels not to draw after the tests are complete
+
+//if ( DATE )
+//{
+	vEnable = _mm256_and_si256(vEnable, vTest_DstAlpha);
+	//}
+
+	//if ( ZTST != 1 )
+	//{
+	vEnable = _mm256_and_si256(vEnable, vTest_Depth);
+	//}
+
+
+	// if alpha test passes, then draw pixel normally regardless
+	//vControl_Pixel = _mm_or_si128 ( vControl_Pixel, vTest_SrcAlpha );
+	//vControl_ZPixel = _mm_or_si128 ( vControl_ZPixel, vTest_SrcAlpha );
+
+	// also be sure not to draw pixels that are not supposed to be
+	vControl_Pixel = _mm256_and_si256(vControl_Pixel, vEnable);
+
+
+	// also make sure that pixel is inside the buffer //
+	if (FBPSM & 1)
+	{
+		vControl_Pixel = _mm256_and_si256(vControl_Pixel, _mm256_cmpgt_epi32(_mm256_set1_epi32((1 << 22) >> 1), vOffset32));
+	}
+	else
+	{
+		vControl_Pixel = _mm256_and_si256(vControl_Pixel, _mm256_cmpgt_epi32(_mm256_set1_epi32((1 << 22) >> 2), vOffset32));
+	}
+
+
+	vControl_ZPixel = _mm256_and_si256(vControl_ZPixel, vEnable);
+
+
+	// also make sure that pixel is inside the z-buffer //
+	if (ZBPSM & 1)
+	{
+		vControl_ZPixel = _mm256_and_si256(vControl_ZPixel, _mm256_cmpgt_epi32(_mm256_set1_epi32((1 << 22) >> 1), vZOffset32));
+	}
+	else
+	{
+		vControl_ZPixel = _mm256_and_si256(vControl_ZPixel, _mm256_cmpgt_epi32(_mm256_set1_epi32((1 << 22) >> 2), vZOffset32));
+	}
+
+
+	// write pixels
+	// *ptr32 = bgr_temp;
+
+	switch (FBPSM & 3)
+	{
+		// PSMCT24
+	case 1:
+
+		// PSMZ24
+		//case 0x31:
+
+			// only copy the rgb, not the alpha component
+		bgr_temp = _mm256_blendv_epi8(vDestPixel, bgr_temp, _mm256_srli_epi32(_mm256_set1_epi32(-1), 8));
+
+		// PSMCT32
+	case 0:
+
+		// PSMZ32
+		//case 0x30:
+
+		if (_mm256_extract_epi32(vControl_Pixel, 0)) buf32[_mm256_extract_epi32(vOffset32, 0)] = _mm256_extract_epi32(bgr_temp, 0);
+		if (_mm256_extract_epi32(vControl_Pixel, 1)) buf32[_mm256_extract_epi32(vOffset32, 1)] = _mm256_extract_epi32(bgr_temp, 1);
+		if (_mm256_extract_epi32(vControl_Pixel, 2)) buf32[_mm256_extract_epi32(vOffset32, 2)] = _mm256_extract_epi32(bgr_temp, 2);
+		if (_mm256_extract_epi32(vControl_Pixel, 3)) buf32[_mm256_extract_epi32(vOffset32, 3)] = _mm256_extract_epi32(bgr_temp, 3);
+		if ( _mm256_extract_epi32 ( vControl_Pixel, 4 ) ) buf32 [ _mm256_extract_epi32 ( vOffset32, 4 ) ] = _mm256_extract_epi32 ( bgr_temp, 4 );
+		if ( _mm256_extract_epi32 ( vControl_Pixel, 5 ) ) buf32 [ _mm256_extract_epi32 ( vOffset32, 5 ) ] = _mm256_extract_epi32 ( bgr_temp, 5 );
+		if ( _mm256_extract_epi32 ( vControl_Pixel, 6 ) ) buf32 [ _mm256_extract_epi32 ( vOffset32, 6 ) ] = _mm256_extract_epi32 ( bgr_temp, 6 );
+		if ( _mm256_extract_epi32 ( vControl_Pixel, 7 ) ) buf32 [ _mm256_extract_epi32 ( vOffset32, 7 ) ] = _mm256_extract_epi32 ( bgr_temp, 7 );
+
+
+		break;
+
+
+
+		// PSMCT16
+	case 2:
+
+		// PSMCT16S
+		//case 0xa:
+
+		// PSMZ16
+		//case 0x32:
+
+		// PSMZ16S
+		//case 0x3a:
+
+			// convert pixels from 32-bit to 16-bit
+		vRed = _mm256_srli_epi32(_mm256_slli_epi32(bgr_temp, 24), 24 + 3);
+		vGreen = _mm256_slli_epi32(_mm256_srli_epi32(_mm256_slli_epi32(bgr_temp, 16), 24 + 3), 5);
+		vBlue = _mm256_slli_epi32(_mm256_srli_epi32(_mm256_slli_epi32(bgr_temp, 8), 24 + 3), 10);
+		vAlpha = _mm256_slli_epi32(_mm256_srli_epi32(bgr_temp, 31), 15);
+
+		bgr_temp = _mm256_or_si256(_mm256_or_si256(_mm256_or_si256(vRed, vGreen), vBlue), vAlpha);
+
+		if (_mm256_extract_epi32(vControl_Pixel, 0)) ((u16*)buf32)[_mm256_extract_epi32(vOffset32, 0)] = _mm256_extract_epi32(bgr_temp, 0);
+		if (_mm256_extract_epi32(vControl_Pixel, 1)) ((u16*)buf32)[_mm256_extract_epi32(vOffset32, 1)] = _mm256_extract_epi32(bgr_temp, 1);
+		if (_mm256_extract_epi32(vControl_Pixel, 2)) ((u16*)buf32)[_mm256_extract_epi32(vOffset32, 2)] = _mm256_extract_epi32(bgr_temp, 2);
+		if (_mm256_extract_epi32(vControl_Pixel, 3)) ((u16*)buf32)[_mm256_extract_epi32(vOffset32, 3)] = _mm256_extract_epi32(bgr_temp, 3);
+		if ( _mm256_extract_epi32 ( vControl_Pixel, 4 ) ) ( (u16*) buf32 ) [ _mm256_extract_epi32 ( vOffset32, 4 ) ] = _mm256_extract_epi32 ( bgr_temp, 4 );
+		if ( _mm256_extract_epi32 ( vControl_Pixel, 5 ) ) ( (u16*) buf32 ) [ _mm256_extract_epi32 ( vOffset32, 5 ) ] = _mm256_extract_epi32 ( bgr_temp, 5 );
+		if ( _mm256_extract_epi32 ( vControl_Pixel, 6 ) ) ( (u16*) buf32 ) [ _mm256_extract_epi32 ( vOffset32, 6 ) ] = _mm256_extract_epi32 ( bgr_temp, 6 );
+		if ( _mm256_extract_epi32 ( vControl_Pixel, 7 ) ) ( (u16*) buf32 ) [ _mm256_extract_epi32 ( vOffset32, 7 ) ] = _mm256_extract_epi32 ( bgr_temp, 7 );
+
+		break;
+
+	default:
+		//#ifdef VERBOSE_ZBUFFER_H
+		cout << "\nhps2x64: GPU: ALERT: invalid frame-buffer format! FBBUF PSM=" << hex << FBPSM << "\n";
+		//#endif
+		break;
+	}
+
+
+
+	// z-buffer writer //
+	if (!ZMSK)
+	{
+
+		switch (ZBPSM & 3)
+		{
+			// PSMCT24
+		case 1:
+
+			// PSMZ24
+			//case 0x31:
+
+				// only copy the rgb, not the alpha component
+			z0 = _mm256_blendv_epi8(vZDestPixel, z0, _mm256_srli_epi32(_mm256_set1_epi32(-1), 8));
+
+			// PSMCT32
+		case 0:
+
+			// PSMZ32
+			//case 0x30:
+
+			if (_mm256_extract_epi32(vControl_ZPixel, 0)) zbuf32[_mm256_extract_epi32(vZOffset32, 0)] = _mm256_extract_epi32(z0, 0);
+			if (_mm256_extract_epi32(vControl_ZPixel, 1)) zbuf32[_mm256_extract_epi32(vZOffset32, 1)] = _mm256_extract_epi32(z0, 1);
+			if (_mm256_extract_epi32(vControl_ZPixel, 2)) zbuf32[_mm256_extract_epi32(vZOffset32, 2)] = _mm256_extract_epi32(z0, 2);
+			if (_mm256_extract_epi32(vControl_ZPixel, 3)) zbuf32[_mm256_extract_epi32(vZOffset32, 3)] = _mm256_extract_epi32(z0, 3);
+			if ( _mm256_extract_epi32 ( vControl_ZPixel, 4 ) ) zbuf32 [ _mm256_extract_epi32 ( vZOffset32, 4 ) ] = _mm256_extract_epi32 ( z0, 4 );
+			if ( _mm256_extract_epi32 ( vControl_ZPixel, 5 ) ) zbuf32 [ _mm256_extract_epi32 ( vZOffset32, 5 ) ] = _mm256_extract_epi32 ( z0, 5 );
+			if ( _mm256_extract_epi32 ( vControl_ZPixel, 6 ) ) zbuf32 [ _mm256_extract_epi32 ( vZOffset32, 6 ) ] = _mm256_extract_epi32 ( z0, 6 );
+			if ( _mm256_extract_epi32 ( vControl_ZPixel, 7 ) ) zbuf32 [ _mm256_extract_epi32 ( vZOffset32, 7 ) ] = _mm256_extract_epi32 ( z0, 7 );
+
+			break;
+
+
+			// PSMCT16
+		case 2:
+
+			// PSMCT16S
+			//case 0xa:
+
+			// PSMZ16
+			//case 0x32:
+
+			// PSMZ16S
+			//case 0x3a:
+
+			if (_mm256_extract_epi32(vControl_ZPixel, 0)) ((u16*)zbuf32)[_mm256_extract_epi32(vZOffset32, 0)] = _mm256_extract_epi32(z0, 0);
+			if (_mm256_extract_epi32(vControl_ZPixel, 1)) ((u16*)zbuf32)[_mm256_extract_epi32(vZOffset32, 1)] = _mm256_extract_epi32(z0, 1);
+			if (_mm256_extract_epi32(vControl_ZPixel, 2)) ((u16*)zbuf32)[_mm256_extract_epi32(vZOffset32, 2)] = _mm256_extract_epi32(z0, 2);
+			if (_mm256_extract_epi32(vControl_ZPixel, 3)) ((u16*)zbuf32)[_mm256_extract_epi32(vZOffset32, 3)] = _mm256_extract_epi32(z0, 3);
+			if ( _mm256_extract_epi32 ( vControl_ZPixel, 4 ) ) ( (u16*) zbuf32 ) [ _mm256_extract_epi32 ( vZOffset32, 4 ) ] = _mm256_extract_epi32 ( z0, 4 );
+			if ( _mm256_extract_epi32 ( vControl_ZPixel, 5 ) ) ( (u16*) zbuf32 ) [ _mm256_extract_epi32 ( vZOffset32, 5 ) ] = _mm256_extract_epi32 ( z0, 5 );
+			if ( _mm256_extract_epi32 ( vControl_ZPixel, 6 ) ) ( (u16*) zbuf32 ) [ _mm256_extract_epi32 ( vZOffset32, 6 ) ] = _mm256_extract_epi32 ( z0, 6 );
+			if ( _mm256_extract_epi32 ( vControl_ZPixel, 7 ) ) ( (u16*) zbuf32 ) [ _mm256_extract_epi32 ( vZOffset32, 7 ) ] = _mm256_extract_epi32 ( z0, 7 );
+
+			break;
+
+			// OTHER
+		default:
+			//#ifdef VERBOSE_ZBUFFER_H
+			cout << "\nhps2x64: GPU: ALERT: invalid z-buffer format! ZBUF PSM=" << hex << ZBPSM << "\n";
+			//#endif
+			break;
+		}
+
+
+	} // end if ( !ZMSK )
+
+
+
+//} // end if ( ptr32 < PtrEnd )
+
+}
+
+#endif
+
+
 
 
 
@@ -11782,6 +12842,414 @@ static void PerformAlphaFail32_t ( u32* ptr32, u32* zptr32, u32 bgr, u32 DstPixe
 
 #ifdef USE_TEMPLATES_PS2_POINT
 
+
+#ifdef _ENABLE_AVX2_GPU
+
+template<const long ABE, const long ZMSK, const long FBPSM, const long ZBPSM>
+static u64 Render_Generic_Point_tx8(u64* p_inputbuffer, u32 ulThreadNum)
+{
+#if defined INLINE_DEBUG_POINT || defined INLINE_DEBUG_PRIMITIVE
+	debug << "; RenderPoint";
+#endif
+
+	// render in 8bits per pixel, then convert down when done
+
+	static const int c_iVectorSize = 1;
+
+	u32 NumberOfPixelsDrawn;
+
+	// if writing 16-bit pixels, then this could change to a u16 pointer
+	//u32 *ptr, *buf;
+
+	u32 bgr;
+	//u32 DestPixel, bgr_temp;
+
+	// 12.4 fixed point
+	s32 x0, y0;
+
+	// must be 64-bit signed
+	s64 z0;
+
+	//u32 *buf32;
+	//u16 *buf16;
+
+	//u32 *ptr32;
+	//u16 *ptr16;
+
+	// array for alpha selection
+	//u32 AlphaSelect [ 4 ];
+
+	// alpha value for rgb24 pixels
+	// RGB24_Alpha -> this will be or'ed with pixel when writing to add-in alpha value for RGB24 format when writing
+	// Pixel24_Mask -> this will be and'ed with pixel after reading from source
+	//u32 RGB24_Alpha, Pixel24_Mask;
+
+	// determine if rgb24 value is transparent (a=0)
+	// this will be or'ed with pixel to determine if pixels is transparent
+	//u32 RGB24_TAlpha;
+
+	// alpha blending selection
+	//u32 uA, uB, uC, uD;
+
+	// pabe
+	//u32 AlphaXor32, AlphaXor16;
+
+	// alpha correction value (FBA)
+	//u32 PixelOr32, PixelOr16;
+
+	// destination alpha test
+	// DA_Enable -> the value of DATE, to be and'ed with pixel
+	// DA_Test -> the value of DATM, to be xor'ed with pixel
+	//u32 DA_Enable, DA_Test;
+
+	// source alpha test
+	//u64 LessThan_And, GreaterOrEqualTo_And, LessThan_Or;
+	//u32 Alpha_Fail;
+	//u32 SrcAlphaTest_Pass, SrcAlpha_ARef;
+
+	// depth test
+	//s64 DepthTest_Offset;
+
+	// in a 24-bit frame buffer, destination alpha is always 0x80
+	//u32 DestAlpha24, DestMask24;
+
+
+	// z-buffer
+	//u32 *zbuf32;
+	//u16 *zbuf16;
+	//u32 *zptr32;
+	//u16 *zptr16;
+
+	//u32 ZBuffer_Shift, ZBuffer_32bit;
+	//s64 ZBufValue;
+
+
+	u32 FrameBufferWidthInPixels;
+	u32 SetPixelMask;
+	u32 Window_YTop, Window_YBottom, Window_XLeft, Window_XRight;
+	s32 Coord_OffsetX, Coord_OffsetY;
+	u32 FrameBufferStartOffset32, ZBufferStartOffset32;
+
+	u32 DA_Test, AlphaXor32, FrameBuffer_WriteMask32;
+	u32 AlphaSelect[4];
+	u32 uA, uB, uC, uD;
+
+	AlphaTestx8 at;
+	ZTestx8 zt;
+	AlphaFailx8 af;
+
+	u32 TEST_ATST;
+	u32 TEST_ZTST;
+	u32 TEST_AFAIL;
+	u32 aref;
+
+	u32 lContext;
+
+	__m256i vDestAlpha24, vDestMask24;
+	__m256i vDA_Enable, vDA_Test;
+	__m256i vFrameBuffer_WriteMask32;
+	__m256i vPixelOr32;
+	__m256i vFrameBufferStartOffset32;
+	__m256i vFrameBufferWidth_Pixels;
+	__m256i vARef_SrcAlpha;
+	__m256i vAlphaXor32;
+	__m256i vAlphaSelect[4];
+
+	__m256i vYOffset;
+	__m256i vZYOffset;
+
+
+
+	__m256i vEnable;
+	__m256i vIdentity;
+	//vIdentity = _mm_set_epi32 ( 3, 2, 1, 0 );
+
+	__m256i vStartX, vXacross, vXmax, vYacross, vYmax, vZacross, vBgr;
+	__m256i vXInc;
+	__m256i vYInc;
+	//vXInc = _mm_set1_epi32 ( c_iVectorSize );
+	//vYInc = _mm_set1_epi32 ( 1 );
+
+	__m256i vZInc;
+	__m256i vZIdentity0, vZIdentity1;
+	__m256i vZacross0, vZacross1;
+
+	__m256i vRInc, vGInc, vBInc, vAInc;
+	__m256i vRIdentity, vGIdentity, vBIdentity, vAIdentity;
+	__m256i vRacross, vGacross, vBacross, vAacross;
+	__m256i vRed, vGreen, vBlue, vAlpha;
+
+	__m256i vWindow_XLeft, vWindow_XRight, vWindow_YTop, vWindow_YBottom;
+	__m256i vLine;
+	__m256i vXIdentity, vYIdentity;
+
+	__m256i vYOffset_xor, vYOffset_add, vZYOffset_xor, vZYOffset_add;
+
+	//cout << "\n->Render_Generic_Line_t" << hex << " SHADED=" << SHADED << " ABE=" << ABE << " ATST=" << ATST << " COLCLAMP=" << COLCLAMP << " ZTST=" << ZTST << " DATE=" << DATE << " FBPSM=" << FBPSM << " ZBPSM=" << ZBPSM;
+
+	lContext = (p_inputbuffer[15] >> 9) & 1;
+
+	GPUDrawingVars* gd = &GpDrawVars[lContext];
+
+
+
+#ifdef USE_NEW_FBA
+	SetPixelMask = gd->FBA;
+#else
+	SetPixelMask = p_inputbuffer[4] << 31;
+#endif
+
+#ifdef USE_NEW_FRAME
+	FrameBuffer_WriteMask32 = gd->FRAME_FBMSK;
+	FrameBufferStartOffset32 = gd->FRAME_FBP << 11;
+	FrameBufferWidthInPixels = gd->FRAME_FBW << 6;
+	buf32 = gd->buf32;
+#else
+	FrameBuffer_WriteMask32 = 0xffffffffull & ~(p_inputbuffer[2] >> 32);
+	FrameBufferStartOffset32 = (p_inputbuffer[2] & 0x1ff) << 11;
+	FrameBufferWidthInPixels = ((p_inputbuffer[2] >> 16) & 0x3f) << 6;
+	buf32 = &(_GPU->RAM32[FrameBufferStartOffset32]);
+#endif
+
+#ifdef USE_NEW_ZBUF
+	ZBufferStartOffset32 = gd->ZBUF_ZBP << 11;
+	zbuf32 = gd->zbuf32;
+#else
+	ZBufferStartOffset32 = (p_inputbuffer[3] & 0x1ff) << 11;
+	zbuf32 = &(_GPU->RAM32[ZBufferStartOffset32]);
+#endif
+
+
+	//cout << "\nbuf32=" << hex << buf32 << " zbuf32=" << zbuf32;
+
+
+	if (ABE)
+	{
+#ifdef USE_NEW_PABE
+		AlphaXor32 = gd->PABE << 31;
+#else
+		AlphaXor32 = p_inputbuffer[8] << 31;
+#endif
+
+#ifdef USE_NEW_ALPHA
+		uA = gd->uA;
+		uB = gd->uB;
+		uC = gd->uC;
+		uD = gd->uD;
+#else
+		uA = (p_inputbuffer[7] >> 0) & 3;
+		uB = (p_inputbuffer[7] >> 2) & 3;
+		uC = (p_inputbuffer[7] >> 4) & 3;
+		uD = (p_inputbuffer[7] >> 6) & 3;
+#endif
+
+
+		// set fixed alpha values
+
+		// current RGBA value
+		//AlphaSelect [ 0 ] = rgbaq_Current.Value & 0xffffffffL;
+		AlphaSelect[0] = p_inputbuffer[16 - 14] & 0xffffffffULL;
+
+		// FIX value
+		//AlphaSelect [ 2 ] = ALPHA_X.FIX << 24;
+		//AlphaSelect [ 2 ] = ( p_inputbuffer [ 7 ] >> 8 ) & 0xff000000ULL;
+		AlphaSelect[2] = gd->FIX;
+
+		// ZERO
+		AlphaSelect[3] = 0;
+
+		vAlphaSelect[0] = _mm256_set1_epi32(AlphaSelect[0]);
+		//vAlphaSelect [ 1 ] = _mm_set1_epi32 ( AlphaSelect [ 1 ] );
+		vAlphaSelect[2] = _mm256_set1_epi32(AlphaSelect[2]);
+		vAlphaSelect[3] = _mm256_set1_epi32(AlphaSelect[3]);
+	}	// end if ( ABE )
+
+
+
+	Window_YTop = (p_inputbuffer[0] >> 32) & 0x7ff;
+	Window_YBottom = (p_inputbuffer[0] >> 48) & 0x7ff;
+	Window_XLeft = (p_inputbuffer[0]) & 0x7ff;
+	Window_XRight = (p_inputbuffer[0] >> 16) & 0x7ff;
+
+	Coord_OffsetX = p_inputbuffer[1] & 0xffff;
+	Coord_OffsetY = (p_inputbuffer[1] >> 32) & 0xffff;
+
+	// get x,y
+	//x0 = xyz [ Coord0 ].X;
+	//y0 = xyz [ Coord0 ].Y;
+	//x1 = xyz [ Coord1 ].X;
+	//y1 = xyz [ Coord1 ].Y;
+	x0 = p_inputbuffer[16 + 1 - 14] & 0xffff;
+	y0 = (p_inputbuffer[16 + 1 - 14] >> 16) & 0xffff;
+
+	//////////////////////////////////////////
+	// get coordinates on screen
+	// *note* this is different from PS1, where you would add the offsets..
+	x0 -= Coord_OffsetX;
+	y0 -= Coord_OffsetY;
+
+
+	// get z
+	z0 = (p_inputbuffer[16 + 1 - 14] >> 32);
+
+
+
+	// get fill color
+	//bgr = rgbaq_Current.Value & 0xffffffffL;
+
+	//bgr = rgbaq [ Coord0 ].Value & 0xffffffffL;
+	bgr = p_inputbuffer[16 + 0 - 14] & 0xffffffffULL;
+
+
+#if defined INLINE_DEBUG_LINE || defined INLINE_DEBUG_PRIMITIVE
+	debug << hex << " bgr=" << bgr;
+	debug << dec << "; Coords: x0=" << (x0 >> 4) << " y0=" << (y0 >> 4) << " x1=" << (x1 >> 4) << " y1=" << (y1 >> 4);
+#endif
+
+
+
+#if defined INLINE_DEBUG_LINE || defined INLINE_DEBUG_PRIMITIVE
+	debug << dec << "; FinalCoords: x0=" << x0 << " y0=" << y0 << " x1=" << x1 << " y1=" << y1;
+#endif
+
+
+
+
+	// check if line is within draw area
+//	if ( x1 < Window_XLeft || x0 > Window_XRight || y1 < Window_YTop || y0 > Window_YBottom ) return;
+#if defined INLINE_DEBUG_LINE_TEST || defined INLINE_DEBUG_PRIMITIVE_TEST
+//	else
+//	{
+	debug << dec << "\r\nDrawLine_Gradient" << " FinalCoords: x0=" << x0 << " y0=" << y0 << " x1=" << x1 << " y1=" << y1;
+	debug << " FrameBufPixFmt=" << PixelFormat_Names[FrameBuffer_PixelFormat];
+	debug << " Alpha=" << Alpha;
+	//	}
+#endif
+
+
+
+
+	//StartX = x0 >> 4;
+	//StartY = y0 >> 4;
+	x0 = (x0 + 0x8) >> 4;
+	y0 = (y0 + 0x8) >> 4;
+
+
+
+	// check for some important conditions
+	if (Window_XRight < Window_XLeft)
+	{
+		//cout << "\nhps2x64 ALERT: GPU: Window_XRight < Window_XLeft.\n";
+		return 0;
+	}
+
+	if (Window_YBottom < Window_YTop)
+	{
+		//cout << "\nhps2x64 ALERT: GPU: Window_YBottom < Window_YTop.\n";
+		return 0;
+	}
+
+	// check if sprite is within draw area
+	if (x0 < ((s32)Window_XLeft) || x0 >((s32)Window_XRight) || y0 < ((s32)Window_YTop) || y0 >((s32)Window_YBottom)) return 0;
+
+
+	vBgr = _mm256_set1_epi32(bgr);
+
+
+	vAlphaSelect[0] = _mm256_set1_epi32(AlphaSelect[0]);
+	vAlphaSelect[2] = _mm256_set1_epi32(AlphaSelect[2]);
+	vAlphaSelect[3] = _mm256_set1_epi32(AlphaSelect[3]);
+
+
+	vFrameBuffer_WriteMask32 = _mm256_set1_epi32(FrameBuffer_WriteMask32);
+
+	//vDestAlpha24 = _mm_set1_epi32 ( DestAlpha24 );
+	//vDestMask24 = _mm_set1_epi32 ( DestMask24 );
+	//vDA_Enable = _mm_set1_epi32 ( DA_Enable );
+	//vDA_Enable = _mm_set1_epi32 ( DATE << 31 );
+	vDA_Test = _mm256_set1_epi32(DA_Test);
+	vPixelOr32 = _mm256_set1_epi32(SetPixelMask);
+	//vFrameBufferStartOffset32 = _mm_set1_epi32 ( FrameBufferStartOffset32 );
+	vFrameBufferWidth_Pixels = _mm256_set1_epi32(FrameBufferWidthInPixels);
+	//vARef_SrcAlpha = _mm_set1_epi32 ( SrcAlpha_ARef );
+	vARef_SrcAlpha = _mm256_set1_epi32(aref);
+	vAlphaXor32 = _mm256_set1_epi32(AlphaXor32);
+
+
+	vXacross = _mm256_set1_epi32(x0);
+	vYacross = _mm256_set1_epi32(y0);
+	vZacross = _mm256_set1_epi32(z0);
+	vEnable = _mm256_set_epi32(0, 0, 0, 0, 0, 0, 0, -1);
+
+
+	// for now, combine these two
+	//vYOffset_xor = _mm_set1_epi32 ( LUT_YOFFSET [ ( y0 & 0x3f ) | ( ( FBPSM >> 1 ) << 7 ) ] );
+	//vYOffset_add = _mm_set1_epi32 ( ( y0 & LUT_YNAND[ FBPSM >> 1 ] ) * FrameBufferWidthInPixels );
+	//vYOffset_add = _mm_set1_epi32 ( LUT_YOFFSET [ ( y0 & 0x3f ) | ( ( FBPSM >> 1 ) << 7 ) ] + ( ( y0 & LUT_YNAND[ FBPSM >> 1 ] ) * FrameBufferWidthInPixels ) );
+
+
+	//vZYOffset_xor = _mm_set1_epi32 ( LUT_YOFFSET [ ( y0 & 0x3f ) | ( ( ( ZBPSM | 0x30 ) >> 1 ) << 7 ) ] );
+	//vZYOffset_add = _mm_set1_epi32 ( ( y0 & LUT_YNAND[ ( ZBPSM | 0x30 ) >> 1 ] ) * FrameBufferWidthInPixels );
+
+
+	switch (FBPSM)
+	{
+	case 0:
+	case 1:
+		vYOffset = _mm256_set1_epi32(CvtAddrPix32(0, y0, FrameBufferWidthInPixels));
+		break;
+
+	case 2:
+		vYOffset = _mm256_set1_epi32(CvtAddrPix16(0, y0, FrameBufferWidthInPixels));
+		break;
+
+	case 0xa:
+		vYOffset = _mm256_set1_epi32(CvtAddrPix16S(0, y0, FrameBufferWidthInPixels));
+		break;
+
+		/*
+		case 0x30:
+		case 0x31:
+			vYOffset = _mm_set1_epi32 ( CvtAddrZBuf32 ( 0x20, y0, FrameBufferWidthInPixels ) );
+			break;
+
+		case 0x32:
+			vYOffset = _mm_set1_epi32 ( CvtAddrZBuf16 ( 0x20, y0, FrameBufferWidthInPixels ) );
+			break;
+
+		case 0x3a:
+			vYOffset = _mm_set1_epi32 ( CvtAddrZBuf16S ( 0x20, y0, FrameBufferWidthInPixels ) );
+			break;
+		*/
+	}
+
+	/*
+	switch ( ZBPSM )
+	{
+		case 0:
+		case 1:
+			vZYOffset = _mm_set1_epi32 ( CvtAddrZBuf32 ( 0x20, y0, FrameBufferWidthInPixels ) );
+			break;
+
+		case 2:
+			vZYOffset = _mm_set1_epi32 ( CvtAddrZBuf16 ( 0x20, y0, FrameBufferWidthInPixels ) );
+			break;
+
+		case 0xa:
+			vZYOffset = _mm_set1_epi32 ( CvtAddrZBuf16S ( 0x20, y0, FrameBufferWidthInPixels ) );
+			break;
+	}
+	*/
+
+	PlotPixel_Gradient_tx8<0, ABE, ZMSK, FBPSM, ZBPSM>
+		(buf32, zbuf32, vXacross, vYacross, vZacross, vBgr, vPixelOr32, vFrameBufferWidth_Pixels, vDA_Test, vAlphaXor32, vFrameBuffer_WriteMask32, vARef_SrcAlpha, at, zt, TEST_AFAIL, vAlphaSelect, uA, uB, uC, uD, vEnable, vYOffset, x0);
+
+	return 0;
+}
+
+#endif
+
+
 template<const long ABE,const long ZMSK,const long FBPSM, const long ZBPSM>
 static u64 Render_Generic_Point_t ( u64 *p_inputbuffer, u32 ulThreadNum )
 {
@@ -11792,6 +13260,17 @@ static u64 Render_Generic_Point_t ( u64 *p_inputbuffer, u32 ulThreadNum )
 	// render in 8bits per pixel, then convert down when done
 	
 	static const int c_iVectorSize = 1;
+
+
+#ifdef _ENABLE_AVX2_GPU
+
+	if (iDrawVectorSize == 8)
+	{
+		return Render_Generic_Point_tx8<ABE, ZMSK, FBPSM, ZBPSM>(p_inputbuffer, ulThreadNum);
+	}
+
+#endif
+
 
 	u32 NumberOfPixelsDrawn;
 	
@@ -12479,10 +13958,1026 @@ static u64 Select_RenderPoint_t ( u64* p_inputbuffer, u32 ulThreadNum )
 
 #ifdef USE_TEMPLATES_PS2_LINE
 
+
+#ifdef _ENABLE_AVX2_GPU
+
+template<const long SHADED, const long DTHE, const long ABE, const long ZMSK, const long FBPSM, const long ZBPSM>
+static u64 Render_Generic_Line_tx8(u64* p_inputbuffer, u32 ulThreadNum)
+{
+	static const int c_iVectorSize = 8;
+
+	s32 StartX, EndX, StartY, EndY;
+	//u32 PixelsPerLine;
+	u32 NumberOfPixelsDrawn;
+
+	// if writing 16-bit pixels, then this could change to a u16 pointer
+	//u32 *ptr, *buf32;
+	//u16 *buf16;
+
+	u32 bgr;
+	//u32 DestPixel, bgr, bgr_temp;
+	//u32 bgr2;
+
+	// 12.4 fixed point
+	s32 x0, y0, x1, y1;
+	u32 bgr0, bgr1;
+
+	s64 z0, z1;
+
+	s32 Line, x_across;
+
+
+	s32 distance, x_distance, y_distance;
+
+	s32 r0, g0, b0, r1, g1, b1;
+	s32 a0, a1;
+
+
+	//s64 dxdc;
+	//s64 dydc;
+	//s64 drdc, dgdc, dbdc;
+	//s64 line_x, line_y;
+	//s64 line_r, line_g, line_b;
+
+	// ***TODO*** interpolate alpha
+	//s64 dadc;
+	//s64 line_a;
+
+	// and for the z
+	//s64 dzdc;
+	//s64 line_z;
+
+
+	//u32 DestPixel, PixelMask = 0;
+
+	//s32 iX, iY;
+	s32 ix, iy;
+	s64 iz;
+	s32 dx, dy, dr, dg, db, da;
+	s64 dz;
+	s32 incdec;
+	s32 Temp;
+	s32 line_length;
+	u64 NumPixels;
+
+	s32 iR, iG, iB, iA;
+
+	s32 Window_YTop, Window_YBottom, Window_XLeft, Window_XRight;
+
+	s32 Coord_OffsetX, Coord_OffsetY;
+
+	s32 RightMostX, LeftMostX, TopMostY, BottomMostY;
+
+	u32* buf32, * zbuf32;
+	u32 SetPixelMask, FrameBufferWidthInPixels;
+
+	u32 FrameBufferStartOffset32, ZBufferStartOffset32;
+
+	u32 DA_Test, AlphaXor32, FrameBuffer_WriteMask32;
+	u32 AlphaSelect[4];
+	u32 uA, uB, uC, uD;
+
+	AlphaTestx8 at;
+	ZTestx8 zt;
+	AlphaFailx8 af;
+
+	u32 TEST_ATST;
+	u32 TEST_ZTST;
+	u32 TEST_AFAIL;
+	u32 aref;
+
+	u32 lContext;
+
+	__m256i vDestAlpha24, vDestMask24;
+	__m256i vDA_Enable, vDA_Test;
+	__m256i vFrameBuffer_WriteMask32;
+	__m256i vPixelOr32;
+	__m256i vFrameBufferStartOffset32;
+	__m256i vFrameBufferWidth_Pixels;
+	__m256i vARef_SrcAlpha;
+	__m256i vAlphaXor32;
+	__m256i vAlphaSelect[4];
+
+	__m256i vYOffset;
+	__m256i vZYOffset;
+
+
+
+	__m256i vEnable;
+	__m256i vIdentity;
+	vIdentity = _mm256_set_epi32(7, 6, 5, 4, 3, 2, 1, 0);
+
+	__m256i vStartX, vXacross, vXmax, vYacross, vYmax, vZacross, vBgr;
+	__m256i vXInc;
+	__m256i vYInc;
+	vXInc = _mm256_set1_epi32(c_iVectorSize);
+	//vYInc = _mm_set1_epi32 ( 1 );
+
+	__m256i vZInc;
+	__m256i vZIdentity0, vZIdentity1;
+	__m256i vZacross0, vZacross1;
+
+	__m256i vRInc, vGInc, vBInc, vAInc;
+	__m256i vRIdentity, vGIdentity, vBIdentity, vAIdentity;
+	__m256i vRacross, vGacross, vBacross, vAacross;
+	__m256i vRed, vGreen, vBlue, vAlpha;
+
+	__m256i vWindow_XLeft, vWindow_XRight, vWindow_YTop, vWindow_YBottom;
+	__m256i vLine;
+	__m256i vXIdentity, vYIdentity;
+
+	__m256i vYOffset_xor, vYOffset_add, vZYOffset_xor, vZYOffset_add;
+
+	//cout << "\n->Render_Generic_Line_t" << hex << " SHADED=" << SHADED << " ABE=" << ABE << " ATST=" << ATST << " COLCLAMP=" << COLCLAMP << " ZTST=" << ZTST << " DATE=" << DATE << " FBPSM=" << FBPSM << " ZBPSM=" << ZBPSM;
+
+
+
+	Window_YTop = (p_inputbuffer[0] >> 32) & 0x7ff;
+	Window_YBottom = (p_inputbuffer[0] >> 48) & 0x7ff;
+	Window_XLeft = (p_inputbuffer[0]) & 0x7ff;
+	Window_XRight = (p_inputbuffer[0] >> 16) & 0x7ff;
+
+	Coord_OffsetX = p_inputbuffer[1] & 0xffff;
+	Coord_OffsetY = (p_inputbuffer[1] >> 32) & 0xffff;
+
+	// get x,y
+	//x0 = xyz [ Coord0 ].X;
+	//y0 = xyz [ Coord0 ].Y;
+	//x1 = xyz [ Coord1 ].X;
+	//y1 = xyz [ Coord1 ].Y;
+	x0 = p_inputbuffer[16 + 1 - 14] & 0xffff;
+	y0 = (p_inputbuffer[16 + 1 - 14] >> 16) & 0xffff;
+	x1 = p_inputbuffer[16 + 5 - 14] & 0xffff;
+	y1 = (p_inputbuffer[16 + 5 - 14] >> 16) & 0xffff;
+
+	//////////////////////////////////////////
+	// get coordinates on screen
+	// *note* this is different from PS1, where you would add the offsets..
+	x0 -= Coord_OffsetX;
+	y0 -= Coord_OffsetY;
+	x1 -= Coord_OffsetX;
+	y1 -= Coord_OffsetY;
+
+
+
+
+	// get z
+	//z0 = (u64) xyz [ Coord0 ].Z;
+	//z1 = (u64) xyz [ Coord1 ].Z;
+	z0 = (p_inputbuffer[16 + 1 - 14] >> 32);
+	z1 = (p_inputbuffer[16 + 5 - 14] >> 32);
+
+	iz = z0 << 16;
+
+
+	LeftMostX = (x1 > x0) ? (x0 >> 4) : (x1 >> 4);
+	RightMostX = (x0 > x1) ? (x0 >> 4) : (x1 >> 4);
+	TopMostY = (y1 > y0) ? (y0 >> 4) : (y1 >> 4);
+	BottomMostY = (y0 > y1) ? (y0 >> 4) : (y1 >> 4);
+
+	// get fill color
+	//bgr = rgbaq_Current.Value & 0xffffffffL;
+
+	if (SHADED)
+	{
+		//bgr0 = rgbaq [ Coord0 ].Value & 0xffffffffL;
+		//bgr1 = rgbaq [ Coord1 ].Value & 0xffffffffL;
+		bgr0 = p_inputbuffer[16 + 0 - 14] & 0xffffffffULL;
+		bgr1 = p_inputbuffer[16 + 4 - 14] & 0xffffffffULL;
+
+
+		// get color components
+		r0 = bgr0 & 0xff;
+		r1 = bgr1 & 0xff;
+		g0 = (bgr0 >> 8) & 0xff;
+		g1 = (bgr1 >> 8) & 0xff;
+		b0 = (bgr0 >> 16) & 0xff;
+		b1 = (bgr1 >> 16) & 0xff;
+
+		// get alpha
+		a0 = (bgr0 >> 24) & 0xff;
+		a1 = (bgr1 >> 24) & 0xff;
+
+		iR = (r0 << 16) + 0x8000;
+		iG = (g0 << 16) + 0x8000;
+		iB = (b0 << 16) + 0x8000;
+		iA = (a0 << 16) + 0x8000;
+	}
+	else
+	{
+		//bgr = rgbaq [ Coord0 ].Value & 0xffffffffL;
+		bgr = p_inputbuffer[16 + 4 - 14] & 0xffffffffULL;
+	}
+
+#if defined INLINE_DEBUG_LINE || defined INLINE_DEBUG_PRIMITIVE
+	debug << hex << " bgr=" << bgr;
+	debug << dec << "; Coords: x0=" << (x0 >> 4) << " y0=" << (y0 >> 4) << " x1=" << (x1 >> 4) << " y1=" << (y1 >> 4);
+#endif
+
+
+
+#if defined INLINE_DEBUG_LINE || defined INLINE_DEBUG_PRIMITIVE
+	debug << dec << "; FinalCoords: x0=" << x0 << " y0=" << y0 << " x1=" << x1 << " y1=" << y1;
+#endif
+
+
+
+
+	// check if line is within draw area
+//	if ( x1 < Window_XLeft || x0 > Window_XRight || y1 < Window_YTop || y0 > Window_YBottom ) return;
+#if defined INLINE_DEBUG_LINE_TEST || defined INLINE_DEBUG_PRIMITIVE_TEST
+//	else
+//	{
+	debug << dec << "\r\nDrawLine_Gradient" << " FinalCoords: x0=" << x0 << " y0=" << y0 << " x1=" << x1 << " y1=" << y1;
+	debug << " FrameBufPixFmt=" << PixelFormat_Names[FrameBuffer_PixelFormat];
+	debug << " Alpha=" << Alpha;
+	//	}
+#endif
+
+
+
+
+	//StartX = ( x0 + 0xf ) >> 4;
+	//EndX = ( x1 - 1 ) >> 4;
+	//StartY = ( y0 + 0xf ) >> 4;
+	//EndY = ( y1 - 1 ) >> 4;
+	StartX = x0 >> 4;
+	EndX = x1 >> 4;
+	StartY = y0 >> 4;
+	EndY = y1 >> 4;
+
+	x_distance = _Abs(EndX - StartX);
+	y_distance = _Abs(EndY - StartY);
+	//if ( x_distance > y_distance ) distance = x_distance; else distance = y_distance;
+
+
+		// check for some important conditions
+	if (Window_XRight < Window_XLeft)
+	{
+		//cout << "\nhps2x64 ALERT: GPU: Window_XRight < Window_XLeft.\n";
+		return 0;
+	}
+
+	if (Window_YBottom < Window_YTop)
+	{
+		//cout << "\nhps2x64 ALERT: GPU: Window_YBottom < Window_YTop.\n";
+		return 0;
+	}
+
+	// check if sprite is within draw area
+	if (RightMostX < ((s32)Window_XLeft) || LeftMostX >((s32)Window_XRight) || BottomMostY < ((s32)Window_YTop) || TopMostY >((s32)Window_YBottom)) return 0;
+
+#ifdef ENABLE_MAX_OBJECT_WIDTH
+	// skip drawing if distance between vertices is greater than max allowed by GPU
+	if (_Abs(EndX - StartX) > c_MaxPolygonWidth)
+	{
+		// skip drawing polygon
+		return 0;
+	}
+#endif
+#ifdef ENABLE_MAX_OBJECT_HEIGHT
+	if (_Abs(EndY - StartY) > c_MaxPolygonHeight)
+	{
+		// skip drawing polygon
+		return 0;
+	}
+#endif
+
+	//x_distance = _Abs( x1 - x0 );
+	//y_distance = _Abs( y1 - y0 );
+
+//cout << "\ncheckpoint1";
+
+	if (x_distance > y_distance)
+	{
+		NumPixels = x_distance;
+
+		if (LeftMostX < ((s32)Window_XLeft))
+		{
+			NumPixels -= (Window_XLeft - LeftMostX);
+		}
+
+		if (RightMostX > ((s32)Window_XRight))
+		{
+			NumPixels -= (RightMostX - Window_XRight);
+		}
+	}
+	else
+	{
+		NumPixels = y_distance;
+
+		if (y0 < ((s32)Window_YTop))
+		{
+			NumPixels -= (Window_YTop - y0);
+		}
+
+		if (y1 > ((s32)Window_YBottom))
+		{
+			NumPixels -= (y1 - Window_YBottom);
+		}
+	}
+
+
+	/*
+	if ( ( !ulThreadNum ) && _GPU->ulNumberOfThreads )
+	{
+		//ulInputBuffer_WriteIndex++;
+		//x64ThreadSafe::Utilities::Lock_ExchangeAdd32 ( (long&) ulInputBuffer_TargetIndex, 1 );
+		return NumPixels;
+	}
+	*/
+
+
+
+	lContext = (p_inputbuffer[15] >> 9) & 1;
+	GPUDrawingVars* gd = &GpDrawVars[lContext];
+
+
+
+
+#ifdef USE_NEW_FBA
+	SetPixelMask = gd->FBA;
+#else
+	SetPixelMask = p_inputbuffer[4] << 31;
+#endif
+
+
+#ifdef USE_NEW_FRAME
+	FrameBuffer_WriteMask32 = gd->FRAME_FBMSK;
+	FrameBufferStartOffset32 = gd->FRAME_FBP << 11;
+	FrameBufferWidthInPixels = gd->FRAME_FBW << 6;
+	buf32 = gd->buf32;
+#else
+	FrameBuffer_WriteMask32 = 0xffffffffull & ~(p_inputbuffer[2] >> 32);
+	FrameBufferStartOffset32 = (p_inputbuffer[2] & 0x1ff) << 11;
+	FrameBufferWidthInPixels = ((p_inputbuffer[2] >> 16) & 0x3f) << 6;
+	buf32 = &(_GPU->RAM32[FrameBufferStartOffset32]);
+#endif
+
+#ifdef USE_NEW_ZBUF
+	ZBufferStartOffset32 = gd->ZBUF_ZBP << 11;
+	zbuf32 = gd->zbuf32;
+#else
+	ZBufferStartOffset32 = (p_inputbuffer[3] & 0x1ff) << 11;
+	zbuf32 = &(_GPU->RAM32[ZBufferStartOffset32]);
+#endif
+
+
+
+	//cout << "\nbuf32=" << hex << buf32 << " zbuf32=" << zbuf32;
+
+
+	if (ABE)
+	{
+#ifdef USE_NEW_PABE
+		AlphaXor32 = gd->PABE << 31;
+#else
+		AlphaXor32 = p_inputbuffer[8] << 31;
+#endif
+
+#ifdef USE_NEW_ALPHA
+		uA = gd->uA;
+		uB = gd->uB;
+		uC = gd->uC;
+		uD = gd->uD;
+#else
+		uA = (p_inputbuffer[7] >> 0) & 3;
+		uB = (p_inputbuffer[7] >> 2) & 3;
+		uC = (p_inputbuffer[7] >> 4) & 3;
+		uD = (p_inputbuffer[7] >> 6) & 3;
+#endif
+
+
+		// set fixed alpha values
+
+		// current RGBA value
+		//AlphaSelect [ 0 ] = rgbaq_Current.Value & 0xffffffffL;
+		AlphaSelect[0] = p_inputbuffer[16 - 14] & 0xffffffffULL;
+
+		// FIX value
+		//AlphaSelect [ 2 ] = ALPHA_X.FIX << 24;
+		//AlphaSelect [ 2 ] = ( p_inputbuffer [ 7 ] >> 8 ) & 0xff000000ULL;
+		AlphaSelect[2] = gd->FIX;
+
+		// ZERO
+		AlphaSelect[3] = 0;
+
+		vAlphaSelect[0] = _mm256_set1_epi32(AlphaSelect[0]);
+		//vAlphaSelect [ 1 ] = _mm256_set1_epi32 ( AlphaSelect [ 1 ] );
+		vAlphaSelect[2] = _mm256_set1_epi32(AlphaSelect[2]);
+		vAlphaSelect[3] = _mm256_set1_epi32(AlphaSelect[3]);
+	}	// end if ( ABE )
+
+
+
+	if (!SHADED)
+	{
+		vBgr = _mm256_set1_epi32(bgr);
+	}
+
+	//vStartX = _mm256_add_epi32 ( _mm256_set1_epi32 ( StartX ), vIdentity );
+	//vYacross = _mm256_set1_epi32 ( StartY );
+	//vZacross = _mm256_set1_epi32 ( z1 );
+	//vXmax = _mm256_set1_epi32 ( EndX + 1 );
+
+
+	vAlphaSelect[0] = _mm256_set1_epi32(AlphaSelect[0]);
+	vAlphaSelect[2] = _mm256_set1_epi32(AlphaSelect[2]);
+	vAlphaSelect[3] = _mm256_set1_epi32(AlphaSelect[3]);
+
+
+	vFrameBuffer_WriteMask32 = _mm256_set1_epi32(FrameBuffer_WriteMask32);
+
+	//vDestAlpha24 = _mm256_set1_epi32 ( DestAlpha24 );
+	//vDestMask24 = _mm256_set1_epi32 ( DestMask24 );
+	//vDA_Enable = _mm256_set1_epi32 ( DA_Enable );
+	//vDA_Enable = _mm256_set1_epi32 ( DATE << 31 );
+	vDA_Test = _mm256_set1_epi32(DA_Test);
+	vPixelOr32 = _mm256_set1_epi32(SetPixelMask);
+	//vFrameBufferStartOffset32 = _mm256_set1_epi32 ( FrameBufferStartOffset32 );
+	vFrameBufferWidth_Pixels = _mm256_set1_epi32(FrameBufferWidthInPixels);
+	//vARef_SrcAlpha = _mm256_set1_epi32 ( SrcAlpha_ARef );
+	vARef_SrcAlpha = _mm256_set1_epi32(aref);
+	vAlphaXor32 = _mm256_set1_epi32(AlphaXor32);
+
+
+	if (x_distance > y_distance)
+	{
+
+		// get the largest length
+		line_length = x_distance;
+
+		//if ( denominator < 0 )
+		//{
+			// x1 is on the left and x0 is on the right //
+
+			////////////////////////////////////
+			// get slopes
+
+		//ix = x0;
+		iy = (y0 << 12) + 0x8000;
+		//iy = ( y0 << 12 ) + 0xffff;
+		//x_right = x_left;
+
+
+		//if ( y1 - y0 )
+		if (line_length)
+		{
+			/////////////////////////////////////////////
+			// init x on the left and right
+
+			//dx_left = ( ( x1 - x0 ) << 16 ) / ( ( y1 - y0 ) + 1 );
+			//dx = ( ( x1 - x0 ) << 16 ) / line_length;
+			dy = ((y1 - y0) << 12) / line_length;
+			dz = (((s64)(z1 - z0)) << 16) / ((s64)line_length);
+
+			if (SHADED)
+			{
+				dr = ((r1 - r0) << 16) / line_length;
+				dg = ((g1 - g0) << 16) / line_length;
+				db = ((b1 - b0) << 16) / line_length;
+				da = ((a1 - a0) << 16) / line_length;
+			}
+		}
+
+		//cout << "\ndy=" << hex << dy << " dz=" << dz << " dr=" << dr << " dg=" << dg << " db=" << db << " da=" << da;
+
+				// check if line is going left or right
+		if (x1 > x0)
+		{
+			// line is going to the right
+			incdec = 1;
+
+			// clip against edge of screen
+			if (StartX < ((s32)Window_XLeft))
+			{
+				Temp = Window_XLeft - StartX;
+				StartX = Window_XLeft;
+
+				iy += dy * Temp;
+				iz += dz * Temp;
+
+				if (SHADED)
+				{
+					iR += dr * Temp;
+					iG += dg * Temp;
+					iB += db * Temp;
+					iA += da * Temp;
+				}
+			}
+
+			if (EndX > ((s32)Window_XRight))
+			{
+				EndX = Window_XRight + 1;
+			}
+		}
+		else
+		{
+			// line is going to the left from the right
+			incdec = -1;
+
+			// clip against edge of screen
+			if (StartX > ((s32)Window_XRight))
+			{
+				Temp = StartX - Window_XRight;
+				StartX = Window_XRight;
+
+				iy += dy * Temp;
+				iz += dz * Temp;
+
+				if (SHADED)
+				{
+					iR += dr * Temp;
+					iG += dg * Temp;
+					iB += db * Temp;
+					iA += da * Temp;
+				}
+			}
+
+			if (EndX < ((s32)Window_XLeft))
+			{
+				EndX = Window_XLeft - 1;
+			}
+		}
+
+
+		if (dy <= 0)
+		{
+
+			if ((iy >> 16) < ((s32)Window_YTop))
+			{
+				return NumPixels;
+			}
+			//else
+			//{
+			//	// line is veering onto screen
+			//	
+			//	// get y value it hits screen at
+			//	ix = ( ( ( y0 << 16 ) + 0x8000 ) - ( ((s32)DrawArea_TopLeftY) << 16 ) ) / ( dy >> 8 );
+			//	ix -= ( x0 << 8 ) + 0xff;
+			//	
+			//}
+
+			if (EndY < ((s32)Window_YTop))
+			{
+				// line is going down, so End Y would
+				EndY = Window_YTop - 1;
+			}
+		}
+
+		if (dy >= 0)
+		{
+			if ((iy >> 16) > ((s32)Window_YBottom))
+			{
+				// line is veering off screen
+				return NumPixels;
+			}
+
+			if (EndY > ((s32)Window_YBottom))
+			{
+				// line is going down, so End Y would
+				EndY = Window_YBottom + 1;
+			}
+		}
+
+
+		////////////////
+		// *** TODO *** at this point area of full triangle can be calculated and the rest of the drawing can be put on another thread *** //
+
+		// include the first point?
+		//EndX += incdec;
+
+
+		//vEnable = _mm256_set_epi32 ( 0, 0, 0, -1 );
+
+		// get starting point for line
+		vStartX = _mm256_set1_epi32(StartX);
+
+		// get starting vector
+		//vXacross = vIdentity;
+
+		// get start y values
+		vYacross = _mm256_mullo_epi32(vIdentity, _mm256_set1_epi32(dy));
+		vYacross = _mm256_add_epi32(vYacross, _mm256_set1_epi32(iy));
+
+		vYInc = _mm256_set1_epi32(dy * c_iVectorSize);
+
+
+		// get start z values
+		vZIdentity0 = _mm256_set_epi64x(dz * 6, dz * 4, dz * 2, 0);
+		vZIdentity1 = _mm256_set_epi64x(dz * 7, dz * 5, dz * 3, dz * 1);
+
+		vZacross0 = _mm256_add_epi64(_mm256_set1_epi64x(iz), vZIdentity0);
+		vZacross1 = _mm256_add_epi64(_mm256_set1_epi64x(iz), vZIdentity1);
+
+		vZInc = _mm256_set1_epi64x(dz * c_iVectorSize);
+
+		// get start color components
+		if (SHADED)
+		{
+			vRacross = _mm256_mullo_epi32(vIdentity, _mm256_set1_epi32(dr));
+			vRacross = _mm256_add_epi32(vRacross, _mm256_set1_epi32(iR));
+			vGacross = _mm256_mullo_epi32(vIdentity, _mm256_set1_epi32(dg));
+			vGacross = _mm256_add_epi32(vGacross, _mm256_set1_epi32(iG));
+			vBacross = _mm256_mullo_epi32(vIdentity, _mm256_set1_epi32(db));
+			vBacross = _mm256_add_epi32(vBacross, _mm256_set1_epi32(iB));
+			vAacross = _mm256_mullo_epi32(vIdentity, _mm256_set1_epi32(da));
+			vAacross = _mm256_add_epi32(vAacross, _mm256_set1_epi32(iA));
+
+			vRInc = _mm256_set1_epi32(dr * c_iVectorSize);
+			vGInc = _mm256_set1_epi32(dg * c_iVectorSize);
+			vBInc = _mm256_set1_epi32(db * c_iVectorSize);
+			vAInc = _mm256_set1_epi32(da * c_iVectorSize);
+
+		}
+
+		/*
+		if( incdec < 0 )
+		{
+		cout << "\nStartX=" << dec << StartX << " StartY=" << StartY << " EndX=" << EndX << " EndY=" << EndY;
+		}
+		*/
+
+		//StartX *= incdec;
+		//StartX -= ( incdec >> 1 ) & 3;
+
+		// recalculate line length after cropping line
+		line_length = abs(EndX - StartX);
+
+		// draw the line horizontally
+		//for ( ix = StartX; ix != EndX; ix += incdec )
+		for (ix = 0; ix < line_length; ix += c_iVectorSize)
+		{
+
+			//Line = iy >> 16;
+
+			// get y value for x values on line
+			vLine = _mm256_srai_epi32(vYacross, 16);
+
+
+			// get the actual x values
+			vXacross = _mm256_sign_epi32(vIdentity, _mm256_set1_epi32(incdec));
+			vXacross = _mm256_add_epi32(vXacross, vStartX);
+
+			// get z values
+			vZacross = _mm256_blend_epi16(_mm256_srli_epi64(vZacross0, 16), _mm256_slli_epi64(vZacross1, 16), 0xcc);
+
+
+			// make sure y is on screen
+			//vEnable = _mm256_set1_epi32( -1 );
+			vEnable = _mm256_cmpgt_epi32(vLine, _mm256_set1_epi32(Window_YTop - 1));
+			vEnable = _mm256_and_si256(vEnable, _mm256_cmpgt_epi32(_mm256_set1_epi32(Window_YBottom + 1), vLine));
+
+			// also make sure count is less than line length
+			vEnable = _mm256_and_si256(vEnable, _mm256_cmpgt_epi32(_mm256_set1_epi32(line_length), vIdentity));
+
+			//if ( Line >= ((s32)Window_YTop) && Line <= ((s32)Window_YBottom) )
+			if (!_mm256_test_all_zeros(vEnable, vEnable))
+			{
+
+				if (SHADED)
+				{
+
+					//bgr = ( iR >> 16 ) | ( ( iG >> 16 ) << 8 ) | ( ( iB >> 16 ) << 16 ) | ( ( iA >> 16 ) << 24 );
+					vRed = _mm256_srli_epi32(_mm256_slli_epi32(vRacross, 8), 24);
+					vGreen = _mm256_srli_epi32(_mm256_slli_epi32(vGacross, 8), 24);
+					vBlue = _mm256_srli_epi32(_mm256_slli_epi32(vBacross, 8), 24);
+					vAlpha = _mm256_srli_epi32(_mm256_slli_epi32(vAacross, 8), 24);
+					vBgr = _mm256_or_si256(_mm256_or_si256(vRed, _mm256_slli_epi32(vGreen, 8)), _mm256_or_si256(_mm256_slli_epi32(vBlue, 16), _mm256_slli_epi32(vAlpha, 24)));
+
+					//vBgr = _mm256_set1_epi32 ( bgr );
+				}
+
+
+				PlotPixel_Gradient_tx8<DTHE, ABE, ZMSK, FBPSM, ZBPSM, 1>
+					(buf32, zbuf32, vXacross, vLine, vZacross, vBgr, vPixelOr32, vFrameBufferWidth_Pixels, vDA_Test, vAlphaXor32, vFrameBuffer_WriteMask32, vARef_SrcAlpha, at, zt, TEST_AFAIL, vAlphaSelect, uA, uB, uC, uD, vEnable, vYOffset_add, ix);
+			}
+
+			//iy += dy;
+			vYacross = _mm256_add_epi32(vYacross, vYInc);
+
+			//iz += dz;
+			vZacross0 = _mm256_add_epi64(vZacross0, vZInc);
+			vZacross1 = _mm256_add_epi64(vZacross1, vZInc);
+
+
+			if (SHADED)
+			{
+				//iR += dr;
+				//iG += dg;
+				//iB += db;
+				//iA += da;
+
+				vRacross = _mm256_add_epi32(vRacross, vRInc);
+				vGacross = _mm256_add_epi32(vGacross, vGInc);
+				vBacross = _mm256_add_epi32(vBacross, vBInc);
+				vAacross = _mm256_add_epi32(vAacross, vAInc);
+			}
+
+			//vXacross = _mm256_add_epi32 ( vXacross, vXInc );
+			vIdentity = _mm256_add_epi32(vIdentity, vXInc);
+		}	// end for ( ix = 0; ix < line_length; ix += c_iVectorSize )
+
+	}
+	else
+	{
+		// line is vertical //
+
+		// get the largest length
+		line_length = y_distance;
+
+		//if ( denominator < 0 )
+		//{
+			// x1 is on the left and x0 is on the right //
+
+			////////////////////////////////////
+			// get slopes
+
+		ix = (x0 << 12) + 0x8000;
+		//ix = ( x0 << 12 ) + 0xffff;
+		//iy = y0;
+		//x_right = x_left;
+
+		//if ( y1 - y0 )
+		if (line_length)
+		{
+			/////////////////////////////////////////////
+			// init x on the left and right
+
+			//dx_left = ( ( x1 - x0 ) << 16 ) / ( ( y1 - y0 ) + 1 );
+			//dy = ( ( y1 - y0 ) << 16 ) / line_length;,
+			dx = ((x1 - x0) << 12) / line_length;
+			dz = (((s64)(z1 - z0)) << 16) / ((s64)line_length);
+
+			if (SHADED)
+			{
+				dr = ((r1 - r0) << 16) / line_length;
+				dg = ((g1 - g0) << 16) / line_length;
+				db = ((b1 - b0) << 16) / line_length;
+				da = ((a1 - a0) << 16) / line_length;
+			}
+		}
+
+		//cout << "\ndy=" << hex << dy << " dz=" << dz << " dr=" << dr << " dg=" << dg << " db=" << db << " da=" << da;
+
+
+				// check if line is going up or down
+		if (y1 > y0)
+		{
+			// line is going to the down
+			incdec = 1;
+
+			// clip against edge of screen
+			if (StartY < ((s32)Window_YTop))
+			{
+				Temp = Window_YTop - StartY;
+				StartY = Window_YTop;
+
+				ix += dx * Temp;
+				iz += dz * Temp;
+
+				if (SHADED)
+				{
+					iR += dr * Temp;
+					iG += dg * Temp;
+					iB += db * Temp;
+					iA += da * Temp;
+				}
+			}
+
+			if (EndY > ((s32)Window_YBottom))
+			{
+				EndY = Window_YBottom + 1;
+			}
+		}
+		else
+		{
+			// line is going to the left from the up
+			incdec = -1;
+
+			// clip against edge of screen
+			if (StartY > ((s32)Window_YBottom))
+			{
+				Temp = StartY - Window_YBottom;
+				StartY = Window_YBottom;
+
+				ix += dx * Temp;
+				iz += dz * Temp;
+
+				if (SHADED)
+				{
+					iR += dr * Temp;
+					iG += dg * Temp;
+					iB += db * Temp;
+					iA += da * Temp;
+				}
+			}
+
+			if (EndY < ((s32)Window_YTop))
+			{
+				EndY = Window_YTop - 1;
+			}
+		}
+
+		if (dx <= 0)
+		{
+			if ((ix >> 16) < ((s32)Window_XLeft))
+			{
+				// line is veering off screen
+				return NumPixels;
+			}
+
+			if (EndX < ((s32)Window_XLeft))
+			{
+				EndX = Window_XLeft - 1;
+			}
+		}
+
+		if (dx >= 0)
+		{
+			if ((ix >> 16) > ((s32)Window_XRight))
+			{
+				// line is veering off screen
+				return NumPixels;
+			}
+
+			if (EndX > ((s32)Window_XRight))
+			{
+				EndX = Window_XRight + 1;
+			}
+		}
+
+
+		// offset to get to this compute unit's scanline
+		//group_yoffset = group_id - ( StartY % num_global_groups );
+		//if ( group_yoffset < 0 )
+		//{
+		//	group_yoffset += num_global_groups;
+		//}
+
+	//}	// end if ( !local_id )
+
+
+
+	// synchronize variables across workers
+	//barrier ( CLK_LOCAL_MEM_FENCE );
+
+		// include the first point?
+		//EndY += incdec;
+
+		// get starting point for line
+		vStartX = _mm256_set1_epi32(StartY);
+
+		// get starting vector
+		//vXacross = vIdentity;
+
+		// get start y values
+		vXacross = _mm256_mullo_epi32(vIdentity, _mm256_set1_epi32(dx));
+		vXacross = _mm256_add_epi32(vXacross, _mm256_set1_epi32(ix));
+
+		vXInc = _mm256_set1_epi32(dx * c_iVectorSize);
+
+		vYInc = _mm256_set1_epi32(c_iVectorSize);
+
+		// get start z values
+		vZIdentity0 = _mm256_set_epi64x(dz * 6, dz * 4, dz * 2, 0);
+		vZIdentity1 = _mm256_set_epi64x(dz * 7, dz * 5, dz * 3, dz * 1);
+
+		vZacross0 = _mm256_add_epi64(_mm256_set1_epi64x(iz), vZIdentity0);
+		vZacross1 = _mm256_add_epi64(_mm256_set1_epi64x(iz), vZIdentity1);
+
+		vZInc = _mm256_set1_epi64x(dz * c_iVectorSize);
+
+		// get start color components
+		if (SHADED)
+		{
+			vRacross = _mm256_mullo_epi32(vIdentity, _mm256_set1_epi32(dr));
+			vRacross = _mm256_add_epi32(vRacross, _mm256_set1_epi32(iR));
+			vGacross = _mm256_mullo_epi32(vIdentity, _mm256_set1_epi32(dg));
+			vGacross = _mm256_add_epi32(vGacross, _mm256_set1_epi32(iG));
+			vBacross = _mm256_mullo_epi32(vIdentity, _mm256_set1_epi32(db));
+			vBacross = _mm256_add_epi32(vBacross, _mm256_set1_epi32(iB));
+			vAacross = _mm256_mullo_epi32(vIdentity, _mm256_set1_epi32(da));
+			vAacross = _mm256_add_epi32(vAacross, _mm256_set1_epi32(iA));
+
+			vRInc = _mm256_set1_epi32(dr * c_iVectorSize);
+			vGInc = _mm256_set1_epi32(dg * c_iVectorSize);
+			vBInc = _mm256_set1_epi32(db * c_iVectorSize);
+			vAInc = _mm256_set1_epi32(da * c_iVectorSize);
+
+		}
+
+
+
+		//if( incdec < 0 )
+		//{
+		//cout << "\nStartX=" << dec << StartX << " StartY=" << StartY << " EndX=" << EndX << " EndY=" << EndY;
+		//}
+
+
+				// recalculate line length after cropping line
+		line_length = abs(EndY - StartY);
+
+		// draw the line vertically
+		//for ( iy = StartY; iy != EndY; iy += incdec )
+		for (iy = 0; iy < line_length; iy += c_iVectorSize)
+		{
+
+			//Line = ix >> 16;
+
+			// get y value for x values on line
+			vLine = _mm256_srai_epi32(vXacross, 16);
+
+
+			// get the actual x values
+			vYacross = _mm256_sign_epi32(vIdentity, _mm256_set1_epi32(incdec));
+			vYacross = _mm256_add_epi32(vYacross, vStartX);
+
+			// get z values
+			vZacross = _mm256_blend_epi16(_mm256_srli_epi64(vZacross0, 16), _mm256_slli_epi64(vZacross1, 16), 0xcc);
+
+
+			// make sure y is on screen
+			//vEnable = _mm256_set1_epi32( -1 );
+			vEnable = _mm256_cmpgt_epi32(vLine, _mm256_set1_epi32(Window_XLeft - 1));
+			vEnable = _mm256_and_si256(vEnable, _mm256_cmpgt_epi32(_mm256_set1_epi32(Window_XRight + 1), vLine));
+
+			// also make sure count is less than line length
+			vEnable = _mm256_and_si256(vEnable, _mm256_cmpgt_epi32(_mm256_set1_epi32(line_length), vIdentity));
+
+			//if ( Line >= ((s32)Window_YTop) && Line <= ((s32)Window_YBottom) )
+			if (!_mm256_test_all_zeros(vEnable, vEnable))
+			{
+
+				if (SHADED)
+				{
+
+					//bgr = ( iR >> 16 ) | ( ( iG >> 16 ) << 8 ) | ( ( iB >> 16 ) << 16 ) | ( ( iA >> 16 ) << 24 );
+					vRed = _mm256_srli_epi32(_mm256_slli_epi32(vRacross, 8), 24);
+					vGreen = _mm256_srli_epi32(_mm256_slli_epi32(vGacross, 8), 24);
+					vBlue = _mm256_srli_epi32(_mm256_slli_epi32(vBacross, 8), 24);
+					vAlpha = _mm256_srli_epi32(_mm256_slli_epi32(vAacross, 8), 24);
+					vBgr = _mm256_or_si256(_mm256_or_si256(vRed, _mm256_slli_epi32(vGreen, 8)), _mm256_or_si256(_mm256_slli_epi32(vBlue, 16), _mm256_slli_epi32(vAlpha, 24)));
+
+					//vBgr = _mm256_set1_epi32 ( bgr );
+				}
+
+
+
+				PlotPixel_Gradient_tx8<DTHE, ABE, ZMSK, FBPSM, ZBPSM, 1>
+					(buf32, zbuf32, vLine, vYacross, vZacross, vBgr, vPixelOr32, vFrameBufferWidth_Pixels, vDA_Test, vAlphaXor32, vFrameBuffer_WriteMask32, vARef_SrcAlpha, at, zt, TEST_AFAIL, vAlphaSelect, uA, uB, uC, uD, vEnable, vYOffset_add, Line);
+			}
+
+			//ix += dx;
+			//iz += dz;
+
+			//iy += dy;
+			vXacross = _mm256_add_epi32(vXacross, vXInc);
+
+			//iz += dz;
+			vZacross0 = _mm256_add_epi64(vZacross0, vZInc);
+			vZacross1 = _mm256_add_epi64(vZacross1, vZInc);
+
+
+			if (SHADED)
+			{
+				//iR += dr;
+				//iG += dg;
+				//iB += db;
+				//iA += da;
+
+				vRacross = _mm256_add_epi32(vRacross, vRInc);
+				vGacross = _mm256_add_epi32(vGacross, vGInc);
+				vBacross = _mm256_add_epi32(vBacross, vBInc);
+				vAacross = _mm256_add_epi32(vAacross, vAInc);
+			}
+
+			//vXacross = _mm256_add_epi32 ( vXacross, vXInc );
+			vIdentity = _mm256_add_epi32(vIdentity, vYInc);
+
+		}	// end for ( iy = 0; iy < line_length; iy += c_iVectorSize )
+
+	}
+
+	return NumPixels;
+
+}
+
+#endif
+
+
+
 template<const long SHADED,const long DTHE,const long ABE,const long ZMSK,const long FBPSM, const long ZBPSM>
 static u64 Render_Generic_Line_t( u64* p_inputbuffer, u32 ulThreadNum )
 {
 	static const int c_iVectorSize = 4;
+
+#ifdef _ENABLE_AVX2_GPU
+	if (iDrawVectorSize == 8)
+	{
+		return Render_Generic_Line_tx8<SHADED, DTHE, ABE, ZMSK, FBPSM, ZBPSM>(p_inputbuffer, ulThreadNum);
+	}
+#endif
 	
 	s32 StartX, EndX, StartY, EndY;
 	//u32 PixelsPerLine;
@@ -13827,6 +16322,84 @@ static u64 Select_RenderLine_t ( u64* p_inputbuffer, u32 ulThreadNum )
 //---------------------------------------------------------------------------------------
 
 
+inline static __m256i FogFunc32_tx8(__m256i bgr, __m256i FogCoef, __m256i vFOGCOLR, __m256i vFOGCOLG, __m256i vFOGCOLB)
+{
+
+	__m256i cr, cg, cb, ca, rf, fogr, fogg, fogb;
+	//__m256i cag, crb, vFOGCOLRB;
+	__m256i vFOGCOLRB;
+	__m256i vMask;
+	vMask = _mm256_srli_epi16(_mm256_set1_epi32(-1), 8);
+
+
+	// remove later
+	FogCoef = _mm256_or_si256(FogCoef, _mm256_slli_epi32(FogCoef, 16));
+	//vFOGCOLR = _mm256_or_si256( vFOGCOLR, _mm256_slli_epi32( vFOGCOLR, 16 ) );
+	//vFOGCOLG = _mm256_or_si256( vFOGCOLG, _mm256_slli_epi32( vFOGCOLG, 16 ) );
+	//vFOGCOLB = _mm256_or_si256( vFOGCOLB, _mm256_slli_epi32( vFOGCOLB, 16 ) );
+	vFOGCOLRB = _mm256_or_si256(vFOGCOLR, _mm256_slli_epi32(vFOGCOLB, 16));
+
+
+	//rf = 0xff - FogCoef;
+	rf = _mm256_sub_epi16(vMask, FogCoef);
+	//rf = _mm256_srli_epi32 ( _mm256_slli_epi32 ( rf, 24 ), 24 );
+
+	// get components from pixel
+	//ca = ( bgr >> 24 ) & 0xff;
+	//cr = ( bgr >> 0 ) & 0xff;
+	//cg = ( bgr >> 8 ) & 0xff;
+	//cb = ( bgr >> 16 ) & 0xff;
+
+	cr = _mm256_and_si256(bgr, vMask);
+
+	cg = _mm256_srli_epi16(bgr, 8);
+	//cag = bgr;
+
+	// get components from fog color
+	//fogr = ( GPURegsGp.FOGCOL >> 0 ) & 0xff;
+	//fogg = ( GPURegsGp.FOGCOL >> 8 ) & 0xff;
+	//fogb = ( GPURegsGp.FOGCOL >> 16 ) & 0xff;
+
+	//cr = ColClamp8 ( ( ( FogCoef * cr ) >> 8 ) + ( ( rf * fogr ) >> 8 ) );
+	//cg = ColClamp8 ( ( ( FogCoef * cg ) >> 8 ) + ( ( rf * fogg ) >> 8 ) );
+	//cb = ColClamp8 ( ( ( FogCoef * cb ) >> 8 ) + ( ( rf * fogb ) >> 8 ) );
+
+	//cag = _mm256_add_epi16 ( _mm256_srli_epi16 ( _mm256_mullo_epi16 ( FogCoef, bgr ), 8 ), _mm256_srli_epi16 ( _mm256_mullo_epi16 ( rf, vFOGCOLG ), 8 ) );
+	//crb = _mm256_add_epi16 ( _mm256_srli_epi16 ( _mm256_mullo_epi16 ( FogCoef, crb ), 8 ), _mm256_srli_epi16 ( _mm256_mullo_epi16 ( rf, vFOGCOLRB ), 8 ) );
+
+
+	//if ( COLCLAMP & 1 )
+	//{
+		//cag = _mm256_min_epi16( cag, vMask );
+		//crb = _mm256_min_epi16( crb, vMask );
+	cg = _mm256_adds_epu8(_mm256_mullo_epi16(FogCoef, cg), _mm256_mullo_epi16(rf, vFOGCOLG));
+	cr = _mm256_adds_epu8(_mm256_mullo_epi16(FogCoef, cr), _mm256_mullo_epi16(rf, vFOGCOLRB));
+	//}
+	//else
+	//{
+	//	//cag = _mm256_and_si256( cag, vMask );
+	//	//crb = _mm256_and_si256( crb, vMask );
+	//	cg = _mm256_add_epi8 ( _mm256_mullo_epi16 ( FogCoef, cg ), _mm256_mullo_epi16 ( rf, vFOGCOLG ) );
+	//	cr = _mm256_add_epi8 ( _mm256_mullo_epi16 ( FogCoef, cr ), _mm256_mullo_epi16 ( rf, vFOGCOLRB ) );
+	//}
+
+	// shift into place as needed
+	//cg = _mm256_slli_epi32 ( cg, 8 );
+	//cb = _mm256_slli_epi32 ( cb, 16 );
+	cg = _mm256_blend_epi16(cg, bgr, 0xaa);
+
+	//cag = _mm256_slli_epi16 ( cag, 8 );
+	cg = _mm256_slli_epi16(_mm256_srli_epi16(cg, 8), 8);
+	cr = _mm256_srli_epi16(cr, 8);
+
+	// return the pixel
+	//return ( cr ) | ( cg << 8 ) | ( cb << 16 ) | ( ca << 24 );
+	//return _mm256_or_si256 ( _mm256_or_si256 ( cr, cg ), _mm256_or_si256 ( cb, ca ) );
+	return _mm256_or_si256(cg, cr);
+
+}
+
+
 inline static __m128i FogFunc32_t ( __m128i bgr, __m128i FogCoef, __m128i vFOGCOLR, __m128i vFOGCOLG, __m128i vFOGCOLB )
 {
 	
@@ -13903,6 +16476,198 @@ inline static __m128i FogFunc32_t ( __m128i bgr, __m128i FogCoef, __m128i vFOGCO
 	return _mm_or_si128( cg, cr );
 	
 }
+
+#ifdef _ENABLE_AVX2_GPU
+
+template<const long TFX, const long TCC>
+static __m256i TextureFunc32_tx8(__m256i bgr, __m256i shade1, __m256i shade2, __m256i shade3, __m256i shade_a)
+{
+	if (TFX == 1)
+	{
+		if (TCC)
+		{
+			return bgr;
+		}
+		else
+		{
+			//return ( ( bgr & 0x00ffffff ) | ( shade_a << 24 ) );
+			return _mm256_or_si256(_mm256_srli_epi32(_mm256_slli_epi32(bgr, 8), 8), _mm256_slli_epi32(shade_a, 24));
+		}
+	}
+	else
+	{
+		//u32 c1, c2, c3, ca;
+		__m256i c1, c2, c3, ca;
+		__m256i vMask;
+		vMask = _mm256_srli_epi16(_mm256_set1_epi32(-1), 8);
+
+		// get components from pixel
+		/*
+		ca = ( bgr >> 24 ) & 0xff;
+		c3 = ( bgr >> 16 ) & 0xff;
+		c2 = ( bgr >> 8 ) & 0xff;
+		c1 = ( bgr >> 0 ) & 0xff;
+		*/
+		//ca = _mm256_srli_epi32 ( bgr, 24 );
+		ca = _mm256_srli_epi16(bgr, 8);
+		//c3 = _mm256_srli_epi32 ( _mm256_slli_epi32 ( bgr, 8 ), 24 );
+		//c2 = _mm256_srli_epi32 ( _mm256_slli_epi32 ( bgr, 16 ), 24 );
+		//c1 = _mm256_srli_epi32 ( _mm256_slli_epi32 ( bgr, 24 ), 24 );
+
+		//c1 = _mm256_srli_epi16 ( _mm256_slli_epi16 ( bgr, 8 ), 8 );
+		c1 = _mm256_and_si256(bgr, vMask);
+		//c2 = _mm256_srli_epi16 ( bgr, 8 );
+		c2 = ca;
+
+		shade1 = _mm256_or_si256(shade1, _mm256_slli_epi32(shade3, 16));
+		shade_a = _mm256_or_si256(shade_a, _mm256_slli_epi32(shade_a, 16));
+
+		// get pixel color
+		switch (TFX)
+		{
+			// MODULATE
+		case 0:
+			shade2 = _mm256_blend_epi16(shade2, shade_a, 0xaa);
+
+			// todo: implement col clamp ?
+			c1 = _mm256_srli_epi16(_mm256_mullo_epi16(c1, shade1), 7);
+			c2 = _mm256_srli_epi16(_mm256_mullo_epi16(c2, shade2), 7);
+			//c3 = _mm256_srli_epi16 ( _mm256_mullo_epi16 ( c3, shade3 ), 7 );
+
+
+			// colclamp
+			c1 = _mm256_and_si256(c1, vvCOLCLAMP);
+			c2 = _mm256_and_si256(c2, vvCOLCLAMP);
+
+			//if ( COLCLAMP & 1 )
+			//{
+			c1 = _mm256_min_epi16(c1, vMask);
+			c2 = _mm256_min_epi16(c2, vMask);
+			//c3 = _mm256_min_epi16( c3, vMask );
+		//}
+		//else
+		//{
+		//	c1 = _mm256_and_si256( c1, vMask );
+		//	c2 = _mm256_and_si256( c2, vMask );
+		//	//c3 = _mm256_and_si256( c3, vMask );
+		//}
+
+			break;
+
+
+			// HIGHLIGHT
+		case 2:
+
+			// HIGHLIGHT2
+		case 3:
+
+			//c1 = UnsignedClamp<u32,8> ( ( c1 * shade1 ) >> 7 );
+			//c2 = UnsignedClamp<u32,8> ( ( c2 * shade2 ) >> 7 );
+			//c3 = UnsignedClamp<u32,8> ( ( c3 * shade3 ) >> 7 );
+			c1 = _mm256_srli_epi16(_mm256_mullo_epi16(c1, shade1), 7);
+			c2 = _mm256_srli_epi16(_mm256_mullo_epi16(c2, shade2), 7);
+			//c3 = _mm256_srli_epi16 ( _mm256_mullo_epi16 ( c3, shade3 ), 7 );
+
+
+			//c1 += shade_a;
+			//c2 += shade_a;
+			//c3 += shade_a;
+			c1 = _mm256_add_epi16(c1, shade_a);
+			c2 = _mm256_add_epi16(c2, shade_a);
+			//c3 = _mm256_add_epi16 ( c3, shade_a );
+
+			// colclamp
+			c1 = _mm256_and_si256(c1, vvCOLCLAMP);
+			c2 = _mm256_and_si256(c2, vvCOLCLAMP);
+
+			//if ( COLCLAMP & 1 )
+			//{
+
+			c1 = _mm256_min_epi16(c1, vMask);
+			c2 = _mm256_min_epi16(c2, vMask);
+			//c3 = _mm256_min_epi16( c3, vMask );
+		//}
+		//else
+		//{
+		//	c1 = _mm256_and_si256( c1, vMask );
+		//	c2 = _mm256_and_si256( c2, vMask );
+		//	//c3 = _mm256_and_si256( c3, vMask );
+		//}
+
+
+			break;
+		}
+
+
+		// determine alpha
+		switch (TCC)
+		{
+			// RGB
+		case 0:
+
+			// alpha value is from shading color
+			//ca = shade_a;
+			//ca = _mm256_slli_epi32 ( shade_a, 24 );
+			c2 = _mm256_blend_epi16(c2, shade_a, 0xaa);
+			break;
+
+			// RGBA
+		case 1:
+
+			// use TEXA register if pixel format is not 32-bit to get alpha value
+
+			// calculate alpha
+			switch (TFX)
+			{
+				// MODULATE
+			case 0:
+
+				break;
+
+				// HIGHLIGHT
+			case 2:
+				//ca = ColClamp8_t<COLCLAMP> ( ca + shade_a );
+				ca = _mm256_add_epi16(ca, shade_a);
+
+				// colclamp
+				ca = _mm256_and_si256(ca, vvCOLCLAMP);
+
+				//if ( COLCLAMP & 1 )
+				//{
+				ca = _mm256_min_epi16(ca, vMask);
+				//}
+				//else
+				//{
+				//	ca = _mm256_and_si256( ca, vMask );
+				//}
+
+				//ca = _mm256_slli_epi32 ( ca, 24 );
+				c2 = _mm256_blend_epi16(c2, ca, 0xaa);
+				break;
+
+			default:
+				//ca = _mm256_slli_epi32 ( ca, 24 );
+				c2 = _mm256_blend_epi16(c2, ca, 0xaa);
+				break;
+			}
+
+			break;
+		}
+
+		//c3 = _mm256_slli_epi32 ( c3, 16 );
+		c2 = _mm256_slli_epi16(c2, 8);
+
+		//c2 = _mm256_blend_epi16 ( c2, ca, 0xaa );
+
+		// return the pixel
+		//return ( c1 ) | ( c2 << 8 ) | ( c3 << 16 ) | ( ca << 24 );
+		//return _mm256_or_si256 ( _mm256_or_si256 ( _mm256_or_si256 ( c1, c2 ), c3 ), ca );
+		return _mm256_or_si256(c1, c2);
+	}
+}
+
+#endif
+
 
 
 template<const long TFX,const long TCC>
@@ -14095,6 +16860,227 @@ static __m128i TextureFunc32_t ( __m128i bgr, __m128i shade1, __m128i shade2, __
 
 
 #ifdef _ENABLE_SSE41
+
+
+#ifdef _ENABLE_AVX2
+
+// requirement: TEXA64 must be pre-shifted to the left by 24
+template<const long TEX_PSM, const long CLUT_PSM>
+static __m256i Render_Texture_Pixel_tx8(u32* ptr_texture32, __m256i vTexCoordX, __m256i vTexCoordY, __m256i vTexBufWidth, u16* ptr_clut16, __m256i vTA0, __m256i vTA1, __m256i vEnable)
+{
+	//u32 bgr, bgr_temp;
+	__m256i vTexOffset32, vBgr, vBgr2, vBgr_temp, vRed, vGreen, vBlue;
+
+	switch (TEX_PSM)
+	{
+		// PSMCT32
+	case 0:
+		//bgr = ptr_texture32 [ CvtAddrPix32 ( TexCoordX, TexCoordY, TexBufWidth ) ];
+		//break;
+
+	// PSMCT24
+	case 1:
+		//bgr = ptr_texture32 [ CvtAddrPix32 ( TexCoordX, TexCoordY, TexBufWidth ) ];
+		vTexOffset32 = CvtAddrPix32x8(vTexCoordX, vTexCoordY, vTexBufWidth, vEnable);
+		vBgr = _mm256_mask_i32gather_epi32(vBgr, (int const*)ptr_texture32, vTexOffset32, vEnable, 4);
+		break;
+
+		// PSMCT16
+	case 2:
+		//bgr = ptr_texture16 [ CvtAddrPix16 ( TexCoordX, TexCoordY, TexBufWidth ) ];
+		vTexOffset32 = CvtAddrPix16x8(vTexCoordX, vTexCoordY, vTexBufWidth, vEnable);
+		vBgr = _mm256_mask_i32gather_epi32(vBgr, (int const*)ptr_texture32, vTexOffset32, vEnable, 2);
+		break;
+
+		// PSMCT16S
+	case 0xa:
+		//bgr = ptr_texture16 [ CvtAddrPix16S ( TexCoordX, TexCoordY, TexBufWidth ) ];
+		vTexOffset32 = CvtAddrPix16Sx8(vTexCoordX, vTexCoordY, vTexBufWidth, vEnable);
+		vBgr = _mm256_mask_i32gather_epi32(vBgr, (int const*)ptr_texture32, vTexOffset32, vEnable, 2);
+		break;
+
+		// PSMT8
+	case 0x13:
+		//bgr_temp = ptr_texture8 [ CvtAddrPix8 ( TexCoordX, TexCoordY, TexBufWidth ) ];
+		vTexOffset32 = CvtAddrPix8x8(vTexCoordX, vTexCoordY, vTexBufWidth, vEnable);
+		vBgr_temp = _mm256_mask_i32gather_epi32(vBgr_temp, (int const*)ptr_texture32, vTexOffset32, vEnable, 1);
+		vBgr_temp = _mm256_srli_epi32(_mm256_slli_epi32(vBgr_temp, 24), 24);
+		break;
+
+		// PSMT4
+	case 0x14:
+		//bgr = CvtAddrPix4 ( TexCoordX, TexCoordY, TexBufWidth );
+		//bgr_temp = ( ( ptr_texture8 [ bgr >> 1 ] ) >> ( ( bgr & 1 ) << 2 ) ) & 0xf;
+		vTexOffset32 = CvtAddrPix4x8(vTexCoordX, vTexCoordY, vTexBufWidth, vEnable);
+		vBgr = _mm256_srli_epi32(_mm256_slli_epi32(vTexOffset32, 31), 31 - 2);
+		vTexOffset32 = _mm256_srli_epi32(vTexOffset32, 1);
+
+		vBgr_temp = _mm256_mask_i32gather_epi32(vBgr_temp, (int const*)ptr_texture32, vTexOffset32, vEnable, 1);
+		vBgr_temp = _mm256_srlv_epi32(vBgr_temp, vBgr);
+		vBgr_temp = _mm256_srli_epi32(_mm256_slli_epi32(vBgr_temp, 28), 28);
+
+		break;
+
+		// PSMT8H
+	case 0x1b:
+		//bgr_temp = ( ptr_texture32 [ CvtAddrPix32 ( TexCoordX, TexCoordY, TexBufWidth ) ] ) >> 24;
+		vTexOffset32 = CvtAddrPix32x8(vTexCoordX, vTexCoordY, vTexBufWidth, vEnable);
+
+		vBgr_temp = _mm256_mask_i32gather_epi32(vBgr_temp, (int const*)ptr_texture32, vTexOffset32, vEnable, 4);
+		vBgr_temp = _mm256_srli_epi32(vBgr_temp, 24);
+		break;
+
+		// PSMT4HL
+	case 0x24:
+		//bgr_temp = ( ptr_texture32 [ CvtAddrPix32 ( TexCoordX, TexCoordY, TexBufWidth ) ] >> 24 ) & 0xf;
+		vTexOffset32 = CvtAddrPix32x8(vTexCoordX, vTexCoordY, vTexBufWidth, vEnable);
+
+		vBgr_temp = _mm256_mask_i32gather_epi32(vBgr_temp, (int const*)ptr_texture32, vTexOffset32, vEnable, 4);
+		vBgr_temp = _mm256_srli_epi32(_mm256_slli_epi32(vBgr_temp, 4), 28);
+		break;
+
+		// PSMT4HH
+	case 0x2c:
+		//bgr_temp = ptr_texture32 [ CvtAddrPix32 ( TexCoordX, TexCoordY, TexBufWidth ) ] >> 28;
+		vTexOffset32 = CvtAddrPix32x8(vTexCoordX, vTexCoordY, vTexBufWidth, vEnable);
+
+		vBgr_temp = _mm256_mask_i32gather_epi32(vBgr_temp, (int const*)ptr_texture32, vTexOffset32, vEnable, 4);
+		vBgr_temp = _mm256_srli_epi32(vBgr_temp, 28);
+		break;
+
+		// Z-buffer formats
+
+		// PSMZ32
+	case 0x30:
+
+		// PSMZ24
+	case 0x31:
+		//case 0x35:
+			//bgr = ptr_texture32 [ CvtAddrZBuf32 ( TexCoordX, TexCoordY, TexBufWidth ) ];
+		vTexOffset32 = CvtAddrZBuf32x8(vTexCoordX, vTexCoordY, vTexBufWidth, vEnable);
+
+		vBgr = _mm256_mask_i32gather_epi32(vBgr, (int const*)ptr_texture32, vTexOffset32, vEnable, 4);
+		break;
+
+		// PSMZ16
+	case 0x32:
+		//bgr = ptr_texture16 [ CvtAddrZBuf16 ( TexCoordX, TexCoordY, TexBufWidth ) ];
+		vTexOffset32 = CvtAddrZBuf16x8(vTexCoordX, vTexCoordY, vTexBufWidth, vEnable);
+
+		vBgr = _mm256_mask_i32gather_epi32(vBgr, (int const*)ptr_texture32, vTexOffset32, vEnable, 2);
+		break;
+
+		// PSMZ16S
+	case 0x3a:
+		//bgr = ptr_texture16 [ CvtAddrZBuf16S ( TexCoordX, TexCoordY, TexBufWidth ) ];
+		vTexOffset32 = CvtAddrZBuf16Sx8(vTexCoordX, vTexCoordY, vTexBufWidth, vEnable);
+
+		vBgr = _mm256_mask_i32gather_epi32(vBgr, (int const*)ptr_texture32, vTexOffset32, vEnable, 2);
+		break;
+	}
+
+	// look up color value in CLUT if needed //
+	if ((TEX_PSM & 7) >= 3)
+	{
+		// lookup color value in CLUT //
+
+#ifdef CLUT_PRE_CALC
+		if (!(CLUT_PSM & 0x2))
+		{
+			// 32-bit pixels in CLUT //
+		}
+		else
+		{
+			// 16-bit pixels in CLUT //
+		}
+
+#else
+
+		vBgr = _mm256_mask_i32gather_epi32(vBgr, (int const*)ptr_clut16, vBgr_temp, vEnable, 2);
+
+		if (!(CLUT_PSM & 0x2))
+		{
+			// 32-bit pixels in CLUT //
+			vBgr2 = _mm256_mask_i32gather_epi32(vBgr2, (int const*)(ptr_clut16 + 256), vBgr_temp, vEnable, 2);
+			vBgr = _mm256_srli_epi32(_mm256_slli_epi32(vBgr, 16), 16);
+			vBgr = _mm256_or_si256(vBgr, _mm256_slli_epi32(vBgr2, 16));
+		}
+#endif
+	}
+
+	// convert 16-bit pixels to 32-bit (since 32-bit frame buffer here) //
+
+	// check if pixel is 16-bit
+	//if ( ( ( PixelFormat == 0x2 ) || ( PixelFormat == 0xa ) ) || ( ( PixelFormat > 0xa ) && ( CLUTPixelFormat & 0x2 ) ) )
+	if (((TEX_PSM == 0x2) || (TEX_PSM == 0xa)) || ((TEX_PSM > 0xa) && (TEX_PSM < 0x30) && (CLUT_PSM & 0x2)))
+	{
+		// pixel is 16-bit //
+
+#ifdef CLUT_PRE_CALC
+
+		// set the texture alpha for 16 bit pixel
+		//bgr |= ( ( ( bgr_temp & 0x8000 ) ? GPURegsGp.TEXA.TA1 : GPURegsGp.TEXA.TA0 ) << 24 );
+		vBgr = _mm256_or_si256(vBgr, _mm256_blendv_epi8(vTA0, vTA1, _mm256_slli_epi32(_mm256_srli_epi32(vBgr, 24),24)));
+
+#else
+		// get alpha component of 16-bit pixel
+		//bgr_temp = bgr & 0x8000;
+		vBgr_temp = vBgr;
+
+		// convert to 32-bit
+		//bgr = ConvertPixel16To24 ( bgr );
+		// convert 16-bit pixels to 32-bit pixels
+		vRed = _mm256_srli_epi32(_mm256_slli_epi32(vBgr, 24 + 3), 24);
+		vGreen = _mm256_srli_epi32(_mm256_slli_epi32(vBgr, 16 + 6), 24 + 3);
+		vBlue = _mm256_srli_epi32(_mm256_slli_epi32(vBgr, 8 + 9), 24 + 3);
+		//vAlpha = _mm256_slli_epi32 ( _mm256_srli_epi32 ( vBgr, 15 ), 31 );
+		//vBgr = _mm256_or_si256 ( _mm256_or_si256 ( _mm256_or_si256 ( vRed, vAlpha ), _mm256_slli_epi32 ( vGreen, 8 + 3 ) ), _mm256_slli_epi32 ( vBlue, 16 + 3 ) );
+		vBgr = _mm256_or_si256(_mm256_or_si256(vRed, _mm256_slli_epi32(vGreen, 8 + 3)), _mm256_slli_epi32(vBlue, 16 + 3));
+#endif
+
+		// set the texture alpha for 16 bit pixel
+		//bgr |= ( ( ( bgr_temp & 0x8000 ) ? GPURegsGp.TEXA.TA1 : GPURegsGp.TEXA.TA0 ) << 24 );
+		vBgr = _mm256_or_si256(vBgr, _mm256_blendv_epi8(vTA0, vTA1, _mm256_slli_epi32(vBgr_temp, 16)));
+
+
+		// check if pixel is definitely not transparent, if transparent then just stays zero
+		//if ( ( !GPURegsGp.TEXA.AEM ) || bgr )
+		//if ( TEXA_AEM )
+		//{
+			// if pixel is zero, then clear it and it is transparent
+			//vBgr = _mm256_andnot_si256 ( _mm256_cmpeq_epi32 ( vBgr_temp, _mm256_setzero_si256 () ), vBgr );
+		vBgr = _mm256_andnot_si256(_mm256_srai_epi32(_mm256_sub_epi32(vBgr_temp, vvAEM), 31), vBgr);
+		//}
+	}
+
+	//if ( PixelFormat == 1 )
+	if (TEX_PSM == 1)
+	{
+		// 24-bit pixel //
+		//bgr &= 0xffffff;
+		vBgr = _mm256_srli_epi32(_mm256_slli_epi32(vBgr, 8), 8);
+
+		vBgr_temp = vBgr;
+
+		vBgr = _mm256_or_si256(vBgr, vTA0);
+
+
+		//if ( TEXA_AEM )
+		//{
+			// if pixel is zero, then clear it and it is transparent
+			//vBgr = _mm256_andnot_si256 ( _mm256_cmpeq_epi32 ( vBgr_temp, _mm256_setzero_si256 () ), vBgr );
+		vBgr = _mm256_andnot_si256(_mm256_srai_epi32(_mm256_sub_epi32(vBgr_temp, vvAEM), 31), vBgr);
+
+		//}
+	}
+
+	//return bgr;
+	return vBgr;
+}
+
+#endif
+
+
 
 // requirement: TEXA64 must be pre-shifted to the left by 24
 template<const long TEX_PSM,const long CLUT_PSM>
@@ -14425,6 +17411,262 @@ static __m128i Render_Texture_Pixel_t ( u32* ptr_texture32, __m128i vTexCoordX, 
 
 
 
+#ifdef _ENABLE_AVX2
+
+static TexturePixelx8 Select_TexturePixel_tx8(u32 TEX_PSM, u32 CLUT_PSM, u32 TEXA_AEM)
+{
+	u32 Combine;
+
+
+	switch (TEX_PSM)
+	{
+		//PSMCT32
+	case 0x00:
+		//return &Render_Texture_Pixel_t<TEX_PSM,CLUT_PSM,TEXA_AEM>;
+		return &Render_Texture_Pixel_tx8<0, 0>;
+		break;
+
+		//PSMCT24
+	case 0x01:
+		switch (TEXA_AEM)
+		{
+			//PSMCT24 AEM=0
+		case 0x0:
+			return &Render_Texture_Pixel_tx8<1, 0>;
+			break;
+
+			//PSMCT24 AEM=1
+		case 0x1:
+			return &Render_Texture_Pixel_tx8<1, 0>;
+			break;
+		}
+
+		break;
+
+		//PSMCT16
+	case 0x2:
+		switch (TEXA_AEM)
+		{
+			//PSMCT16 AEM=0
+		case 0x0:
+			return &Render_Texture_Pixel_tx8<2, 0>;
+			break;
+
+			//PSMCT16 AEM=1
+		case 0x1:
+			return &Render_Texture_Pixel_tx8<2, 0>;
+			break;
+		}
+
+		break;
+
+		//PSMCT16S
+	case 0xa:
+		switch (TEXA_AEM)
+		{
+			//PSMCT16S AEM=0
+		case 0x0:
+			return &Render_Texture_Pixel_tx8<0xa, 0>;
+			break;
+
+			//PSMCT16S AEM=1
+		case 0x1:
+			return &Render_Texture_Pixel_tx8<0xa, 0>;
+			break;
+		}
+
+		break;
+
+		//PSMZ32
+	case 0x30:
+		//return &Render_Texture_Pixel_t<TEX_PSM,CLUT_PSM,TEXA_AEM>;
+		return &Render_Texture_Pixel_tx8<0x30, 0>;
+		break;
+
+		//PSMZ24 AEM=0
+	case 0x31:
+		return &Render_Texture_Pixel_tx8<0x31, 0>;
+		break;
+
+		//PSMZ24 AEM=1
+		//case 0x1031:
+		//case 0x1231:
+		//case 0x1a31:
+		//	return &Render_Texture_Pixel_t<0x31,0,1>;
+		//	break;
+
+		//PSMZ16 AEM=0
+	case 0x32:
+		return &Render_Texture_Pixel_tx8<0x32, 0>;
+		break;
+
+		//PSMZ16 AEM=1
+		//case 0x1032:
+		//case 0x1232:
+		//case 0x1a32:
+		//	return &Render_Texture_Pixel_t<0x32,0,1>;
+		//	break;
+
+		//PSMZ16S AEM=0
+	case 0x3a:
+		return &Render_Texture_Pixel_tx8<0x3a, 0>;
+		break;
+
+		//PSMZ16S AEM=1
+		//case 0x103a:
+		//case 0x123a:
+		//case 0x1a3a:
+		//	return &Render_Texture_Pixel_t<0x3a,0,1>;
+		//	break;
+
+
+
+	default:
+		Combine = (TEXA_AEM << 12) | ((CLUT_PSM & 0xa) << 8) | TEX_PSM;
+
+		switch (Combine)
+		{
+			//PSMT8 CLUT=PSMCT32 AEM=0
+			//PSMT8 CLUT=PSMCT32 AEM=1
+		case 0x0013:
+		case 0x1013:
+			return &Render_Texture_Pixel_tx8<0x13, 0>;
+			break;
+			//PSMT8 CLUT=PSMCT16 AEM=0
+		case 0x0213:
+			return &Render_Texture_Pixel_tx8<0x13, 2>;
+			break;
+			//PSMT8 CLUT=PSMCT16S AEM=0
+		case 0x0a13:
+			return &Render_Texture_Pixel_tx8<0x13, 0xa>;
+			break;
+
+			//PSMT8 CLUT=PSMCT16 AEM=1
+		case 0x1213:
+			return &Render_Texture_Pixel_tx8<0x13, 2>;
+			break;
+			//PSMT8 CLUT=PSMCT16S AEM=1
+		case 0x1a13:
+			return &Render_Texture_Pixel_tx8<0x13, 0xa>;
+			break;
+
+
+			//PSMT4 CLUT=PSMCT32 AEM=0
+			//PSMT4 CLUT=PSMCT32 AEM=1
+		case 0x0014:
+		case 0x1014:
+			return &Render_Texture_Pixel_tx8<0x14, 0>;
+			break;
+			//PSMT4 CLUT=PSMCT16 AEM=0
+		case 0x0214:
+			return &Render_Texture_Pixel_tx8<0x14, 2>;
+			break;
+			//PSMT4 CLUT=PSMCT16S AEM=0
+		case 0x0a14:
+			return &Render_Texture_Pixel_tx8<0x14, 0xa>;
+			break;
+
+			//PSMT4 CLUT=PSMCT16 AEM=1
+		case 0x1214:
+			return &Render_Texture_Pixel_tx8<0x14, 2>;
+			break;
+			//PSMT4 CLUT=PSMCT16S AEM=1
+		case 0x1a14:
+			return &Render_Texture_Pixel_tx8<0x14, 0xa>;
+			break;
+
+			//PSMT8H CLUT=PSMCT32 AEM=0
+			//PSMT8H CLUT=PSMCT32 AEM=1
+		case 0x001b:
+		case 0x101b:
+			return &Render_Texture_Pixel_tx8<0x1b, 0>;
+			break;
+			//PSMT8H CLUT=PSMCT16 AEM=0
+		case 0x021b:
+			return &Render_Texture_Pixel_tx8<0x1b, 2>;
+			break;
+			//PSMT8H CLUT=PSMCT16S AEM=0
+		case 0x0a1b:
+			return &Render_Texture_Pixel_tx8<0x1b, 0xa>;
+			break;
+
+			//PSMT8H CLUT=PSMCT16 AEM=1
+		case 0x121b:
+			return &Render_Texture_Pixel_tx8<0x1b, 2>;
+			break;
+			//PSMT8H CLUT=PSMCT16S AEM=1
+		case 0x1a1b:
+			return &Render_Texture_Pixel_tx8<0x1b, 0xa>;
+			break;
+
+
+			//PSMT4HL CLUT=PSMCT32 AEM=0
+			//PSMT4HL CLUT=PSMCT32 AEM=1
+		case 0x0024:
+		case 0x1024:
+			return &Render_Texture_Pixel_tx8<0x24, 0>;
+			break;
+			//PSMT4HL CLUT=PSMCT16 AEM=0
+		case 0x0224:
+			return &Render_Texture_Pixel_tx8<0x24, 2>;
+			break;
+			//PSMT4HL CLUT=PSMCT16S AEM=0
+		case 0x0a24:
+			return &Render_Texture_Pixel_tx8<0x24, 0xa>;
+			break;
+
+			//PSMT4HL CLUT=PSMCT16 AEM=1
+		case 0x1224:
+			return &Render_Texture_Pixel_tx8<0x24, 2>;
+			break;
+			//PSMT4HL CLUT=PSMCT16S AEM=1
+		case 0x1a24:
+			return &Render_Texture_Pixel_tx8<0x24, 0xa>;
+			break;
+
+
+			//PSMT4HH CLUT=PSMCT32 AEM=0
+			//PSMT4HH CLUT=PSMCT32 AEM=1
+		case 0x002c:
+		case 0x102c:
+			return &Render_Texture_Pixel_tx8<0x2c, 0>;
+			break;
+			//PSMT4HH CLUT=PSMCT16 AEM=0
+		case 0x022c:
+			return &Render_Texture_Pixel_tx8<0x2c, 2>;
+			break;
+			//PSMT4HH CLUT=PSMCT16S AEM=0
+		case 0x0a2c:
+			return &Render_Texture_Pixel_tx8<0x2c, 0xa>;
+			break;
+
+			//PSMT4HH CLUT=PSMCT16 AEM=1
+		case 0x122c:
+			return &Render_Texture_Pixel_tx8<0x2c, 2>;
+			break;
+			//PSMT4HH CLUT=PSMCT16S AEM=1
+		case 0x1a2c:
+			return &Render_Texture_Pixel_tx8<0x2c, 0xa>;
+			break;
+
+		default:
+#ifdef VERBOSE_DEBUG_INVALID_PIXEL
+			cout << "\nhps2x64: GPU: ERROR: problem selecting texture pixel renderer. TEX_PSM=" << hex << TEX_PSM << " CLUT_PSM=" << CLUT_PSM << " TEXA_AEM=" << TEXA_AEM;
+#endif
+			return NULL;
+			break;
+		}
+
+		break;
+	}
+
+	return NULL;
+}
+
+#endif
+
+
+
 // returns texture function to use
 static TexturePixel Select_TexturePixel_t ( u32 TEX_PSM, u32 CLUT_PSM, u32 TEXA_AEM )
 {
@@ -14681,6 +17923,1298 @@ static TexturePixel Select_TexturePixel_t ( u32 TEX_PSM, u32 CLUT_PSM, u32 TEXA_
 
 #ifdef USE_TEMPLATES_PS2_RECTANGLE
 
+
+#ifdef _ENABLE_AVX2_GPU
+
+template<const long TME, const long FGE, const long ABE, const long ZMSK, const long FBPSM, const long ZBPSM>
+static u64 Render_Generic_Rectangle_tx8(u64* p_inputbuffer, u32 ulThreadNum)
+{
+#if defined INLINE_DEBUG_SPRITE || defined INLINE_DEBUG_PRIMITIVE
+	debug << "; RenderSprite";
+#endif
+
+	// before sse2, was sending 1 pixels at a time
+	static const int c_iVectorSize = 8;
+
+	// notes: looks like sprite size is same as specified by w/h
+
+	//u32 Pixel,
+
+	u16* CLUT_LUT;
+
+	u32 TexelIndex;
+
+	u32 color_add;
+
+	u32* ptr_texture;
+	u8* ptr_texture8;
+	u16* ptr_texture16;
+	u32* ptr_texture32;
+	u32* ptr_clut;
+	u16* ptr_clut16;
+	u32 clut_width, clut_x, clut_y;
+
+	// not used
+	//u32 clut_xoffset, clut_yoffset;
+
+	//u16 *ptr;
+	s32 StartX, EndX, StartY, EndY;
+	u32 NumberOfPixelsDrawn;
+
+
+	u32* ptr32;
+	u16* ptr16;
+
+	u32* zptr32;
+	u16* zptr16;
+
+	u32 DestPixel, bgr, bgr_temp;
+	u32 bgr0, bgr1;
+
+	// 12.4 fixed point
+	s32 x0, y0, x1, y1;
+	s32 u0, v0, u1, v1;
+
+	// and the z coords
+	s64 z0, z1;
+
+	// interpolate the z ??
+	s64 dzdx, dzdy;
+	s64 iZ;
+
+	// interpolate f for fog
+	s64 f0, f1;
+	s64 dfdx, dfdy;
+	s64 iF;
+
+
+	s32 iU, iV, dudx, dvdy;
+
+	s32 Line, x_across;
+
+	u32 c1, c2, c3, ca;
+
+	s64 Temp;
+	s64 TempX, TempY;
+
+	//u32 tge;
+
+	//u32 DestPixel, PixelMask = 0, SetPixelMask = 0;
+	s32 TexCoordX, TexCoordY;
+
+	//u32 Shift1 = 0, Shift2 = 0, And1 = 0, And2 = 0;
+	//u32 Shift0 = 0;
+	u32 TextureOffset;
+
+	u32 And3, Shift3, Shift4;
+
+	u32 PixelsPerLine;
+
+	u32 PixelFormat;
+	u32 CLUTBufBase32, CLUTPixelFormat, CLUTStoreMode, CLUTOffset;
+
+	u32 TexBufWidth, TexWidth, TexHeight, TexWidth_Mask, TexHeight_Mask;
+
+	s32 TexX_Min, TexX_Max, TexY_Min, TexY_Max;
+	u32 TexX_And, TexX_Or, TexY_And, TexY_Or;
+
+	u64 NumPixels;
+
+	s32 iR, iG, iB, iA;
+	s64 iz;
+
+	s32 Window_YTop, Window_YBottom, Window_XLeft, Window_XRight;
+
+	s32 Coord_OffsetX, Coord_OffsetY;
+
+	s32 RightMostX, LeftMostX, TopMostY, BottomMostY;
+	u32 TexBufStartOffset32;
+	u32 Clamp_ModeX, Clamp_ModeY;
+	s32 Clamp_MinU, Clamp_MaxU, Clamp_MinV, Clamp_MaxV;
+	u32 Fst;
+	u32 TEX_PSM;
+	u32 RGB24_Alpha, Pixel24_Mask, RGB24_TAlpha;
+	FloatLong fTemp1, fTemp2;
+	//long lTemp1, lTemp2;
+
+
+	u64 TEXA64;
+	u32 Combine;
+
+	u32 TEX_TFX, TEX_TCC;
+	u32 FOGCOL;
+
+	u32* buf32, * zbuf32;
+	u32 PixelOr32, FrameBufferWidthInPixels;
+
+	u32 FrameBufferStartOffset32, ZBufferStartOffset32;
+
+	u32 DA_Test, AlphaXor32, FrameBuffer_WriteMask32;
+	u32 AlphaSelect[4];
+	u32 uA, uB, uC, uD;
+
+	u32 TEXA_AEM;
+
+	AlphaTestx8 at;
+	ZTestx8 zt;
+	AlphaFailx8 af;
+	TexturePixelx8 pd;
+	TextureFuncx8 tf;
+
+	u32 TEST_ATST;
+	u32 TEST_ZTST;
+	u32 TEST_AFAIL;
+	u32 aref;
+
+
+	__m256i vDestAlpha24, vDestMask24;
+	__m256i vDA_Enable, vDA_Test;
+	__m256i vFrameBuffer_WriteMask32;
+	__m256i vPixelOr32;
+	__m256i vFrameBufferStartOffset32;
+	__m256i vFrameBufferWidth_Pixels;
+	__m256i vARef_SrcAlpha;
+	__m256i vAlphaXor32;
+	__m256i vAlphaSelect[4];
+
+	__m256i vFOGCOLR;
+	__m256i vFOGCOLG;
+	__m256i vFOGCOLB;
+
+	__m256i vTA0;
+	__m256i vTA1;
+
+	__m256i vYOffset;
+	__m256i vZYOffset;
+
+
+	__m256i vEnable;
+	__m256i vIdentity;
+	vIdentity = _mm256_set_epi32(7, 6, 5, 4, 3, 2, 1, 0);
+
+	__m256i vStartX, vXacross, vXmax, vYacross, vZacross, vBgr;
+	__m256i vXInc;
+	__m256i vYInc;
+	vXInc = _mm256_set1_epi32(c_iVectorSize);
+	vYInc = _mm256_set1_epi32(1);
+
+	__m256i vTexOffset32, vUinc, vVinc, vUidentity, vUstart, vUacross, vVacross, vFacross, vTexBufWidth;
+	__m256i vTexCoordY, vTexY_Min, vTexY_Max, vTexY_And, vTexY_Or;
+	__m256i vTexCoordX, vTexX_Min, vTexX_Max, vTexX_And, vTexX_Or;
+	__m256i vRed, vGreen, vBlue, vAlpha;
+	__m256i vBgr_temp, vBgr2, vca, vc1, vc2, vc3;
+
+	__m256i vYOffset_xor, vYOffset_add, vZYOffset_xor, vZYOffset_add;
+
+
+	u32 lContext;
+
+
+	u32 Coord0x = 16 - 14, Coord0y = 16 - 14, Coord1x = 20 - 14, Coord1y = 20 - 14;
+
+
+
+
+
+
+	Window_YTop = (p_inputbuffer[0] >> 32) & 0x7ff;
+	Window_YBottom = (p_inputbuffer[0] >> 48) & 0x7ff;
+	Window_XLeft = (p_inputbuffer[0]) & 0x7ff;
+	Window_XRight = (p_inputbuffer[0] >> 16) & 0x7ff;
+
+	Coord_OffsetX = p_inputbuffer[1] & 0xffff;
+	Coord_OffsetY = (p_inputbuffer[1] >> 32) & 0xffff;
+
+	// get x,y
+	x0 = p_inputbuffer[Coord0x + 1] & 0xffff;
+	y0 = (p_inputbuffer[Coord0y + 1] >> 16) & 0xffff;
+	x1 = p_inputbuffer[Coord1x + 1] & 0xffff;
+	y1 = (p_inputbuffer[Coord1y + 1] >> 16) & 0xffff;
+
+	//////////////////////////////////////////
+	// get coordinates on screen
+	// *note* this is different from PS1, where you would add the offsets..
+	x0 -= Coord_OffsetX;
+	y0 -= Coord_OffsetY;
+	x1 -= Coord_OffsetX;
+	y1 -= Coord_OffsetY;
+
+	LeftMostX = (x1 > x0) ? ((x0 + 0xf) >> 4) : ((x1 + 0xf) >> 4);
+	RightMostX = (x0 > x1) ? ((x0 - 1) >> 4) : ((x1 - 1) >> 4);
+	TopMostY = (y1 > y0) ? ((y0 + 0xf) >> 4) : ((y1 + 0xf) >> 4);
+	BottomMostY = (y0 > y1) ? ((y0 - 1) >> 4) : ((y1 - 1) >> 4);
+
+	// order coords so they go top to bottom and left to right
+	if (x1 < x0)
+	{
+		// swap x,u coords
+		Swap(x0, x1);
+
+		// swap z,f coords ??
+		// note: possibly need to update the z,f coords ??
+		//Swap ( z0, z1 );
+
+
+		if (TME)
+		{
+			//Swap ( u0, u1 );
+			Swap(Coord0x, Coord1x);
+		}
+
+		//if ( FGE )
+		//{
+		//Swap ( f0, f1 );
+		//}
+	}
+
+	if (y1 < y0)
+	{
+		// swap y,v coords
+		Swap(y0, y1);
+
+		// swap z,f coords ??
+		// note: possibly need to update the z,f coords ??
+		//Swap ( z0, z1 );
+
+		if (TME)
+		{
+			//Swap ( v0, v1 );
+			Swap(Coord0y, Coord1y);
+		}
+
+		//if ( FGE )
+		//{
+		//Swap ( f0, f1 );
+		//}
+	}
+
+
+	// looks like some sprites have y1 < y0 and/or x1 < x0
+	// didn't expect that so need to alert and figure out some other time
+	if ((y1 < y0) || (x1 < x0))
+	{
+#if defined INLINE_DEBUG_SPRITE_TEST || defined INLINE_DEBUG_PRIMITIVE_TEST
+		debug << dec << "\r\nERROR: y1 < y0 or x1 < x0 in sprite!!!";
+		debug << dec << " FinalCoords: x0=" << x0 << " y0=" << y0 << " x1=" << x1 << " y1=" << y1;
+#endif
+
+#ifdef VERBOSE_SPRITE_ERROR
+		cout << "\nhps2x64: GPU: ERROR: Sprite has x1 < x0 or y1 < y0!!!";
+#endif
+
+		return 0;
+	}
+
+	// coords are in 12.4 fixed point
+	//x0 >>= 4;
+	//y0 >>= 4;
+	//x1 >>= 4;
+	//y1 >>= 4;
+	StartX = (x0 + 0xf) >> 4;
+	EndX = (x1 - 1) >> 4;
+	StartY = (y0 + 0xf) >> 4;
+	EndY = (y1 - 1) >> 4;
+
+
+	TempY = (StartY << 4) - y0;
+
+	if (StartY < Window_YTop)
+	{
+		//v0 += ( Window_YTop - StartY ) * dvdy;
+		TempY += (Window_YTop - StartY) << 4;
+		StartY = Window_YTop;
+	}
+
+
+
+	if (EndY > Window_YBottom)
+	{
+		EndY = Window_YBottom;
+	}
+
+
+	TempX = (StartX << 4) - x0;
+
+	if (StartX < Window_XLeft)
+	{
+		//u0 += ( Window_XLeft - StartX ) * dudx;
+		TempX += (Window_XLeft - StartX) << 4;
+		StartX = Window_XLeft;
+	}
+
+
+
+	if (EndX > Window_XRight)
+	{
+		EndX = Window_XRight;
+	}
+
+
+	// check that there is a pixel to draw
+	if ((EndX < StartX) || (EndY < StartY))
+	{
+#if defined INLINE_DEBUG_SPRITE_TEST || defined INLINE_DEBUG_PRIMITIVE_TEST
+		debug << dec << "\r\nERROR: EndY < StartY or EndX < StartX in sprite!!!";
+		debug << dec << " FinalCoords: StartX=" << StartX << " StartY=" << StartY << " EndX=" << EndX << " EndY=" << EndY;
+#endif
+
+		return 0;
+	}
+
+
+
+
+	NumberOfPixelsDrawn = (EndX - StartX + 1) * (EndY - StartY + 1);
+
+	/*
+	if ( ( !ulThreadNum ) && _GPU->ulNumberOfThreads )
+	{
+		//ulInputBuffer_WriteIndex++;
+		//x64ThreadSafe::Utilities::Lock_ExchangeAdd32 ( (long&) ulInputBuffer_TargetIndex, 1 );
+		return NumberOfPixelsDrawn;
+	}
+	*/
+
+
+	lContext = (p_inputbuffer[15] >> 9) & 1;
+
+	GPUDrawingVars* gd = &GpDrawVars[lContext];
+
+	// check if sprite is within draw area
+	if (EndX < Window_XLeft || StartX > Window_XRight || EndY < Window_YTop || StartY > Window_YBottom) return 0;
+#if defined INLINE_DEBUG_SPRITE_TEST || defined INLINE_DEBUG_PRIMITIVE_TEST
+	else
+	{
+		debug << dec << "\r\nDrawSprite" << " FinalCoords: x0=" << (x0 >> 4) << " y0=" << (y0 >> 4) << " x1=" << (x1 >> 4) << " y1=" << (y1 >> 4);
+		debug << dec << " u0=" << (u0 >> 16) << " v0=" << (v0 >> 16) << " u1=" << (u1 >> 16) << " v1=" << (v1 >> 16);
+		debug << hex << " z0=" << z0 << " z1=" << z1;
+		debug << " bgr=" << bgr;
+		debug << hex << "; TexBufPtr32/64=" << (TexBufStartOffset32 >> 6);
+		debug << dec << "; TexWidth=" << TexWidth << " TexHeight=" << TexHeight;
+		debug << dec << "; TexBufWidth=" << TexBufWidth;
+		debug << "; TexPixFmt=" << PixelFormat_Names[PixelFormat];
+		debug << "; Clamp_ModeX=" << Clamp_ModeX << " Clamp_ModeY=" << Clamp_ModeY;
+		debug << hex << "; CLUTBufPtr32/64=" << (CLUTBufBase32 >> 6);
+		debug << "; CLUTPixFmt=" << PixelFormat_Names[CLUTPixelFormat];
+		debug << hex << "; CLUTOffset/16=" << CLUTOffset;
+		debug << "; CSM=" << CLUTStoreMode;
+		debug << "; TME=" << hex << TME;
+		debug << hex << "; FrameBufPtr32/64=" << (FrameBufferStartOffset32 >> 6);
+		debug << dec << " FrameBufWidth=" << FrameBufferWidthInPixels;
+		debug << " FrameBufPixFmt=" << PixelFormat_Names[FBPSM];
+		debug << " ATST=" << hex << TEST_ATST;
+		debug << " AFAIL=" << hex << TEST_AFAIL;
+		debug << " Alpha=" << ABE;
+		debug << " PixelOr32=" << PixelOr32;
+		debug << " AlphaXor32=" << AlphaXor32;
+		debug << " DA_Test=" << DA_Test;
+		debug << hex << " ZBuf=" << (ZBufferStartOffset32 >> 11);
+		debug << PixelFormat_Names[ZBPSM];
+		//debug << " TEST=" << TEST_X.Value;
+		//debug << " LCM=" << TEX1 [ Ctx ].LCM;
+		//debug << " K=" << TEX1 [ Ctx ].K;
+	}
+#endif
+
+
+
+
+
+
+
+	// get z
+	//z0 = ( p_inputbuffer [ Coord0 + 1 ] >> 32 );
+	z1 = (p_inputbuffer[16 + 5 - 14] >> 32);
+
+	// constant z-value for rectangles/sprites (using z1 here)
+	//iz = z1 << 16;
+
+
+
+
+	// get bgr color value
+	//bgr0 = p_inputbuffer [ Coord0 + 0 ] & 0xffffffffULL;
+	bgr1 = p_inputbuffer[16 + 4 - 14] & 0xffffffffULL;
+
+	bgr = bgr1;
+
+	//cout << "\nx0=" << dec << x0 << " y0=" << y0 << " x1=" << x1 << " y1=" << y1 << " z0=" << z0 << " z1=" << z1 << hex << " bgr0=" << bgr0 << " bgr1=" << bgr1;
+	//cout << "\nABE=" << hex << ABE << " TEST_ATST=" << TEST_ATST << " TEST_AFAIL=" << TEST_AFAIL << " TEST_ZTST=" << TEST_ZTST << " A=" << uA << " B=" << uB << " C=" << uC << " D=" << uD << " PRIM=" << p_inputbuffer [ 15 ];
+
+		/*
+		// set fixed alpha values
+		AlphaSelect [ 2 ] = ALPHA_X.FIX << 24;
+		AlphaSelect [ 3 ] = 0;
+		*/
+
+
+
+
+	if (TME)
+	{
+		// get color components
+		c1 = bgr & 0xff;
+		c2 = (bgr >> 8) & 0xff;
+		c3 = (bgr >> 16) & 0xff;
+		ca = (bgr >> 24) & 0xff;
+
+
+
+
+		//TEX0_t *TEX0 = TEXX;
+		//TEX1_t *TEX1 = &GPURegsGp.TEX1_1;
+
+
+		//TexBufWidth = TEX0 [ Ctx ].TBW0 << 6;
+		//TexWidth = 1 << TEX0 [ Ctx ].TW;
+		//TexHeight = 1 << TEX0 [ Ctx ].TH;
+
+#ifdef USE_NEW_TEX0
+		TexBufWidth = gd->TexBufWidth;
+		TexWidth = gd->TexWidth;
+		TexHeight = gd->TexHeight;
+		TexWidth_Mask = gd->TexWidth_Mask;
+		TexHeight_Mask = gd->TexHeight_Mask;
+#else
+		TexBufWidth = ((p_inputbuffer[13] >> 14) & 0x3f) << 6;
+		TexWidth = 1 << ((p_inputbuffer[13] >> 26) & 0xf);
+		TexHeight = 1 << ((p_inputbuffer[13] >> 30) & 0xf);
+		TexWidth_Mask = TexWidth - 1;
+		TexHeight_Mask = TexHeight - 1;
+#endif
+
+
+#ifdef USE_NEW_TEXA
+		TEXA64 = gd->TEXA << 24;
+#else
+		// TEXA64 is TEXA pre-shifted to the left by 24
+		//TEXA64 = ( p_inputbuffer [ 31 ] >> 8 ) & 0xff000000ull;
+		TEXA64 = p_inputbuffer[31] << 24;
+#endif
+
+#ifdef USE_NEW_TEXA
+		TEXA_AEM = gd->TEXA_AEM;
+#else
+		TEXA_AEM = (p_inputbuffer[31] >> 15) & 1;
+#endif
+
+
+#ifdef USE_NEW_TEX0
+		TexBufStartOffset32 = gd->TexBufStartOffset32;
+		PixelFormat = gd->PixelFormat;
+		CLUTPixelFormat = gd->CLUTPixelFormat;
+		CLUTBufBase32 = gd->CLUTBufBase32;
+		CLUTStoreMode = gd->CLUTStoreMode;
+		CLUTOffset = gd->CLUTOffset;
+		ptr_clut = gd->ptr_clut;
+		ptr_clut16 = gd->ptr_clut16;
+		TEX_TCC = gd->TEX_TCC;
+		TEX_TFX = gd->TEX_TFX;
+		ptr_texture = gd->ptr_texture;
+		pd = gd->pdx8;
+#else
+		/////////////////////////////////////////////////////////
+		// Get offset into texture page
+		//TexBufStartOffset32 = TEX0 [ Ctx ].TBP0 << 6;
+		TexBufStartOffset32 = (p_inputbuffer[13] & 0x3fff) << 6;
+
+		// get the pixel format (16 bit, 32 bit, etc)
+		//PixelFormat = TEX0 [ Ctx ].PSM;
+		PixelFormat = ((p_inputbuffer[13] >> 20) & 0x3f);
+
+
+
+		//CLUTPixelFormat = TEX0 [ Ctx ].CPSM;
+		CLUTPixelFormat = ((p_inputbuffer[13] >> 51) & 0xf);
+
+		// get base pointer to color lookup table (32-bit word address divided by 64)
+		//CLUTBufBase32 = TEX0 [ Ctx ].CBP << 6;
+		CLUTBufBase32 = ((p_inputbuffer[13] >> 37) & 0x3fff) << 6;
+
+		// storage mode ??
+		//CLUTStoreMode = TEX0 [ Ctx ].CSM;
+		CLUTStoreMode = ((p_inputbuffer[13] >> 55) & 0x1);
+
+		// clut offset ??
+		// this is the offset / 16
+		// note: this is actually the position in the temporary buffer, not in the local memory
+		//CLUTOffset = TEX0 [ Ctx ].CSA;
+		CLUTOffset = ((p_inputbuffer[13] >> 56) & 0x1f);
+
+		//ptr_clut = & ( _GPU->RAM32 [ CLUTBufBase32 ] );
+		//ptr_clut16 = & ( _GPU->InternalCLUT [ CLUTOffset ] );
+
+
+		TEX_TCC = (p_inputbuffer[13] >> 34) & 1;
+		TEX_TFX = (p_inputbuffer[13] >> 35) & 3;
+
+		ptr_texture = &(_GPU->RAM32[TexBufStartOffset32]);
+
+		// get texture drawing function
+		pd = Select_TexturePixel_tx8(PixelFormat, CLUTPixelFormat, TEXA_AEM);
+
+
+
+
+		if (!CLUTStoreMode)
+		{
+#if defined INLINE_DEBUG_SPRITE || defined INLINE_DEBUG_PRIMITIVE
+			debug << " CSM1";
+#endif
+
+			// CSM1 //
+
+			if (CLUTPixelFormat & 0x2)
+			{
+				// 4-bit pixels - 16 colors
+				// 16-bit pixels in CLUT //
+				CLUTOffset &= 0x1f;
+			}
+			else
+			{
+				// 32-bit pixels in CLUT //
+				CLUTOffset &= 0xf;
+			}
+
+		}
+		else
+		{
+#if defined INLINE_DEBUG_SPRITE || defined INLINE_DEBUG_PRIMITIVE
+			debug << " CSM2";
+#endif
+
+		}
+
+		CLUTOffset <<= 4;
+
+
+		ptr_clut = &(_GPU->RAM32[CLUTBufBase32]);
+		ptr_clut16 = &(_GPU->InternalCLUT[CLUTOffset]);
+#endif
+
+
+		if (!pd)
+		{
+#if defined INLINE_DEBUG_SPRITE || defined INLINE_DEBUG_PRIMITIVE
+			debug << "\r\nERROR: INVALID PIXEL FORMAT: Pixel Format=" << hex << PixelFormat << " ClutFormat=" << CLUTPixelFormat;
+#endif
+
+			cout << "\nhps2x64: GPU: ERROR: RECTANGLE/SPRITE8 INVALID PIXEL FORMAT: Pixel Format=" << hex << PixelFormat << " ClutFormat=" << CLUTPixelFormat;
+
+			return 0;
+		}
+
+
+#ifdef USE_NEW_TEXCLUT
+		clut_width = gd->TEXCLUT_WIDTH;
+		clut_x = gd->TEXCLUT_X;
+		clut_y = gd->TEXCLUT_Y;
+#else
+		// color lookup table width is stored in TEXCLUT register (in pixels/64)
+		// get clut width and x in pixels
+		//clut_width = GPURegsGp.TEXCLUT.CBW << 6;
+		clut_width = (p_inputbuffer[14] & 0x3f) << 6;
+
+
+		//clut_x = GPURegsGp.TEXCLUT.COU << 6;
+		clut_x = p_inputbuffer[14] & 0xfc0;
+
+		// get clut y in units of pixels
+		//clut_y = GPURegsGp.TEXCLUT.COV;
+		clut_y = (p_inputbuffer[14] & 0x3ff000) >> 12;
+#endif
+
+
+
+
+
+
+
+#if defined INLINE_DEBUG_SPRITE || defined INLINE_DEBUG_PRIMITIVE
+		debug << "; TexPixFmt=" << PixelFormat_Names[PixelFormat];
+#endif
+
+
+
+
+
+		// *** TODO *** use a union
+		ptr_texture8 = (u8*)ptr_texture;
+		ptr_texture16 = (u16*)ptr_texture;
+		ptr_texture32 = (u32*)ptr_texture;
+
+
+
+		// texture pixel format variables //
+
+
+
+
+
+		if ((c1 == 0x80) && (c2 == 0x80) && (c3 == 0x80))
+		{
+			if (!TEX_TFX)
+			{
+				if ((ca == 0x80) || (!TEX_TCC))
+				{
+					TEX_TFX = 1;
+				}
+			}
+		}
+
+		Combine = TEX_TFX | (TEX_TCC << 2);
+
+		switch (Combine)
+		{
+		case 0:
+			tf = &TextureFunc32_tx8<0, 0>;
+			break;
+		case 1:
+			tf = &TextureFunc32_tx8<1, 0>;
+			break;
+		case 2:
+			tf = &TextureFunc32_tx8<2, 0>;
+			break;
+		case 3:
+			tf = &TextureFunc32_tx8<3, 0>;
+			break;
+		case 4:
+			tf = &TextureFunc32_tx8<0, 1>;
+			break;
+		case 5:
+			tf = &TextureFunc32_tx8<1, 1>;
+			break;
+		case 6:
+			tf = &TextureFunc32_tx8<2, 1>;
+			break;
+		case 7:
+			tf = &TextureFunc32_tx8<3, 1>;
+			break;
+		}
+
+
+
+
+
+
+
+
+
+		if (FGE)
+		{
+#ifdef USE_NEW_FOGCOL
+			FOGCOL = gd->FOGCOL;
+#else
+			FOGCOL = p_inputbuffer[11];
+#endif
+
+			// get fog coefficient
+			//f0 = (u64) f [ Coord0 ].F;
+			//f1 = (u64) f [ Coord1 ].F;
+			//f0 = ( p_inputbuffer [ 19 ] >> 56 ) & 0xff;
+			f1 = (p_inputbuffer[23 - 14] >> 56) & 0xff;
+		}
+
+
+
+		Fst = p_inputbuffer[15] & 0x100;
+
+		// check if sprite should use UV coords or ST coords
+		// on PS2, sprite can use the ST register to specify texture coords
+		//if ( GPURegsGp.PRIM.FST )
+		if (Fst)
+		{
+#if defined INLINE_DEBUG_SPRITE || defined INLINE_DEBUG_PRIMITIVE
+			debug << " FST";
+#endif
+
+			// get u,v
+			//u0 = p_inputbuffer [ 18 ] & 0x3fff;
+			u0 = p_inputbuffer[Coord0x + 2] & 0x3fff;
+			//v0 = ( p_inputbuffer [ 18 ] >> 16 ) & 0x3fff;
+			v0 = (p_inputbuffer[Coord0y + 2] >> 16) & 0x3fff;
+			//u1 = p_inputbuffer [ 22 ] & 0x3fff;
+			u1 = p_inputbuffer[Coord1x + 2] & 0x3fff;
+			//v1 = ( p_inputbuffer [ 22 ] >> 16 ) & 0x3fff;
+			v1 = (p_inputbuffer[Coord1y + 2] >> 16) & 0x3fff;
+		}
+		else
+		{
+#if defined INLINE_DEBUG_SPRITE || defined INLINE_DEBUG_PRIMITIVE
+			debug << " !FST";
+#endif
+
+			// put s,t coords into 10.4 fixed point
+			// note: tex width/height should probably be minus one
+
+			//fTemp1.l = p_inputbuffer [ 18 ] & 0xffffffffull;
+			fTemp1.l = p_inputbuffer[Coord0x + 2] & 0xffffffffull;
+			//fTemp2.l = p_inputbuffer [ 18 ] >> 32;
+			fTemp2.l = p_inputbuffer[Coord0y + 2] >> 32;
+			u0 = (s32)(fTemp1.f * ((float)(TexWidth)) * 16.0f);
+			v0 = (s32)(fTemp2.f * ((float)(TexHeight)) * 16.0f);
+			//fTemp1.l = p_inputbuffer [ 22 ] & 0xffffffffull;
+			fTemp1.l = p_inputbuffer[Coord1x + 2] & 0xffffffffull;
+			//fTemp2.l = p_inputbuffer [ 22 ] >> 32;
+			fTemp2.l = p_inputbuffer[Coord1y + 2] >> 32;
+			u1 = (s32)(fTemp1.f * ((float)(TexWidth)) * 16.0f);
+			v1 = (s32)(fTemp2.f * ((float)(TexHeight)) * 16.0f);
+		}
+
+
+
+
+
+	}	// end if ( TME )
+
+
+
+	// initialize number of pixels drawn
+	//NumberOfPixelsDrawn = 0;
+
+
+
+
+#if defined INLINE_DEBUG_SPRITE || defined INLINE_DEBUG_PRIMITIVE
+	debug << hex << " bgr=" << bgr;
+	debug << dec << "; Coords: x0=" << (x0 >> 4) << " y0=" << (y0 >> 4) << " x1=" << (x1 >> 4) << " y1=" << (y1 >> 4);
+	debug << dec << " u0=" << (u0 >> 4) << " v0=" << (v0 >> 4) << " u1=" << (u1 >> 4) << " v1=" << (v1 >> 4);
+	debug << hex << " z0=" << z0 << " z1=" << z1;
+#endif
+
+
+
+
+
+	if (TME)
+	{
+		// tex coords are in 10.4 fixed point
+		u0 <<= 16;
+		v0 <<= 16;
+		u1 <<= 16;
+		v1 <<= 16;
+
+		if (x1 - x0) dudx = (u1 - u0) / (x1 - x0);
+		if (y1 - y0) dvdy = (v1 - v0) / (y1 - y0);
+
+		//if ( FGE )
+		//{
+		//if ( x1 - x0 ) dfdx = ( ( f1 - f0 ) << 16 ) / ( x1 - x0 );
+		//if ( y1 - y0 ) dfdy = ( ( f1 - f0 ) << 16 ) / ( y1 - y0 );
+		//}
+
+		// shift back down to get into 16.16 format
+		u0 >>= 4;
+		v0 >>= 4;
+		u1 >>= 4;
+		v1 >>= 4;
+	}	// end if ( TME )
+
+
+
+#if defined INLINE_DEBUG_SPRITE || defined INLINE_DEBUG_PRIMITIVE
+	debug << dec << "; FinalCoords: x0=" << x0 << " y0=" << y0 << " x1=" << x1 << " y1=" << y1;
+	debug << hex << " u0=" << u0 << " v0=" << v0 << " u1=" << u1 << " v1=" << v1;
+#endif
+
+
+
+	if (TME)
+	{
+
+#ifdef USE_NEW_CLAMP
+		Clamp_ModeX = gd->Clamp_ModeX;
+		Clamp_ModeY = gd->Clamp_ModeY;
+
+		Clamp_MinU = gd->Clamp_MinU;
+		Clamp_MaxU = gd->Clamp_MaxU;
+		Clamp_MinV = gd->Clamp_MinV;
+		Clamp_MaxV = gd->Clamp_MaxV;
+
+		TexY_And = gd->TexY_And;
+		TexHeight_Mask = gd->TexHeight_Mask;
+		TexY_Or = gd->TexY_Or;
+		TexY_Min = gd->TexY_Min;
+		TexY_Max = gd->TexY_Max;
+
+		TexX_And = gd->TexX_And;
+		TexWidth_Mask = gd->TexWidth_Mask;
+		TexX_Or = gd->TexX_Or;
+		TexX_Min = gd->TexX_Min;
+		TexX_Max = gd->TexX_Max;
+#else
+		Clamp_ModeX = p_inputbuffer[12] & 0x3;
+		Clamp_ModeY = (p_inputbuffer[12] >> 2) & 0x3;
+
+		Clamp_MinU = (p_inputbuffer[12] >> 4) & 0x3ff;
+		Clamp_MaxU = (p_inputbuffer[12] >> 14) & 0x3ff;
+		Clamp_MinV = (p_inputbuffer[12] >> 24) & 0x3ff;
+		Clamp_MaxV = (p_inputbuffer[12] >> 34) & 0x3ff;
+
+		switch (Clamp_ModeY)
+		{
+		case 0:
+			// repeat //
+			//TexCoordY &= TexHeight_Mask;
+			TexY_And = TexHeight_Mask;
+
+			TexY_Or = 0;
+
+			// can only have coords in range -2047 to +2047
+			TexY_Min = -2047;
+			TexY_Max = 2047;
+			break;
+
+		case 1:
+			// clamp //
+			//TexCoordY = ( TexCoordY < 0 ) ? 0 : TexCoordY;
+			//TexCoordY = ( TexCoordY > TexHeight ) ? TexHeight : TexCoordY;
+			TexY_Min = 0;
+			TexY_Max = TexHeight_Mask;
+
+			TexY_And = TexHeight_Mask;
+			TexY_Or = 0;
+			break;
+
+		case 2:
+			// region clamp //
+			//TexCoordY = ( TexCoordY < Clamp_MinV ) ? Clamp_MinV : TexCoordY;
+			//TexCoordY = ( TexCoordY > Clamp_MaxV ) ? Clamp_MaxV : TexCoordY;
+			TexY_Min = Clamp_MinV;
+			TexY_Max = Clamp_MaxV;
+
+			TexY_And = TexHeight_Mask;
+			TexY_Or = 0;
+			break;
+
+		case 3:
+			// region repeat //
+			// this one is just like on the ps1
+			//TexCoordY = ( TexCoordY & Clamp_MinV ) | Clamp_MaxV;
+			TexY_And = Clamp_MinV & TexHeight_Mask;
+			TexY_Or = Clamp_MaxV & TexHeight_Mask;
+
+			// can only have coords in range -2047 to +2047
+			TexY_Min = -2047;
+			TexY_Max = 2047;
+			break;
+		}
+
+
+		switch (Clamp_ModeX)
+		{
+		case 0:
+			// repeat //
+			//TexCoordY &= TexHeight_Mask;
+			TexX_And = TexWidth_Mask;
+
+			TexX_Or = 0;
+
+			// can only have coords in range -2047 to +2047
+			TexX_Min = -2047;
+			TexX_Max = 2047;
+			break;
+
+		case 1:
+			// clamp //
+			//TexCoordY = ( TexCoordY < 0 ) ? 0 : TexCoordY;
+			//TexCoordY = ( TexCoordY > TexHeight ) ? TexHeight : TexCoordY;
+			TexX_Min = 0;
+			TexX_Max = TexWidth_Mask;
+
+			TexX_And = TexWidth_Mask;
+			TexX_Or = 0;
+			break;
+
+		case 2:
+			// region clamp //
+			//TexCoordY = ( TexCoordY < Clamp_MinV ) ? Clamp_MinV : TexCoordY;
+			//TexCoordY = ( TexCoordY > Clamp_MaxV ) ? Clamp_MaxV : TexCoordY;
+			TexX_Min = Clamp_MinU;
+			TexX_Max = Clamp_MaxU;
+
+			TexX_And = TexWidth_Mask;
+			TexX_Or = 0;
+			break;
+
+		case 3:
+			// region repeat //
+			// this one is just like on the ps1
+			//TexCoordY = ( TexCoordY & Clamp_MinV ) | Clamp_MaxV;
+			TexX_And = Clamp_MinU & TexWidth_Mask;
+			TexX_Or = Clamp_MaxU & TexWidth_Mask;
+
+			// can only have coords in range -2047 to +2047
+			TexX_Min = -2047;
+			TexX_Max = 2047;
+			break;
+		}
+#endif
+
+	}	// end if ( TME )
+
+
+
+
+#ifdef USE_NEW_FBA
+	PixelOr32 = gd->FBA;
+#else
+	PixelOr32 = p_inputbuffer[4] << 31;
+#endif
+
+
+
+#ifdef USE_NEW_FRAME
+	FrameBuffer_WriteMask32 = gd->FRAME_FBMSK;
+	FrameBufferStartOffset32 = gd->FRAME_FBP << 11;
+	FrameBufferWidthInPixels = gd->FRAME_FBW << 6;
+	buf32 = gd->buf32;
+#else
+	FrameBuffer_WriteMask32 = 0xffffffffull & ~(p_inputbuffer[2] >> 32);
+	FrameBufferStartOffset32 = (p_inputbuffer[2] & 0x1ff) << 11;
+	FrameBufferWidthInPixels = ((p_inputbuffer[2] >> 16) & 0x3f) << 6;
+	buf32 = &(_GPU->RAM32[FrameBufferStartOffset32]);
+#endif
+
+#ifdef USE_NEW_ZBUF
+	ZBufferStartOffset32 = gd->ZBUF_ZBP << 11;
+	zbuf32 = gd->zbuf32;
+#else
+	ZBufferStartOffset32 = (p_inputbuffer[3] & 0x1ff) << 11;
+	zbuf32 = &(_GPU->RAM32[ZBufferStartOffset32]);
+#endif
+
+
+
+
+
+	if (ABE)
+	{
+#ifdef USE_NEW_PABE
+		AlphaXor32 = gd->PABE << 31;
+#else
+		AlphaXor32 = p_inputbuffer[8] << 31;
+#endif
+
+#ifdef USE_NEW_ALPHA
+		uA = gd->uA;
+		uB = gd->uB;
+		uC = gd->uC;
+		uD = gd->uD;
+#else
+		uA = (p_inputbuffer[7] >> 0) & 3;
+		uB = (p_inputbuffer[7] >> 2) & 3;
+		uC = (p_inputbuffer[7] >> 4) & 3;
+		uD = (p_inputbuffer[7] >> 6) & 3;
+#endif
+
+
+		// set fixed alpha values
+
+		// current RGBA value
+		//AlphaSelect [ 0 ] = rgbaq_Current.Value & 0xffffffffL;
+		AlphaSelect[0] = p_inputbuffer[16 + 4 - 14] & 0xffffffffULL;
+
+		// FIX value
+		//AlphaSelect [ 2 ] = ALPHA_X.FIX << 24;
+		//AlphaSelect [ 2 ] = ( p_inputbuffer [ 7 ] >> 8 ) & 0xff000000ULL;
+		AlphaSelect[2] = gd->FIX;
+
+		// ZERO
+		AlphaSelect[3] = 0;
+
+
+
+	}	// end if ( ABE )
+
+
+
+
+	if (TME)
+	{
+		v0 += (dvdy >> 4) * TempY;
+	}
+
+	if (TME)
+	{
+		u0 += (dudx >> 4) * TempX;
+	}
+
+	if (TME)
+	{
+		//iV = v;
+		iV = v0;
+	}
+
+	//if ( FGE )
+	//{
+	//	f0 <<= 16;
+	//}
+
+
+	vBgr = _mm256_set1_epi32(bgr);
+	vStartX = _mm256_add_epi32(_mm256_set1_epi32(StartX), vIdentity);
+	//vYacross = _mm256_set1_epi32 ( StartY );
+	vZacross = _mm256_set1_epi32(z1);
+	vXmax = _mm256_set1_epi32(EndX + 1);
+
+	vAlphaSelect[0] = _mm256_set1_epi32(AlphaSelect[0]);
+	vAlphaSelect[2] = _mm256_set1_epi32(AlphaSelect[2]);
+	vAlphaSelect[3] = _mm256_set1_epi32(AlphaSelect[3]);
+
+
+	if (TME)
+	{
+		vUinc = _mm256_set1_epi32(dudx * c_iVectorSize);
+		vVinc = _mm256_set1_epi32(dvdy);
+
+		vUidentity = _mm256_mullo_epi32(_mm256_set1_epi32(dudx), vIdentity);
+
+		vUstart = _mm256_add_epi32(_mm256_set1_epi32(u0), vUidentity);
+		vVacross = _mm256_set1_epi32(v0);
+
+		vTexBufWidth = _mm256_set1_epi32(TexBufWidth);
+
+		vc1 = _mm256_set1_epi32(c1);
+		vc2 = _mm256_set1_epi32(c2);
+		vc3 = _mm256_set1_epi32(c3);
+		vca = _mm256_set1_epi32(ca);
+
+		vTexY_Min = _mm256_set1_epi32(TexY_Min);
+		vTexY_Max = _mm256_set1_epi32(TexY_Max);
+		vTexY_And = _mm256_set1_epi32(TexY_And);
+		vTexY_Or = _mm256_set1_epi32(TexY_Or);
+
+		vTexX_Min = _mm256_set1_epi32(TexX_Min);
+		vTexX_Max = _mm256_set1_epi32(TexX_Max);
+		vTexX_And = _mm256_set1_epi32(TexX_And);
+		vTexX_Or = _mm256_set1_epi32(TexX_Or);
+
+		vTA0 = _mm256_set1_epi32(TEXA64 & 0xff000000);
+		vTA1 = _mm256_set1_epi32((TEXA64 >> 32) & 0xff000000);
+	}
+
+	vFrameBuffer_WriteMask32 = _mm256_set1_epi32(FrameBuffer_WriteMask32);
+
+	//vDestAlpha24 = _mm256_set1_epi32 ( DestAlpha24 );
+	//vDestMask24 = _mm256_set1_epi32 ( DestMask24 );
+	//vDA_Enable = _mm256_set1_epi32 ( DA_Enable );
+	//vDA_Enable = _mm256_set1_epi32 ( DATE << 31 );
+	vDA_Test = _mm256_set1_epi32(DA_Test);
+	vPixelOr32 = _mm256_set1_epi32(PixelOr32);
+	//vFrameBufferStartOffset32 = _mm256_set1_epi32 ( FrameBufferStartOffset32 );
+	vFrameBufferWidth_Pixels = _mm256_set1_epi32(FrameBufferWidthInPixels);
+	//vARef_SrcAlpha = _mm256_set1_epi32 ( SrcAlpha_ARef );
+	vARef_SrcAlpha = _mm256_set1_epi32(aref);
+	vAlphaXor32 = _mm256_set1_epi32(AlphaXor32);
+
+	if (FGE)
+	{
+		vFacross = _mm256_set1_epi32(f1);
+
+		//fogr = ( GPURegsGp.FOGCOL >> 0 ) & 0xff;
+		//fogg = ( GPURegsGp.FOGCOL >> 8 ) & 0xff;
+		//fogb = ( GPURegsGp.FOGCOL >> 16 ) & 0xff;
+		vFOGCOLR = _mm256_set1_epi32((FOGCOL >> 0) & 0xff);
+		vFOGCOLG = _mm256_set1_epi32((FOGCOL >> 8) & 0xff);
+		vFOGCOLB = _mm256_set1_epi32((FOGCOL >> 16) & 0xff);
+	}
+
+
+
+	for (Line = StartY; Line <= EndY; Line++)
+	{
+
+		vXacross = vStartX;
+		vYacross = _mm256_set1_epi32(Line);
+
+
+		//vYOffset_xor = _mm256_set1_epi32 ( LUT_YOFFSET [ ( Line & 0x3f ) | ( ( FBPSM >> 1 ) << 7 ) ] );
+		//vYOffset_add = _mm256_set1_epi32 ( ( Line & LUT_YNAND[ FBPSM >> 1 ] ) * FrameBufferWidthInPixels );
+		//vYOffset_add = _mm256_set1_epi32 ( LUT_YOFFSET [ ( y0 & 0x3f ) | ( ( FBPSM >> 1 ) << 7 ) ] + ( ( y0 & LUT_YNAND[ FBPSM >> 1 ] ) * FrameBufferWidthInPixels ) );
+
+		//vZYOffset_xor = _mm256_set1_epi32 ( LUT_YOFFSET [ ( Line & 0x3f ) | ( ( ( ZBPSM | 0x30 ) >> 1 ) << 7 ) ] );
+		//vZYOffset_add = _mm256_set1_epi32 ( ( Line & LUT_YNAND[ ( ZBPSM | 0x30 ) >> 1 ] ) * FrameBufferWidthInPixels );
+
+
+		switch (FBPSM)
+		{
+		case 0:
+		case 1:
+			vYOffset = _mm256_set1_epi32(CvtAddrPix32(0, Line, FrameBufferWidthInPixels));
+			break;
+
+		case 2:
+			vYOffset = _mm256_set1_epi32(CvtAddrPix16(0, Line, FrameBufferWidthInPixels));
+			break;
+
+		case 0xa:
+			vYOffset = _mm256_set1_epi32(CvtAddrPix16S(0, Line, FrameBufferWidthInPixels));
+			break;
+
+			/*
+			case 0x30:
+			case 0x31:
+				vYOffset = _mm256_set1_epi32 ( CvtAddrZBuf32 ( 0x20, Line, FrameBufferWidthInPixels ) );
+				break;
+
+			case 0x32:
+				vYOffset = _mm256_set1_epi32 ( CvtAddrZBuf16 ( 0x20, Line, FrameBufferWidthInPixels ) );
+				break;
+
+			case 0x3a:
+				vYOffset = _mm256_set1_epi32 ( CvtAddrZBuf16S ( 0x20, Line, FrameBufferWidthInPixels ) );
+				break;
+			*/
+		}
+
+		/*
+		switch ( ZBPSM )
+		{
+			case 0:
+			case 1:
+				vZYOffset = _mm256_set1_epi32 ( CvtAddrZBuf32 ( 0x20, Line, FrameBufferWidthInPixels ) );
+				break;
+
+			case 2:
+				vZYOffset = _mm256_set1_epi32 ( CvtAddrZBuf16 ( 0x20, Line, FrameBufferWidthInPixels ) );
+				break;
+
+			case 0xa:
+				vZYOffset = _mm256_set1_epi32 ( CvtAddrZBuf16S ( 0x20, Line, FrameBufferWidthInPixels ) );
+				break;
+		}
+		*/
+
+
+		if (TME)
+		{
+
+			// need to start texture coord from left again
+			//iU = u0;
+			vUacross = vUstart;
+
+			//TexCoordY = ( iV >> 16 );
+			vTexCoordY = _mm256_srai_epi32(vVacross, 16);
+
+			//TexCoordY = ( ( TexCoordY < TexY_Min ) ? TexY_Min : TexCoordY );
+			//TexCoordY = ( ( TexCoordY > TexY_Max ) ? TexY_Max : TexCoordY );
+			//TexCoordY &= TexY_And;
+			//TexCoordY |= TexY_Or;
+			vTexCoordY = _mm256_max_epi32(vTexCoordY, vTexY_Min);
+			vTexCoordY = _mm256_min_epi32(vTexCoordY, vTexY_Max);
+			vTexCoordY = _mm256_and_si256(vTexCoordY, vTexY_And);
+			vTexCoordY = _mm256_or_si256(vTexCoordY, vTexY_Or);
+		}
+
+
+		// draw horizontal line
+		//for ( x_across = StartX; x_across <= EndX; x_across++ )
+		for (x_across = StartX; x_across <= EndX /* && ptr32 < PtrEnd */; x_across += c_iVectorSize)
+		{
+
+			// check what pixels are enabled based on x position
+			vEnable = _mm256_cmpgt_epi32(vXmax, vXacross);
+
+
+			if (TME)
+			{
+
+
+				//TexCoordX = ( iU >> 16 );
+				vTexCoordX = _mm256_srai_epi32(vUacross, 16);
+
+				//TexCoordX = ( ( TexCoordX < TexX_Min ) ? TexX_Min : TexCoordX );
+				//TexCoordX = ( ( TexCoordX > TexX_Max ) ? TexX_Max : TexCoordX );
+				//TexCoordX &= TexX_And;
+				//TexCoordX |= TexX_Or;
+				vTexCoordX = _mm256_max_epi32(vTexCoordX, vTexX_Min);
+				vTexCoordX = _mm256_min_epi32(vTexCoordX, vTexX_Max);
+				vTexCoordX = _mm256_and_si256(vTexCoordX, vTexX_And);
+				vTexCoordX = _mm256_or_si256(vTexCoordX, vTexX_Or);
+
+
+
+				// get texel from texture buffer (32-bit frame buffer) //
+				vBgr = pd(ptr_texture32, vTexCoordX, vTexCoordY, vTexBufWidth, ptr_clut16, vTA0, vTA1, vEnable);
+
+
+
+
+
+				// texture function ??
+
+
+				// fog function ??
+
+				//if ( bgr != -1ULL )
+				//if ( bgr )
+				//{
+
+
+					//bgr = _GPU->TextureFunc32 ( bgr, c1, c2, c3, ca );
+					//bgr = tf ( bgr, c1, c2, c3, ca );
+				vBgr = tf(vBgr, vc1, vc2, vc3, vca);
+
+
+
+				if (FGE)
+				{
+					vBgr = FogFunc32_tx8(vBgr, vFacross, vFOGCOLR, vFOGCOLG, vFOGCOLB);
+				}
+
+
+
+
+			}
+			//else
+			//{
+
+			PlotPixel_Gradient_tx8<0, ABE, ZMSK, FBPSM, ZBPSM>(buf32, zbuf32, vXacross, vYacross, vZacross, vBgr, vPixelOr32, vFrameBufferWidth_Pixels, vDA_Test, vAlphaXor32, vFrameBuffer_WriteMask32, vARef_SrcAlpha, at, zt, TEST_AFAIL, vAlphaSelect, uA, uB, uC, uD, vEnable, vYOffset, x_across);
+
+			//}
+
+			// update z on line
+			//iZ += dzdx;
+
+			//if ( FGE )
+			//{
+			// update f on line
+			//iF += dfdx;
+			//}
+
+			if (TME)
+			{
+				/////////////////////////////////////////////////////////
+				// interpolate texture coords across
+				//iU += c_iVectorSize;
+				//iU += dudx;
+				vUacross = _mm256_add_epi32(vUacross, vUinc);
+			}
+
+			// update pointer for pixel out
+			//ptr32 += c_iVectorSize;
+			vXacross = _mm256_add_epi32(vXacross, vXInc);
+
+		}
+
+		if (TME)
+		{
+			/////////////////////////////////////////////////////////
+			// interpolate texture coords down
+			//iV += dvdy;
+			vVacross = _mm256_add_epi32(vVacross, vVinc);
+		}
+
+	}
+
+	return NumberOfPixelsDrawn;
+}
+
+#endif
+
+
+
 template<const long TME,const long FGE,const long ABE,const long ZMSK,const long FBPSM,const long ZBPSM>
 static u64 Render_Generic_Rectangle_t ( u64* p_inputbuffer, u32 ulThreadNum )
 {
@@ -14690,6 +19224,13 @@ static u64 Render_Generic_Rectangle_t ( u64* p_inputbuffer, u32 ulThreadNum )
 
 	// before sse2, was sending 1 pixels at a time
 	static const int c_iVectorSize = 4;
+
+#ifdef _ENABLE_AVX2_GPU
+	if (iDrawVectorSize == 8)
+	{
+		return Render_Generic_Rectangle_tx8<TME, FGE, ABE, ZMSK, FBPSM, ZBPSM>(p_inputbuffer, ulThreadNum);
+	}
+#endif
 
 	// notes: looks like sprite size is same as specified by w/h
 
@@ -15254,7 +19795,7 @@ static u64 Render_Generic_Rectangle_t ( u64* p_inputbuffer, u32 ulThreadNum )
 		debug << "\r\nERROR: INVALID PIXEL FORMAT: Pixel Format=" << hex << PixelFormat << " ClutFormat=" << CLUTPixelFormat;
 #endif
 
-		cout << "\nhps2x64: GPU: ERROR: INVALID PIXEL FORMAT: Pixel Format=" << hex << PixelFormat << " ClutFormat=" << CLUTPixelFormat;
+		cout << "\nhps2x64: GPU: ERROR: RECTANGLE/SPRITE4 INVALID PIXEL FORMAT: Pixel Format=" << hex << PixelFormat << " ClutFormat=" << CLUTPixelFormat;
 
 		return 0;
 	}
@@ -16417,18 +20958,2519 @@ static u64 Select_RenderSprite_t ( u64* p_inputbuffer, u32 ulThreadNum )
 
 #ifdef USE_TEMPLATES_PS2_TRIANGLE
 
-//#define INLINE_DEBUG_PRIMITIVE2
+
+#ifdef _ENABLE_AVX2_GPU
+
+template<const long SHADED, const long TME, const long FST, const long FGE, const long ABE, const long ZMSK, const long FBPSM, const long ZBPSM>
+static u64 Render_Generic_Triangle_tx8(u64* p_inputbuffer, u32 ulThreadNum)
+{
+
+	// before sse2, was sending 1 pixels at a time
+	static const int c_iVectorSize = 8;
+
+
+	u16* CLUT_LUT;
+
+	u32 color_add;
+
+	u32* ptr_texture;
+	u32* ptr_clut;
+	u16* ptr_clut16;
+	u32 clut_width, clut_x, clut_y;
+
+	u32* ptr_texture32;
+	u16* ptr_texture16;
+	u8* ptr_texture8;
+
+	//s64 denominator;
+
+
+
+	s64 Temp;
+	s64 LeftMostX, RightMostX, TopMostY, BottomMostY;
+
+	s32 StartX, EndX, StartY, EndY;
+
+
+	//s64* DitherArray;
+	//s64* DitherLine;
+	//s64 DitherValue;
+
+	u32 uy0, uy1, uy2;
+	s32 x0, y0, x1, y1, x2, y2;
+	s64 x[2], dxdy[2];
+
+	float fS0, fS1, fS2, fT0, fT1, fT2, fQ0, fQ1, fQ2;
+	float fS[2], fT[2], fQ[2], dSdy[2], dTdy[2], dQdy[2];
+	float iS, iT, iQ, dSdx, dTdx, dQdx;
+
+	s64 iU, iV;
+
+	s64 iR, iG, iB;
+
+	s64 u0, u1, u2, v0, v1, v2;
+	s64 u[2], v[2];
+	s64 dudy[2], dvdy[2];
+
+	s64 r0, r1, r2, g0, g1, g2, b0, b1, b2, a0, a1, a2;
+	u32 bgr0, bgr1, bgr2;
+	s64 r[2], g[2], b[2];
+	s64 drdy[2], dgdy[2], dbdy[2];
+
+
+	s64 dudx, dvdx;
+	s64 drdx, dgdx, dbdx;
+
+	s64 a[2];
+	s64 dady[2];
+	s64 dadx;
+	s64 iA;
+
+	u64 bgr, bgr_temp;
+	u32 bgr16;
+
+	// z coords ?
+	s64 z0, z1, z2;
+	s64 z[2], dzdy[2];
+	s64 dzdx;
+	s64 iZ;
+
+	// fog coords ?
+	s64 f0, f1, f2;
+	s64 fogc[2], dfdy[2];
+	s64 dfdx;
+	s64 iF;
+
+	u32 c1, c2, c3, ca;
+
+
+	u32 NumberOfPixelsDrawn;
+	s32 Line, x_across;
+
+
+
+	u32 Coord0 = 16 + 0 - 14, Coord1 = 16 + 4 - 14, Coord2 = 16 + 8 - 14;
+	u32 X1Index = 0, X0Index = 1;
+
+	s64 Red, Green, Blue;
+
+
+	s32 TexCoordX, TexCoordY;
+	//u32 Shift1 = 0, Shift2 = 0, And1 = 0, And2 = 0;
+	//u32 Shift0 = 0;
+	u32 TextureOffset;
+
+	//u32 And3, Shift3, Shift4;
+
+	u32 PixelsPerLine;
+
+	u32 PixelFormat;
+	u32 CLUTBufBase32, CLUTPixelFormat, CLUTStoreMode, CLUTOffset;
+	u32 TexBufWidth, TexWidth, TexHeight, TexWidth_Mask, TexHeight_Mask;
+
+	s32 TexX_Min, TexX_Max, TexY_Min, TexY_Max;
+	u32 TexX_And, TexX_Or, TexY_And, TexY_Or;
+
+	u64 NumPixels;
+
+
+	s32 Window_YTop, Window_YBottom, Window_XLeft, Window_XRight;
+
+	s32 Coord_OffsetX, Coord_OffsetY;
+
+	u32 TexBufStartOffset32;
+	u32 Clamp_ModeX, Clamp_ModeY;
+	s32 Clamp_MinU, Clamp_MaxU, Clamp_MinV, Clamp_MaxV;
+	u32 Fst;
+	u32 TEX_PSM;
+	u32 RGB24_Alpha, Pixel24_Mask, RGB24_TAlpha;
+	FloatLong fTemp1, fTemp2;
+	//long lTemp1, lTemp2;
+
+	u64 TEXA64;
+	u32 Combine;
+
+	u32 TEX_TFX, TEX_TCC;
+	u32 FOGCOL;
+
+	u32* buf32, * zbuf32;
+	u32 SetPixelMask, FrameBufferWidthInPixels;
+
+	u32 FrameBufferStartOffset32, ZBufferStartOffset32;
+
+	u32 DA_Test, AlphaXor32, FrameBuffer_WriteMask32;
+	u32 AlphaSelect[4];
+	u32 uA, uB, uC, uD;
+
+	AlphaTestx8 at;
+	ZTestx8 zt;
+	AlphaFailx8 af;
+	TexturePixelx8 pd;
+	TextureFuncx8 tf;
+
+	u32 TEST_ATST;
+	u32 TEST_ZTST;
+	u32 TEST_AFAIL;
+	u32 aref;
+
+	u32 lContext;
+
+
+	__m256i vDestAlpha24, vDestMask24;
+	__m256i vDA_Enable, vDA_Test;
+	__m256i vFrameBuffer_WriteMask32;
+	__m256i vPixelOr32;
+	__m256i vFrameBufferStartOffset32;
+	__m256i vFrameBufferWidth_Pixels;
+	__m256i vARef_SrcAlpha;
+	__m256i vAlphaXor32;
+	__m256i vAlphaSelect[4];
+
+	__m256i vFOGCOLR;
+	__m256i vFOGCOLG;
+	__m256i vFOGCOLB;
+
+	__m256i vTA0;
+	__m256i vTA1;
+
+
+	__m256i vYOffset;
+	__m256i vZYOffset;
+
+
+	__m256i vEnable;
+	__m256i vIdentity;
+	vIdentity = _mm256_set_epi32(7, 6, 5, 4, 3, 2, 1, 0);
+
+	__m256 vIdentityf;
+	vIdentityf = _mm256_set_ps(7.0f, 6.0f, 5.0f, 4.0f, 3.0f, 2.0f, 1.0f, 0.0f);
+
+	__m256i vStartX, vXacross, vXmax, vYacross, vZacross, vBgr;
+	__m256i vXInc;
+	__m256i vYInc;
+	vXInc = _mm256_set1_epi32(c_iVectorSize);
+	vYInc = _mm256_set1_epi32(1);
+
+	__m256i vZInc;
+	__m256i vZIdentity0, vZIdentity1;
+	__m256i vZacross0, vZacross1;
+
+	__m256i vFInc;
+	__m256i vFIdentity;
+	__m256i vFacross;
+
+	__m256i vUInc, vVInc;
+	__m256i vUIdentity, vVIdentity;
+	__m256i vUacross, vVacross;
+
+	__m256 vSInc, vTInc, vQInc;
+	__m256 vSIdentity, vTIdentity, vQIdentity;
+	__m256 vSacross, vTacross, vQacross;
+
+	__m256i vTexOffset32, vTexBufWidth;
+	__m256i vTexCoordY, vTexY_Min, vTexY_Max, vTexY_And, vTexY_Or;
+	__m256i vTexCoordX, vTexX_Min, vTexX_Max, vTexX_And, vTexX_Or;
+	//__m256i vRed, vGreen, vBlue, vAlpha;
+	__m256i vBgr_temp, vBgr2, vca, vc1, vc2, vc3;
+
+	__m256i vRInc, vGInc, vBInc, vAInc;
+	__m256i vRIdentity, vGIdentity, vBIdentity, vAIdentity;
+	__m256i vRacross, vGacross, vBacross, vAacross;
+	__m256i vRed, vGreen, vBlue, vAlpha;
+
+	__m256i vYOffset_xor, vYOffset_add, vZYOffset_xor, vZYOffset_add;
+
+
+
+	Window_YTop = (p_inputbuffer[0] >> 32) & 0x7ff;
+	Window_YBottom = (p_inputbuffer[0] >> 48) & 0x7ff;
+	Window_XLeft = (p_inputbuffer[0]) & 0x7ff;
+	Window_XRight = (p_inputbuffer[0] >> 16) & 0x7ff;
+
+	Coord_OffsetX = p_inputbuffer[1] & 0xffff;
+	Coord_OffsetY = (p_inputbuffer[1] >> 32) & 0xffff;
+
+
+	// get y
+	//y0 = ( p_inputbuffer [ Coord0 + 1 ] >> 16 ) & 0xffff;
+	//y1 = ( p_inputbuffer [ Coord1 + 1 ] >> 16 ) & 0xffff;
+	//y2 = ( p_inputbuffer [ Coord2 + 1 ] >> 16 ) & 0xffff;
+	uy0 = p_inputbuffer[Coord0 + 1];
+	uy1 = p_inputbuffer[Coord1 + 1];
+	uy2 = p_inputbuffer[Coord2 + 1];
+
+	if (uy1 < uy0)
+	{
+		Swap(uy1, uy0);
+		Swap(Coord1, Coord0);
+	}
+
+	if (uy2 < uy0)
+	{
+		Swap(uy2, uy0);
+		Swap(Coord2, Coord0);
+	}
+
+	if (uy2 < uy1)
+	{
+		Swap(uy2, uy1);
+		Swap(Coord2, Coord1);
+	}
+
+
+	// get x,y
+	//x0 = p_inputbuffer [ Coord0 + 1 ] & 0xffff;
+	//y0 = ( p_inputbuffer [ Coord0 + 1 ] >> 16 ) & 0xffff;
+	//x1 = p_inputbuffer [ Coord1 + 1 ] & 0xffff;
+	//y1 = ( p_inputbuffer [ Coord1 + 1 ] >> 16 ) & 0xffff;
+	//x2 = p_inputbuffer [ Coord2 + 1 ] & 0xffff;
+	//y2 = ( p_inputbuffer [ Coord2 + 1 ] >> 16 ) & 0xffff;
+	x0 = uy0 & 0xffff;
+	y0 = uy0 >> 16;
+	x1 = uy1 & 0xffff;
+	y1 = uy1 >> 16;
+	x2 = uy2 & 0xffff;
+	y2 = uy2 >> 16;
+
+	//////////////////////////////////////////
+	// get coordinates on screen
+	// *note* this is different from PS1, where you would add the offsets..
+	x0 -= Coord_OffsetX;
+	y0 -= Coord_OffsetY;
+	x1 -= Coord_OffsetX;
+	y1 -= Coord_OffsetY;
+	x2 -= Coord_OffsetX;
+	y2 -= Coord_OffsetY;
+
+
+
+
+	// get the left/right most x
+	LeftMostX = ((x0 < x1) ? x0 : x1);
+	LeftMostX = ((x2 < LeftMostX) ? x2 : LeftMostX);
+	RightMostX = ((x0 > x1) ? x0 : x1);
+	RightMostX = ((x2 > RightMostX) ? x2 : RightMostX);
+
+	LeftMostX += 0xf;
+	RightMostX -= 1;
+
+	LeftMostX >>= 4;
+	RightMostX >>= 4;
+	TopMostY = (y0 + 0xf) >> 4;
+	BottomMostY = (y2 - 1) >> 4;
+
+
+	// check if triangle is within draw area
+	//if ( RightMostX <= ((s32)DrawArea_TopLeftX) || LeftMostX > ((s32)DrawArea_BottomRightX) || y2 <= ((s32)DrawArea_TopLeftY) || y0 > ((s32)DrawArea_BottomRightY) ) return;
+	if (RightMostX <= Window_XLeft || LeftMostX > Window_XRight || BottomMostY <= Window_YTop || TopMostY > Window_YBottom)
+	{
+		return 0;
+	}
+#if defined INLINE_DEBUG_TRIANGLE_TEST || defined INLINE_DEBUG_PRIMITIVE_TEST || defined INLINE_DEBUG_PRIMITIVE2
+	else
+	{
+		debug << dec << "\r\nDrawTriangleGradientTexture";
+		debug << dec << " FinalCoords: x0=" << (x0 >> 4) << " y0=" << (y0 >> 4) << " x1=" << (x1 >> 4) << " y1=" << (y1 >> 4) << " x2=" << (x2 >> 4) << " y2=" << (y2 >> 4);
+		//debug << hex << " u0=" << uv_temp [ Coord0 ].U << " v0=" << uv_temp [ Coord0 ].V << " u1=" << uv_temp [ Coord1 ].U << " v1=" << uv_temp [ Coord1 ].V << " u2=" << uv_temp [ Coord2 ].U << " v2=" << uv_temp [ Coord2 ].V;
+		//debug << "; Clamp_ModeX=" << Clamp_ModeX << " Clamp_ModeY=" << Clamp_ModeY;
+		//debug << hex << "; CLUTBufPtr32/64=" << ( CLUTBufBase32 >> 6 );
+		//debug << "; CLUTPixFmt=" << PixelFormat_Names [ CLUTPixelFormat ];
+		//debug << hex << "; CLUTOffset/16=" << CLUTOffset;
+		//debug << "; CSM=" << CLUTStoreMode;
+		//debug << "; TEXCLUT=" << hex << GPURegsGp.TEXCLUT.Value;
+		//debug << hex << "; TexBufPtr32/64=" << ( TexBufStartOffset32 >> 6 );
+		//debug << dec << "; TexWidth=" << TexWidth << " TexHeight=" << TexHeight;
+		//debug << "; TexPixFmt=" << PixelFormat_Names [ PixelFormat ];
+		//debug << hex << "; FrameBufPtr32/64=" << ( FrameBufferStartOffset32 >> 6 );
+		//debug << " FrameBufPixFmt=" << PixelFormat_Names [ FrameBuffer_PixelFormat ];
+		//debug << " Alpha=" << Alpha;
+		//debug << " ZBUF=" << ZBUF_X.Value;
+		//debug << " MXL=" << TEX1 [ Ctx ].MXL;
+		//debug << " LCM=" << TEX1 [ Ctx ].LCM;
+		//debug << " K=" << TEX1 [ Ctx ].K;
+	}
+#endif
+
+	// check if polygon is too large
+#ifdef ENABLE_MAX_OBJECT_WIDTH
+	if ((RightMostX - LeftMostX) > c_MaxPolygonWidth) return 0;
+#endif
+#ifdef ENABLE_MAX_OBJECT_HEIGHT
+	if ((BottomMostY - TopMostY) > c_MaxPolygonHeight) return 0;
+#endif
+
+	// denominator is negative when x1 is on the left, positive when x1 is on the right
+	s64 t0 = y1 - y2;
+	s64 t1 = y0 - y2;
+	s64 denominator = ((x0 - x2) * t0) - ((x1 - x2) * t1);
+
+
+	NumPixels = _Abs(denominator) >> (8 + 1);
+
+	/*
+	if ( ( !ulThreadNum ) && _GPU->ulNumberOfThreads )
+	{
+		//ulInputBuffer_WriteIndex++;
+		//x64ThreadSafe::Utilities::Lock_ExchangeAdd32 ( (long&) ulInputBuffer_TargetIndex, 1 );
+		return NumPixels;
+	}
+	*/
+
+
+	lContext = (p_inputbuffer[15] >> 9) & 1;
+	GPUDrawingVars* gd = &GpDrawVars[lContext];
+
+	// check if x1 is on left or right //
+	if (denominator > 0)
+	{
+		// x1 is on the right //
+		X1Index = 1;
+		X0Index = 0;
+	}
+
+
+	// get z
+	z0 = (p_inputbuffer[Coord0 + 1] >> 32);
+	z1 = (p_inputbuffer[Coord1 + 1] >> 32);
+	z2 = (p_inputbuffer[Coord2 + 1] >> 32);
+
+
+#ifdef USE_NEW_FBA
+	SetPixelMask = gd->FBA;
+#else
+	SetPixelMask = p_inputbuffer[4] << 31;
+#endif
+
+
+
+#ifdef USE_NEW_FRAME
+	FrameBuffer_WriteMask32 = gd->FRAME_FBMSK;
+	FrameBufferStartOffset32 = gd->FRAME_FBP << 11;
+	FrameBufferWidthInPixels = gd->FRAME_FBW << 6;
+	buf32 = gd->buf32;
+#else
+	FrameBuffer_WriteMask32 = 0xffffffffull & ~(p_inputbuffer[2] >> 32);
+	FrameBufferStartOffset32 = (p_inputbuffer[2] & 0x1ff) << 11;
+	FrameBufferWidthInPixels = ((p_inputbuffer[2] >> 16) & 0x3f) << 6;
+	buf32 = &(_GPU->RAM32[FrameBufferStartOffset32]);
+#endif
+
+#ifdef USE_NEW_ZBUF
+	ZBufferStartOffset32 = gd->ZBUF_ZBP << 11;
+	zbuf32 = gd->zbuf32;
+#else
+	ZBufferStartOffset32 = (p_inputbuffer[3] & 0x1ff) << 11;
+	zbuf32 = &(_GPU->RAM32[ZBufferStartOffset32]);
+#endif
+
+
+
+
+
+	//cout << "\nbuf32=" << hex << buf32 << " zbuf32=" << zbuf32;
+
+	if (ABE)
+	{
+#ifdef USE_NEW_PABE
+		AlphaXor32 = gd->PABE << 31;
+#else
+		AlphaXor32 = p_inputbuffer[8] << 31;
+#endif
+
+#ifdef USE_NEW_ALPHA
+		uA = gd->uA;
+		uB = gd->uB;
+		uC = gd->uC;
+		uD = gd->uD;
+#else
+		uA = (p_inputbuffer[7] >> 0) & 3;
+		uB = (p_inputbuffer[7] >> 2) & 3;
+		uC = (p_inputbuffer[7] >> 4) & 3;
+		uD = (p_inputbuffer[7] >> 6) & 3;
+#endif
+
+
+		// set fixed alpha values
+
+		// current RGBA value
+		//AlphaSelect [ 0 ] = rgbaq_Current.Value & 0xffffffffL;
+		AlphaSelect[0] = p_inputbuffer[16 + 8 - 14] & 0xffffffffULL;
+
+		// FIX value
+		//AlphaSelect [ 2 ] = ALPHA_X.FIX << 24;
+		//AlphaSelect [ 2 ] = ( p_inputbuffer [ 7 ] >> 8 ) & 0xff000000ULL;
+		AlphaSelect[2] = gd->FIX;
+
+		// ZERO
+		AlphaSelect[3] = 0;
+
+		// *** testing ***
+		//_GPU->AlphaSelect [ 0 ] = p_inputbuffer [ 16 + 8 ] & 0xffffffffULL;
+		//_GPU->AlphaSelect [ 2 ] = _GPU->ALPHA_X.FIX << 24;
+		//_GPU->AlphaSelect [ 3 ] = 0;
+
+
+	}	// end if ( ABE )
+
+
+
+
+	// skip drawing if distance between vertices is greater than max allowed by GPU
+	//if ( ( _Abs( x1 - x0 ) > c_MaxPolygonWidth ) || ( _Abs( x2 - x1 ) > c_MaxPolygonWidth ) || ( y1 - y0 > c_MaxPolygonHeight ) || ( y2 - y1 > c_MaxPolygonHeight ) )
+	//{
+	//	// skip drawing polygon
+	//	return;
+	//}
+
+
+
+	if (SHADED)
+	{
+		// get bgr color value
+		//bgr0 = p_inputbuffer [ Coord0 + 0 ] & 0xffffffffULL;
+		//bgr1 = p_inputbuffer [ Coord1 + 0 ] & 0xffffffffULL;
+		//bgr2 = p_inputbuffer [ Coord2 + 0 ] & 0xffffffffULL;
+		bgr0 = p_inputbuffer[Coord0 + 0];
+		bgr1 = p_inputbuffer[Coord1 + 0];
+		bgr2 = p_inputbuffer[Coord2 + 0];
+
+		r0 = (bgr0 >> 0) & 0xff;
+		r1 = (bgr1 >> 0) & 0xff;
+		r2 = (bgr2 >> 0) & 0xff;
+
+		g0 = (bgr0 >> 8) & 0xff;
+		g1 = (bgr1 >> 8) & 0xff;
+		g2 = (bgr2 >> 8) & 0xff;
+
+		b0 = (bgr0 >> 16) & 0xff;
+		b1 = (bgr1 >> 16) & 0xff;
+		b2 = (bgr2 >> 16) & 0xff;
+
+		//a0 = ( bgr0 >> 24 ) & 0xff;
+		//a1 = ( bgr1 >> 24 ) & 0xff;
+		//a2 = ( bgr2 >> 24 ) & 0xff;
+		a0 = (bgr0 >> 24);
+		a1 = (bgr1 >> 24);
+		a2 = (bgr2 >> 24);
+	}
+	else
+	{
+		bgr = p_inputbuffer[16 + 8 - 14] & 0xffffffffULL;
+	}
+
+
+
+	if (TME)
+	{
+
+		if (!SHADED)
+		{
+			// get color components (in case not shaded)
+			c1 = bgr & 0xff;
+			c2 = (bgr >> 8) & 0xff;
+			c3 = (bgr >> 16) & 0xff;
+			ca = (bgr >> 24) & 0xff;
+		}
+
+
+
+#ifdef USE_NEW_TEX0
+		TexBufWidth = gd->TexBufWidth;
+		TexWidth = gd->TexWidth;
+		TexHeight = gd->TexHeight;
+		TexWidth_Mask = gd->TexWidth_Mask;
+		TexHeight_Mask = gd->TexHeight_Mask;
+#else
+		//TexBufWidth = TEX0 [ Ctx ].TBW0 << 6;
+		TexBufWidth = ((p_inputbuffer[13] >> 14) & 0x3f) << 6;
+		//TexWidth = 1 << TEX0 [ Ctx ].TW;
+		TexWidth = 1 << ((p_inputbuffer[13] >> 26) & 0xf);
+		//TexHeight = 1 << TEX0 [ Ctx ].TH;
+		TexHeight = 1 << ((p_inputbuffer[13] >> 30) & 0xf);
+		TexWidth_Mask = TexWidth - 1;
+		TexHeight_Mask = TexHeight - 1;
+#endif
+
+
+#ifdef USE_NEW_TEXA
+		TEXA64 = gd->TEXA << 24;
+#else
+		// TEXA64 is TEXA pre-shifted to the left by 24
+		//TEXA64 = ( p_inputbuffer [ 31 ] >> 8 ) & 0xff000000ull;
+		TEXA64 = p_inputbuffer[31] << 24;
+#endif
+
+
+#ifdef USE_NEW_TEX0
+		TexBufStartOffset32 = gd->TexBufStartOffset32;
+		PixelFormat = gd->PixelFormat;
+		CLUTPixelFormat = gd->CLUTPixelFormat;
+		CLUTBufBase32 = gd->CLUTBufBase32;
+		CLUTStoreMode = gd->CLUTStoreMode;
+		CLUTOffset = gd->CLUTOffset;
+		ptr_clut = gd->ptr_clut;
+		ptr_clut16 = gd->ptr_clut16;
+		TEX_TCC = gd->TEX_TCC;
+		TEX_TFX = gd->TEX_TFX;
+		ptr_texture = gd->ptr_texture;
+		pd = gd->pdx8;
+#else
+		/////////////////////////////////////////////////////////
+		// Get offset into texture page
+		//TexBufStartOffset32 = TEX0 [ Ctx ].TBP0 << 6;
+		TexBufStartOffset32 = (p_inputbuffer[13] & 0x3fff) << 6;
+
+		// get the pixel format (16 bit, 32 bit, etc)
+		//PixelFormat = TEX0 [ Ctx ].PSM;
+		PixelFormat = ((p_inputbuffer[13] >> 20) & 0x3f);
+
+
+
+		//CLUTPixelFormat = TEX0 [ Ctx ].CPSM;
+		CLUTPixelFormat = ((p_inputbuffer[13] >> 51) & 0xf);
+
+		// get base pointer to color lookup table (32-bit word address divided by 64)
+		//CLUTBufBase32 = TEX0 [ Ctx ].CBP << 6;
+		CLUTBufBase32 = ((p_inputbuffer[13] >> 37) & 0x3fff) << 6;
+
+		// storage mode ??
+		//CLUTStoreMode = TEX0 [ Ctx ].CSM;
+		CLUTStoreMode = ((p_inputbuffer[13] >> 55) & 0x1);
+
+		// clut offset ??
+		// this is the offset / 16
+		// note: this is actually the position in the temporary buffer, not in the local memory
+		//CLUTOffset = TEX0 [ Ctx ].CSA;
+		CLUTOffset = ((p_inputbuffer[13] >> 56) & 0x1f);
+
+		//ptr_clut = & ( _GPU->RAM32 [ CLUTBufBase32 ] );
+		//ptr_clut16 = & ( _GPU->InternalCLUT [ CLUTOffset ] );
+
+
+		TEX_TCC = (p_inputbuffer[13] >> 34) & 1;
+		TEX_TFX = (p_inputbuffer[13] >> 35) & 3;
+
+		ptr_texture = &(_GPU->RAM32[TexBufStartOffset32]);
+
+		// get texture drawing function
+		pd = Select_TexturePixel_t(PixelFormat, CLUTPixelFormat, (TEXA64 >> (15 + 24)) & 1);
+
+
+		if (!CLUTStoreMode)
+		{
+#if defined INLINE_DEBUG_SPRITE || defined INLINE_DEBUG_PRIMITIVE2
+			debug << " CSM1";
+#endif
+
+			// CSM1 //
+
+			if (CLUTPixelFormat & 0x2)
+			{
+				// 4-bit pixels - 16 colors
+				// 16-bit pixels in CLUT //
+				CLUTOffset &= 0x1f;
+			}
+			else
+			{
+				// 32-bit pixels in CLUT //
+				CLUTOffset &= 0xf;
+			}
+
+		}
+		else
+		{
+#if defined INLINE_DEBUG_SPRITE || defined INLINE_DEBUG_PRIMITIVE2
+			debug << " CSM2";
+#endif
+
+		}
+
+		CLUTOffset <<= 4;
+
+
+		ptr_clut = &(_GPU->RAM32[CLUTBufBase32]);
+		ptr_clut16 = &(_GPU->InternalCLUT[CLUTOffset]);
+#endif
+
+
+
+		if (!pd)
+		{
+#if defined INLINE_DEBUG_SPRITE || defined INLINE_DEBUG_PRIMITIVE2
+			debug << "\r\nERROR: INVALID PIXEL FORMAT: Pixel Format=" << hex << PixelFormat << " ClutFormat=" << CLUTPixelFormat;
+#endif
+
+			cout << "\nhps2x64: GPU: ERROR: TRIANGLE8 INVALID PIXEL FORMAT: Pixel Format=" << hex << PixelFormat << " ClutFormat=" << CLUTPixelFormat;
+
+			return 0;
+		}
+
+
+#ifdef USE_NEW_TEXCLUT
+		clut_width = gd->TEXCLUT_WIDTH;
+		clut_x = gd->TEXCLUT_X;
+		clut_y = gd->TEXCLUT_Y;
+#else
+		// color lookup table width is stored in TEXCLUT register (in pixels/64)
+		// get clut width and x in pixels
+		//clut_width = GPURegsGp.TEXCLUT.CBW << 6;
+		clut_width = (p_inputbuffer[14] & 0x3f) << 6;
+
+
+		//clut_x = GPURegsGp.TEXCLUT.COU << 6;
+		clut_x = p_inputbuffer[14] & 0xfc0;
+
+		// get clut y in units of pixels
+		//clut_y = GPURegsGp.TEXCLUT.COV;
+		clut_y = (p_inputbuffer[14] & 0x3ff000) >> 12;
+#endif
+
+
+		// *** TODO *** use a union
+		ptr_texture8 = (u8*)ptr_texture;
+		ptr_texture16 = (u16*)ptr_texture;
+		ptr_texture32 = (u32*)ptr_texture;
+
+
+
+		// texture pixel format variables //
+
+
+
+		if (!SHADED)
+		{
+			if ((c1 == 0x80) && (c2 == 0x80) && (c3 == 0x80))
+			{
+				if (!TEX_TFX)
+				{
+					if ((ca == 0x80) || (!TEX_TCC))
+					{
+						TEX_TFX = 1;
+					}
+				}
+			}
+		}
+
+
+		Combine = TEX_TFX | (TEX_TCC << 2);
+
+		switch (Combine)
+		{
+		case 0:
+			tf = &TextureFunc32_tx8<0, 0>;
+			break;
+		case 1:
+			tf = &TextureFunc32_tx8<1, 0>;
+			break;
+		case 2:
+			tf = &TextureFunc32_tx8<2, 0>;
+			break;
+		case 3:
+			tf = &TextureFunc32_tx8<3, 0>;
+			break;
+		case 4:
+			tf = &TextureFunc32_tx8<0, 1>;
+			break;
+		case 5:
+			tf = &TextureFunc32_tx8<1, 1>;
+			break;
+		case 6:
+			tf = &TextureFunc32_tx8<2, 1>;
+			break;
+		case 7:
+			tf = &TextureFunc32_tx8<3, 1>;
+			break;
+		}
+
+
+
+
+
+
+
+
+		if (FGE)
+		{
+#ifdef USE_NEW_FOGCOL
+			FOGCOL = gd->FOGCOL;
+#else
+			FOGCOL = p_inputbuffer[11];
+#endif
+
+			// get fog coefficient
+			//f0 = (u64) f [ Coord0 ].F;
+			//f1 = (u64) f [ Coord1 ].F;
+			f0 = (p_inputbuffer[Coord0 + 3] >> 56) & 0xff;
+			f1 = (p_inputbuffer[Coord1 + 3] >> 56) & 0xff;
+			f2 = (p_inputbuffer[Coord2 + 3] >> 56) & 0xff;
+		}
+
+		//Fst = p_inputbuffer [ 15 ] & 0x100;
+
+		// check if sprite should use UV coords or ST coords
+		// on PS2, sprite can use the ST register to specify texture coords
+		//if ( GPURegsGp.PRIM.FST )
+		if (FST)
+		{
+#if defined INLINE_DEBUG_SPRITE || defined INLINE_DEBUG_PRIMITIVE
+			debug << " FST";
+#endif
+
+			// get u,v
+			//u0 = uv [ Coord0 ].U;
+			//u1 = uv [ Coord1 ].U;
+			//v0 = uv [ Coord0 ].V;
+			//v1 = uv [ Coord1 ].V;
+			u0 = p_inputbuffer[Coord0 + 2] & 0x3fff;
+			v0 = (p_inputbuffer[Coord0 + 2] >> 16) & 0x3fff;
+			u1 = p_inputbuffer[Coord1 + 2] & 0x3fff;
+			v1 = (p_inputbuffer[Coord1 + 2] >> 16) & 0x3fff;
+			u2 = p_inputbuffer[Coord2 + 2] & 0x3fff;
+			v2 = (p_inputbuffer[Coord2 + 2] >> 16) & 0x3fff;
+		}
+		else
+		{
+#if defined INLINE_DEBUG_SPRITE || defined INLINE_DEBUG_PRIMITIVE
+			debug << " !FST";
+#endif
+
+			// put s,t coords into 10.4 fixed point
+			// note: tex width/height should probably be minus one
+			//u0 = (s32) ( st [ Coord0 ].fS * ( (float) ( TexWidth ) ) * 16.0f );
+			//u1 = (s32) ( st [ Coord1 ].fS * ( (float) ( TexWidth ) ) * 16.0f );
+			//v0 = (s32) ( st [ Coord0 ].fT * ( (float) ( TexHeight ) ) * 16.0f );
+			//v1 = (s32) ( st [ Coord1 ].fT * ( (float) ( TexHeight ) ) * 16.0f );
+
+			fTemp1.l = p_inputbuffer[Coord0 + 2] & 0xffffffffull;
+			fTemp2.l = p_inputbuffer[Coord0 + 2] >> 32;
+			fS0 = fTemp1.f;
+			fT0 = fTemp2.f;
+			fTemp1.l = p_inputbuffer[Coord1 + 2] & 0xffffffffull;
+			fTemp2.l = p_inputbuffer[Coord1 + 2] >> 32;
+			fS1 = fTemp1.f;
+			fT1 = fTemp2.f;
+			fTemp1.l = p_inputbuffer[Coord2 + 2] & 0xffffffffull;
+			fTemp2.l = p_inputbuffer[Coord2 + 2] >> 32;
+			fS2 = fTemp1.f;
+			fT2 = fTemp2.f;
+
+			fTemp1.l = p_inputbuffer[Coord0 + 0] >> 32;
+			fQ0 = fTemp1.f;
+			fTemp1.l = p_inputbuffer[Coord1 + 0] >> 32;
+			fQ1 = fTemp1.f;
+			fTemp1.l = p_inputbuffer[Coord2 + 0] >> 32;
+			fQ2 = fTemp1.f;
+
+			fS0 *= TexWidth;
+			fS1 *= TexWidth;
+			fS2 *= TexWidth;
+			fT0 *= TexHeight;
+			fT1 *= TexHeight;
+			fT2 *= TexHeight;
+		}
+
+
+
+#ifdef USE_NEW_CLAMP
+		Clamp_ModeX = gd->Clamp_ModeX;
+		Clamp_ModeY = gd->Clamp_ModeY;
+
+		Clamp_MinU = gd->Clamp_MinU;
+		Clamp_MaxU = gd->Clamp_MaxU;
+		Clamp_MinV = gd->Clamp_MinV;
+		Clamp_MaxV = gd->Clamp_MaxV;
+
+		TexY_And = gd->TexY_And;
+		TexHeight_Mask = gd->TexHeight_Mask;
+		TexY_Or = gd->TexY_Or;
+		TexY_Min = gd->TexY_Min;
+		TexY_Max = gd->TexY_Max;
+
+		TexX_And = gd->TexX_And;
+		TexWidth_Mask = gd->TexWidth_Mask;
+		TexX_Or = gd->TexX_Or;
+		TexX_Min = gd->TexX_Min;
+		TexX_Max = gd->TexX_Max;
+#else
+		Clamp_ModeX = p_inputbuffer[12] & 0x3;
+		Clamp_ModeY = (p_inputbuffer[12] >> 2) & 0x3;
+
+		Clamp_MinU = (p_inputbuffer[12] >> 4) & 0x3ff;
+		Clamp_MaxU = (p_inputbuffer[12] >> 14) & 0x3ff;
+		Clamp_MinV = (p_inputbuffer[12] >> 24) & 0x3ff;
+		Clamp_MaxV = (p_inputbuffer[12] >> 34) & 0x3ff;
+
+		switch (Clamp_ModeY)
+		{
+		case 0:
+			// repeat //
+			//TexCoordY &= TexHeight_Mask;
+			TexY_And = TexHeight_Mask;
+
+			TexY_Or = 0;
+
+			// can only have coords in range -2047 to +2047
+			TexY_Min = -2047;
+			TexY_Max = 2047;
+			break;
+
+		case 1:
+			// clamp //
+			//TexCoordY = ( TexCoordY < 0 ) ? 0 : TexCoordY;
+			//TexCoordY = ( TexCoordY > TexHeight ) ? TexHeight : TexCoordY;
+			TexY_Min = 0;
+			TexY_Max = TexHeight_Mask;
+
+			TexY_And = TexHeight_Mask;
+			TexY_Or = 0;
+			break;
+
+		case 2:
+			// region clamp //
+			//TexCoordY = ( TexCoordY < Clamp_MinV ) ? Clamp_MinV : TexCoordY;
+			//TexCoordY = ( TexCoordY > Clamp_MaxV ) ? Clamp_MaxV : TexCoordY;
+			TexY_Min = Clamp_MinV;
+			TexY_Max = Clamp_MaxV;
+
+			TexY_And = TexHeight_Mask;
+			TexY_Or = 0;
+			break;
+
+		case 3:
+			// region repeat //
+			// this one is just like on the ps1
+			//TexCoordY = ( TexCoordY & Clamp_MinV ) | Clamp_MaxV;
+			TexY_And = Clamp_MinV & TexHeight_Mask;
+			TexY_Or = Clamp_MaxV & TexHeight_Mask;
+
+			// can only have coords in range -2047 to +2047
+			TexY_Min = -2047;
+			TexY_Max = 2047;
+			break;
+		}
+
+
+		switch (Clamp_ModeX)
+		{
+		case 0:
+			// repeat //
+			//TexCoordY &= TexHeight_Mask;
+			TexX_And = TexWidth_Mask;
+
+			TexX_Or = 0;
+
+			// can only have coords in range -2047 to +2047
+			TexX_Min = -2047;
+			TexX_Max = 2047;
+			break;
+
+		case 1:
+			// clamp //
+			//TexCoordY = ( TexCoordY < 0 ) ? 0 : TexCoordY;
+			//TexCoordY = ( TexCoordY > TexHeight ) ? TexHeight : TexCoordY;
+			TexX_Min = 0;
+			TexX_Max = TexWidth_Mask;
+
+			TexX_And = TexWidth_Mask;
+			TexX_Or = 0;
+			break;
+
+		case 2:
+			// region clamp //
+			//TexCoordY = ( TexCoordY < Clamp_MinV ) ? Clamp_MinV : TexCoordY;
+			//TexCoordY = ( TexCoordY > Clamp_MaxV ) ? Clamp_MaxV : TexCoordY;
+			TexX_Min = Clamp_MinU;
+			TexX_Max = Clamp_MaxU;
+
+			TexX_And = TexWidth_Mask;
+			TexX_Or = 0;
+			break;
+
+		case 3:
+			// region repeat //
+			// this one is just like on the ps1
+			//TexCoordY = ( TexCoordY & Clamp_MinV ) | Clamp_MaxV;
+			TexX_And = Clamp_MinU & TexWidth_Mask;
+			TexX_Or = Clamp_MaxU & TexWidth_Mask;
+
+			// can only have coords in range -2047 to +2047
+			TexX_Min = -2047;
+			TexX_Max = 2047;
+			break;
+		}
+#endif
+
+	}	// end if ( TME )
+
+
+
+	/////////////////////////////////////////////////
+	// draw top part of triangle
+
+
+
+	// calculate across
+	if (denominator)
+	{
+		dzdx = (((((s64)(z0 - z2)) * t0) - (((s64)(z1 - z2)) * t1)) << 20) / denominator;
+
+		if (TME)
+		{
+
+			if (FST)
+			{
+				//dudx = ( ( ( ( (s64) ( uv [ Coord0 ].U - uv [ Coord2 ].U ) ) * t0 ) - ( ( (s64) ( uv [ Coord1 ].U - uv [ Coord2 ].U ) ) * t1 ) ) << 12 ) / denominator;
+				//dvdx = ( ( ( ( (s64) ( uv [ Coord0 ].V - uv [ Coord2 ].V ) ) * t0 ) - ( ( (s64) ( uv [ Coord1 ].V - uv [ Coord2 ].V ) ) * t1 ) ) << 12 ) / denominator;
+				dudx = (((((s64)(u0 - u2)) * t0) - (((s64)(u1 - u2)) * t1)) << 16) / denominator;
+				dvdx = (((((s64)(v0 - v2)) * t0) - (((s64)(v1 - v2)) * t1)) << 16) / denominator;
+			}
+			else
+			{
+				dSdx = (((fS0 - fS2) * (t0 / 16.0f)) - ((fS1 - fS2) * (t1 / 16.0f))) / (denominator / 256.0f);
+				dTdx = (((fT0 - fT2) * (t0 / 16.0f)) - ((fT1 - fT2) * (t1 / 16.0f))) / (denominator / 256.0f);
+				dQdx = (((fQ0 - fQ2) * (t0 / 16.0f)) - ((fQ1 - fQ2) * (t1 / 16.0f))) / (denominator / 256.0f);
+			}
+
+			if (FGE)
+			{
+				dfdx = (((((s64)(f0 - f2)) * t0) - (((s64)(f1 - f2)) * t1)) << 20) / denominator;
+			}
+
+		}	// end if ( TME )
+
+
+		if (SHADED)
+		{
+			drdx = (((((s64)(r0 - r2)) * t0) - (((s64)(r1 - r2)) * t1)) << 20) / denominator;
+			dgdx = (((((s64)(g0 - g2)) * t0) - (((s64)(g1 - g2)) * t1)) << 20) / denominator;
+			dbdx = (((((s64)(b0 - b2)) * t0) - (((s64)(b1 - b2)) * t1)) << 20) / denominator;
+			dadx = (((((s64)(a0 - a2)) * t0) - (((s64)(a1 - a2)) * t1)) << 20) / denominator;
+		}
+	}
+
+	//debug << dec << "\r\nx0=" << x0 << " y0=" << y0 << " x1=" << x1 << " y1=" << y1 << " x2=" << x2 << " y2=" << y2;
+	//debug << "\r\nfixed: denominator=" << denominator;
+
+
+
+	//StartY = y0;
+	//EndY = y1;
+
+	// left point is included if points are equal
+	StartY = (y0 + 0xf) >> 4;
+	EndY = (y1 - 1) >> 4;
+
+
+
+	/////////////////////////////////////////////////
+	// draw top part of triangle
+
+
+
+	// need to set the x0 index unconditionally
+	//x [ X0Index ] = ( ((s64)x0) << 32 );
+	x[X0Index] = (((s64)x0) << 12);
+
+	z[X0Index] = (((s64)z0) << 16);
+
+	// offset
+	z[X0Index] += 0x8000;
+
+	if (TME)
+	{
+
+		if (FST)
+		{
+			//u [ X0Index ] = ( uv [ Coord0 ].U << 12 );
+			//v [ X0Index ] = ( uv [ Coord0 ].V << 12 );
+			u[X0Index] = (u0 << 12);
+			v[X0Index] = (v0 << 12);
+		}
+		else
+		{
+			fS[X0Index] = fS0;
+			fT[X0Index] = fT0;
+			fQ[X0Index] = fQ0;
+		}
+
+		if (FGE)
+		{
+			fogc[X0Index] = (((s64)f0) << 16);
+
+			// offset
+			fogc[X0Index] += 0x8000;
+		}
+
+	}
+
+	if (SHADED)
+	{
+		r[X0Index] = (r0 << 16);
+		g[X0Index] = (g0 << 16);
+		b[X0Index] = (b0 << 16);
+		a[X0Index] = (a0 << 16);
+
+		// offset
+		r[X0Index] += 0x8000;
+		g[X0Index] += 0x8000;
+		b[X0Index] += 0x8000;
+		a[X0Index] += 0x8000;
+	}
+
+	if (y1 - y0)
+	{
+		// triangle is pointed on top //
+
+		/////////////////////////////////////////////
+		// init x on the left and right
+		//x_left = ( ((s64)x0) << 32 );
+		//x_right = x_left;
+		x[X1Index] = x[X0Index];
+
+		z[X1Index] = z[X0Index];
+
+		if (TME)
+		{
+
+			if (FST)
+			{
+				u[X1Index] = u[X0Index];
+				v[X1Index] = v[X0Index];
+			}
+			else
+			{
+				fS[X1Index] = fS[X0Index];
+				fT[X1Index] = fT[X0Index];
+				fQ[X1Index] = fQ[X0Index];
+			}
+
+			if (FGE)
+			{
+				fogc[X1Index] = fogc[X0Index];
+			}
+
+		}
+
+		if (SHADED)
+		{
+			r[X1Index] = r[X0Index];
+			g[X1Index] = g[X0Index];
+			b[X1Index] = b[X0Index];
+			a[X1Index] = a[X0Index];
+		}
+
+		//dx_left = (((s64)( x1 - x0 )) << 32 ) / ((s64)( y1 - y0 ));
+		//dx_right = (((s64)( x2 - x0 )) << 32 ) / ((s64)( y2 - y0 ));
+		dxdy[X1Index] = (((s64)(x1 - x0)) << 16) / ((s64)(y1 - y0));
+		dxdy[X0Index] = (((s64)(x2 - x0)) << 16) / ((s64)(y2 - y0));
+
+		dzdy[X1Index] = (((s64)(z1 - z0)) << 20) / ((s64)(y1 - y0));
+
+		if (TME)
+		{
+
+			if (FST)
+			{
+				//dudy [ X1Index ] = (((s32)( uv [ Coord1 ].U - uv [ Coord0 ].U )) << 12 ) / ((s32)( y1 - y0 ));
+				//dvdy [ X1Index ] = (((s32)( uv [ Coord1 ].V - uv [ Coord0 ].V )) << 12 ) / ((s32)( y1 - y0 ));
+				dudy[X1Index] = (((s64)(u1 - u0)) << 16) / ((s64)(y1 - y0));
+				dvdy[X1Index] = (((s64)(v1 - v0)) << 16) / ((s64)(y1 - y0));
+			}
+			else
+			{
+				dSdy[X1Index] = (fS1 - fS0) / ((y1 - y0) / 16.0f);
+				dTdy[X1Index] = (fT1 - fT0) / ((y1 - y0) / 16.0f);
+				dQdy[X1Index] = (fQ1 - fQ0) / ((y1 - y0) / 16.0f);
+			}
+
+			if (FGE)
+			{
+				dfdy[X1Index] = (((s64)(f1 - f0)) << 20) / ((s64)(y1 - y0));
+			}
+
+		}
+
+		if (SHADED)
+		{
+			drdy[X1Index] = (((s64)(r1 - r0)) << 20) / ((s64)(y1 - y0));
+			dgdy[X1Index] = (((s64)(g1 - g0)) << 20) / ((s64)(y1 - y0));
+			dbdy[X1Index] = (((s64)(b1 - b0)) << 20) / ((s64)(y1 - y0));
+			dady[X1Index] = (((s64)(a1 - a0)) << 20) / ((s64)(y1 - y0));
+		}
+
+
+		dzdy[X0Index] = (((s64)(z2 - z0)) << 20) / ((s64)(y2 - y0));
+
+		if (TME)
+		{
+
+			if (FST)
+			{
+				//dudy [ X0Index ] = (((s32)( uv [ Coord2 ].U - uv [ Coord0 ].U )) << 12 ) / ((s32)( y2 - y0 ));
+				//dvdy [ X0Index ] = (((s32)( uv [ Coord2 ].V - uv [ Coord0 ].V )) << 12 ) / ((s32)( y2 - y0 ));
+				dudy[X0Index] = (((s64)(u2 - u0)) << 16) / ((s64)(y2 - y0));
+				dvdy[X0Index] = (((s64)(v2 - v0)) << 16) / ((s64)(y2 - y0));
+			}
+			else
+			{
+				dSdy[X0Index] = (fS2 - fS0) / ((y2 - y0) / 16.0f);
+				dTdy[X0Index] = (fT2 - fT0) / ((y2 - y0) / 16.0f);
+				dQdy[X0Index] = (fQ2 - fQ0) / ((y2 - y0) / 16.0f);
+			}
+
+			if (FGE)
+			{
+				dfdy[X0Index] = (((s64)(f2 - f0)) << 20) / ((s64)(y2 - y0));
+			}
+
+		}
+
+		if (SHADED)
+		{
+			drdy[X0Index] = (((s64)(r2 - r0)) << 20) / ((s64)(y2 - y0));
+			dgdy[X0Index] = (((s64)(g2 - g0)) << 20) / ((s64)(y2 - y0));
+			dbdy[X0Index] = (((s64)(b2 - b0)) << 20) / ((s64)(y2 - y0));
+			dady[X0Index] = (((s64)(a2 - a0)) << 20) / ((s64)(y2 - y0));
+		}
+	}
+	else
+	{
+		// Triangle is flat on top //
+
+		// change x_left and x_right where y1 is on left
+		//x [ X1Index ] = ( ((s64)x1) << 32 );
+		x[X1Index] = (((s64)x1) << 12);
+
+		z[X1Index] = (((s64)z1) << 16);
+
+		// offset
+		z[X1Index] += 0x8000;
+
+		if (TME)
+		{
+
+			if (FST)
+			{
+				//u [ X1Index ] = ( uv [ Coord1 ].U << 12 );
+				//v [ X1Index ] = ( uv [ Coord1 ].V << 12 );
+				u[X1Index] = (u1 << 12);
+				v[X1Index] = (v1 << 12);
+			}
+			else
+			{
+				fS[X1Index] = fS1;
+				fT[X1Index] = fT1;
+				fQ[X1Index] = fQ1;
+			}
+
+			if (FGE)
+			{
+				fogc[X1Index] = (((s64)f1) << 16);
+
+				// offset
+				fogc[X1Index] += 0x8000;
+			}
+
+		}
+
+		if (SHADED)
+		{
+			r[X1Index] = (r1 << 16);
+			g[X1Index] = (g1 << 16);
+			b[X1Index] = (b1 << 16);
+			a[X1Index] = (a1 << 16);
+
+			r[X1Index] += 0x8000;
+			g[X1Index] += 0x8000;
+			b[X1Index] += 0x8000;
+			a[X1Index] += 0x8000;
+		}
+
+		// this means that x0 and x1 are on the same line
+		// so if the height of the entire polygon is zero, then we are done
+		if (y2 - y1)
+		{
+			//dx_left = (((s64)( x2 - x1 )) << 32 ) / ((s64)( y2 - y1 ));
+			//dx_right = (((s64)( x2 - x0 )) << 32 ) / ((s64)( y2 - y0 ));
+			dxdy[X1Index] = (((s64)(x2 - x1)) << 16) / ((s64)(y2 - y1));
+			dxdy[X0Index] = (((s64)(x2 - x0)) << 16) / ((s64)(y2 - y0));
+
+			dzdy[X0Index] = (((s64)(z2 - z0)) << 20) / ((s64)(y2 - y0));
+
+			if (TME)
+			{
+
+				if (FST)
+				{
+					//dudy [ X0Index ] = (((s32)( uv [ Coord2 ].U - uv [ Coord0 ].U )) << 12 ) / ((s32)( y2 - y0 ));
+					//dvdy [ X0Index ] = (((s32)( uv [ Coord2 ].V - uv [ Coord0 ].V )) << 12 ) / ((s32)( y2 - y0 ));
+					dudy[X0Index] = (((s32)(u2 - u0)) << 16) / ((s32)(y2 - y0));
+					dvdy[X0Index] = (((s32)(v2 - v0)) << 16) / ((s32)(y2 - y0));
+				}
+				else
+				{
+					dSdy[X0Index] = (fS2 - fS0) / ((y2 - y0) / 16.0f);
+					dTdy[X0Index] = (fT2 - fT0) / ((y2 - y0) / 16.0f);
+					dQdy[X0Index] = (fQ2 - fQ0) / ((y2 - y0) / 16.0f);
+				}
+
+				if (FGE)
+				{
+					dfdy[X0Index] = (((s64)(f2 - f0)) << 20) / ((s64)(y2 - y0));
+				}
+
+			}
+
+			if (SHADED)
+			{
+				// only need to set dr,dg,db for the x0/x2 side here
+				drdy[X0Index] = (((s64)(r2 - r0)) << 20) / ((s64)(y2 - y0));
+				dgdy[X0Index] = (((s64)(g2 - g0)) << 20) / ((s64)(y2 - y0));
+				dbdy[X0Index] = (((s64)(b2 - b0)) << 20) / ((s64)(y2 - y0));
+				dady[X0Index] = (((s64)(a2 - a0)) << 20) / ((s64)(y2 - y0));
+			}
+		}
+	}
+
+
+
+	Temp = (StartY << 4) - y0;
+
+
+
+
+	if (StartY < Window_YTop)
+	{
+		if (EndY < Window_YTop)
+		{
+			//Temp = EndY - StartY;
+			Temp += (EndY - StartY + 1) << 4;
+			//StartY = EndY;
+			StartY = EndY + 1;
+		}
+		else
+		{
+			Temp += (Window_YTop - StartY) << 4;
+			StartY = Window_YTop;
+		}
+	}
+
+
+
+	x[0] += (dxdy[0] >> 4) * Temp;
+	x[1] += (dxdy[1] >> 4) * Temp;
+
+	z[0] += (dzdy[0] >> 4) * Temp;
+
+	if (TME)
+	{
+
+		if (FST)
+		{
+			u[0] += (dudy[0] >> 4) * Temp;
+			v[0] += (dvdy[0] >> 4) * Temp;
+		}
+		else
+		{
+			fS[0] += (dSdy[0]) * (Temp / 16.0f);
+			fT[0] += (dTdy[0]) * (Temp / 16.0f);
+			fQ[0] += (dQdy[0]) * (Temp / 16.0f);
+		}
+
+		if (FGE)
+		{
+			fogc[0] += (dfdy[0] >> 4) * Temp;
+		}
+
+	}
+
+	if (SHADED)
+	{
+		r[0] += (drdy[0] >> 4) * Temp;
+		g[0] += (dgdy[0] >> 4) * Temp;
+		b[0] += (dbdy[0] >> 4) * Temp;
+		a[0] += (dady[0] >> 4) * Temp;
+	}
+
+
+	if (EndY > Window_YBottom)
+	{
+		//EndY = Window_YBottom + 1;
+		EndY = Window_YBottom;
+	}
+
+
+
+
+	//vAlphaSelect [ 0 ] = _mm256_set1_epi32 ( AlphaSelect [ 0 ] );
+	vAlphaSelect[2] = _mm256_set1_epi32(AlphaSelect[2]);
+	vAlphaSelect[3] = _mm256_set1_epi32(AlphaSelect[3]);
+
+
+	vZIdentity0 = _mm256_set_epi64x(dzdx * 6, dzdx * 4, dzdx * 2, 0);
+	vZIdentity1 = _mm256_set_epi64x(dzdx * 7, dzdx * 5, dzdx * 3, dzdx * 1);
+	vZInc = _mm256_set1_epi64x(dzdx * c_iVectorSize);
+
+
+	if (SHADED)
+	{
+		vRInc = _mm256_set1_epi32(drdx * c_iVectorSize);
+		vGInc = _mm256_set1_epi32(dgdx * c_iVectorSize);
+		vBInc = _mm256_set1_epi32(dbdx * c_iVectorSize);
+		vAInc = _mm256_set1_epi32(dadx * c_iVectorSize);
+
+		vRIdentity = _mm256_mullo_epi32(_mm256_set1_epi32(drdx), vIdentity);
+		vGIdentity = _mm256_mullo_epi32(_mm256_set1_epi32(dgdx), vIdentity);
+		vBIdentity = _mm256_mullo_epi32(_mm256_set1_epi32(dbdx), vIdentity);
+		vAIdentity = _mm256_mullo_epi32(_mm256_set1_epi32(dadx), vIdentity);
+	}
+	else
+	{
+		vBgr = _mm256_set1_epi32(bgr);
+	}
+
+
+	if (TME)
+	{
+		vTexBufWidth = _mm256_set1_epi32(TexBufWidth);
+
+		vTexY_Min = _mm256_set1_epi32(TexY_Min);
+		vTexY_Max = _mm256_set1_epi32(TexY_Max);
+		vTexY_And = _mm256_set1_epi32(TexY_And);
+		vTexY_Or = _mm256_set1_epi32(TexY_Or);
+
+		vTexX_Min = _mm256_set1_epi32(TexX_Min);
+		vTexX_Max = _mm256_set1_epi32(TexX_Max);
+		vTexX_And = _mm256_set1_epi32(TexX_And);
+		vTexX_Or = _mm256_set1_epi32(TexX_Or);
+
+		vc1 = _mm256_set1_epi32(c1);
+		vc2 = _mm256_set1_epi32(c2);
+		vc3 = _mm256_set1_epi32(c3);
+		vca = _mm256_set1_epi32(ca);
+
+		vTA0 = _mm256_set1_epi32(TEXA64 & 0xff000000);
+		vTA1 = _mm256_set1_epi32((TEXA64 >> 32) & 0xff000000);
+
+		if (FST)
+		{
+			vUIdentity = _mm256_mullo_epi32(_mm256_set1_epi32(dudx), vIdentity);
+			vVIdentity = _mm256_mullo_epi32(_mm256_set1_epi32(dvdx), vIdentity);
+
+			vUInc = _mm256_set1_epi32(dudx * c_iVectorSize);
+			vVInc = _mm256_set1_epi32(dvdx * c_iVectorSize);
+		}
+		else
+		{
+			vSIdentity = _mm256_mul_ps(_mm256_set1_ps(dSdx), vIdentityf);
+			vTIdentity = _mm256_mul_ps(_mm256_set1_ps(dTdx), vIdentityf);
+			vQIdentity = _mm256_mul_ps(_mm256_set1_ps(dQdx), vIdentityf);
+
+			vSInc = _mm256_set1_ps(dSdx * c_iVectorSize);
+			vTInc = _mm256_set1_ps(dTdx * c_iVectorSize);
+			vQInc = _mm256_set1_ps(dQdx * c_iVectorSize);
+		}
+
+
+		if (FGE)
+		{
+			//vFacross = _mm256_set1_epi32 ( f2 );
+
+			vFIdentity = _mm256_mullo_epi32(_mm256_set1_epi32(dfdx), vIdentity);
+			vFInc = _mm256_set1_epi32(dfdx * c_iVectorSize);
+
+			//fogr = ( GPURegsGp.FOGCOL >> 0 ) & 0xff;
+			//fogg = ( GPURegsGp.FOGCOL >> 8 ) & 0xff;
+			//fogb = ( GPURegsGp.FOGCOL >> 16 ) & 0xff;
+			vFOGCOLR = _mm256_set1_epi32((FOGCOL >> 0) & 0xff);
+			vFOGCOLG = _mm256_set1_epi32((FOGCOL >> 8) & 0xff);
+			vFOGCOLB = _mm256_set1_epi32((FOGCOL >> 16) & 0xff);
+		}
+
+	}
+
+	vFrameBuffer_WriteMask32 = _mm256_set1_epi32(FrameBuffer_WriteMask32);
+
+	//vDestAlpha24 = _mm256_set1_epi32 ( DestAlpha24 );
+	//vDestMask24 = _mm256_set1_epi32 ( DestMask24 );
+	//vDA_Enable = _mm256_set1_epi32 ( DA_Enable );
+	//vDA_Enable = _mm256_set1_epi32 ( DATE << 31 );
+	vDA_Test = _mm256_set1_epi32(DA_Test);
+	vPixelOr32 = _mm256_set1_epi32(SetPixelMask);
+	//vFrameBufferStartOffset32 = _mm256_set1_epi32 ( FrameBufferStartOffset32 );
+	vFrameBufferWidth_Pixels = _mm256_set1_epi32(FrameBufferWidthInPixels);
+	//vARef_SrcAlpha = _mm256_set1_epi32 ( SrcAlpha_ARef );
+	vARef_SrcAlpha = _mm256_set1_epi32(aref);
+	vAlphaXor32 = _mm256_set1_epi32(AlphaXor32);
+
+
+
+
+	if (EndY >= StartY)
+	{
+
+		//////////////////////////////////////////////
+		// draw down to y1
+		for (Line = StartY; Line <= EndY; Line++)
+		{
+			// left point is included if points are equal
+			StartX = (x[0] + 0xffffLL) >> 16;
+			EndX = (x[1] - 1) >> 16;
+			//StartX = ( x_left + 0xffffLL ) >> 16;
+			//EndX = ( x_right - 1 ) >> 16;
+
+
+			if (StartX <= Window_XRight && EndX >= Window_XLeft && EndX >= StartX)
+			{
+				iZ = z[0];
+
+				if (TME)
+				{
+
+					if (FST)
+					{
+						iU = u[0];
+						iV = v[0];
+					}
+					else
+					{
+						iS = fS[0];
+						iT = fT[0];
+						iQ = fQ[0];
+					}
+
+					if (FGE)
+					{
+						iF = fogc[0];
+					}
+
+				}
+
+
+				if (SHADED)
+				{
+					iR = r[0];
+					iG = g[0];
+					iB = b[0];
+					iA = a[0];
+				}
+
+
+
+				//Temp = ( StartX << 16 ) - x_left;
+				Temp = (StartX << 16) - x[0];
+
+				if (StartX < Window_XLeft)
+				{
+					Temp += (Window_XLeft - StartX) << 16;
+					StartX = Window_XLeft;
+				}
+
+				iZ += (dzdx >> 8) * (Temp >> 8);
+
+				if (TME)
+				{
+
+					if (FST)
+					{
+						iU += (dudx >> 8) * (Temp >> 8);
+						iV += (dvdx >> 8) * (Temp >> 8);
+					}
+					else
+					{
+						iS += (dSdx) * (Temp / 65536.0f);
+						iT += (dTdx) * (Temp / 65536.0f);
+						iQ += (dQdx) * (Temp / 65536.0f);
+					}
+
+					if (FGE)
+					{
+						iF += (dfdx >> 8) * (Temp >> 8);
+					}
+
+				}
+
+				if (SHADED)
+				{
+					iR += (drdx >> 8) * (Temp >> 8);
+					iG += (dgdx >> 8) * (Temp >> 8);
+					iB += (dbdx >> 8) * (Temp >> 8);
+					iA += (dadx >> 8) * (Temp >> 8);
+				}
+
+
+				if (EndX > Window_XRight)
+				{
+					//EndX = Window_XRight + 1;
+					EndX = Window_XRight;
+				}
+
+
+
+
+				vYacross = _mm256_set1_epi32(Line);
+
+
+				//vYOffset_xor = _mm256_set1_epi32 ( LUT_YOFFSET [ ( Line & 0x3f ) | ( ( FBPSM >> 1 ) << 7 ) ] );
+				//vYOffset_add = _mm256_set1_epi32 ( ( Line & LUT_YNAND[ FBPSM >> 1 ] ) * FrameBufferWidthInPixels );
+				//vYOffset_add = _mm256_set1_epi32 ( LUT_YOFFSET [ ( y0 & 0x3f ) | ( ( FBPSM >> 1 ) << 7 ) ] + ( ( y0 & LUT_YNAND[ FBPSM >> 1 ] ) * FrameBufferWidthInPixels ) );
+
+				//vZYOffset_xor = _mm256_set1_epi32 ( LUT_YOFFSET [ ( Line & 0x3f ) | ( ( ( ZBPSM | 0x30 ) >> 1 ) << 7 ) ] );
+				//vZYOffset_add = _mm256_set1_epi32 ( ( Line & LUT_YNAND[ ( ZBPSM | 0x30 ) >> 1 ] ) * FrameBufferWidthInPixels );
+
+
+				switch (FBPSM)
+				{
+				case 0:
+				case 1:
+					vYOffset = _mm256_set1_epi32(CvtAddrPix32(0, Line, FrameBufferWidthInPixels));
+					break;
+
+				case 2:
+					vYOffset = _mm256_set1_epi32(CvtAddrPix16(0, Line, FrameBufferWidthInPixels));
+					break;
+
+				case 0xa:
+					vYOffset = _mm256_set1_epi32(CvtAddrPix16S(0, Line, FrameBufferWidthInPixels));
+					break;
+
+					/*
+					case 0x30:
+					case 0x31:
+						vYOffset = _mm256_set1_epi32 ( CvtAddrZBuf32 ( 0x20, Line, FrameBufferWidthInPixels ) );
+						break;
+
+					case 0x32:
+						vYOffset = _mm256_set1_epi32 ( CvtAddrZBuf16 ( 0x20, Line, FrameBufferWidthInPixels ) );
+						break;
+
+					case 0x3a:
+						vYOffset = _mm256_set1_epi32 ( CvtAddrZBuf16S ( 0x20, Line, FrameBufferWidthInPixels ) );
+						break;
+					*/
+				}
+
+				/*
+				switch ( ZBPSM )
+				{
+					case 0:
+					case 1:
+						vZYOffset = _mm256_set1_epi32 ( CvtAddrZBuf32 ( 0x20, Line, FrameBufferWidthInPixels ) );
+						break;
+
+					case 2:
+						vZYOffset = _mm256_set1_epi32 ( CvtAddrZBuf16 ( 0x20, Line, FrameBufferWidthInPixels ) );
+						break;
+
+					case 0xa:
+						vZYOffset = _mm256_set1_epi32 ( CvtAddrZBuf16S ( 0x20, Line, FrameBufferWidthInPixels ) );
+						break;
+				}
+				*/
+
+				vXacross = _mm256_add_epi32(_mm256_set1_epi32(StartX), vIdentity);
+				vXmax = _mm256_set1_epi32(EndX + 1);
+
+				vZacross0 = _mm256_add_epi64(_mm256_set1_epi64x(iZ), vZIdentity0);
+				vZacross1 = _mm256_add_epi64(_mm256_set1_epi64x(iZ), vZIdentity1);
+
+				if (TME)
+				{
+
+					if (FST)
+					{
+						vUacross = _mm256_add_epi32(_mm256_set1_epi32(iU), vUIdentity);
+						vVacross = _mm256_add_epi32(_mm256_set1_epi32(iV), vVIdentity);
+					}
+					else
+					{
+						vSacross = _mm256_add_ps(_mm256_set1_ps(iS), vSIdentity);
+						vTacross = _mm256_add_ps(_mm256_set1_ps(iT), vTIdentity);
+						vQacross = _mm256_add_ps(_mm256_set1_ps(iQ), vQIdentity);
+					}
+
+					if (FGE)
+					{
+						vFacross = _mm256_add_epi32(_mm256_set1_epi32(iF), vFIdentity);
+					}
+
+				}
+
+
+				if (SHADED)
+				{
+					vRacross = _mm256_add_epi32(_mm256_set1_epi32(iR), vRIdentity);
+					vGacross = _mm256_add_epi32(_mm256_set1_epi32(iG), vGIdentity);
+					vBacross = _mm256_add_epi32(_mm256_set1_epi32(iB), vBIdentity);
+					vAacross = _mm256_add_epi32(_mm256_set1_epi32(iA), vAIdentity);
+				}
+
+
+				// draw horizontal line
+				// x_left and x_right need to be rounded off
+				//for ( x_across = StartX; x_across < EndX; x_across++ )
+				for (x_across = StartX; x_across <= EndX; x_across += c_iVectorSize)
+				{
+					vEnable = _mm256_cmpgt_epi32(vXmax, vXacross);
+
+					//vZacross = _mm256_blend_epi16 ( _mm256_srli_epi64 ( vZacross0, 23 ), _mm256_slli_epi64 ( vZacross1, 9 ), 0xcc );
+					vZacross = _mm256_blend_epi16(_mm256_srli_epi64(vZacross0, 16), _mm256_slli_epi64(vZacross1, 16), 0xcc);
+
+					if (TME)
+					{
+
+						if (FST)
+						{
+							//TexCoordX = ( iU >> 16 );
+							//TexCoordY = ( iV >> 16 );
+							vTexCoordX = _mm256_srai_epi32(vUacross, 16);
+							vTexCoordY = _mm256_srai_epi32(vVacross, 16);
+						}
+						else
+						{
+							//TexCoordX = (long) (iS / iQ);
+							//TexCoordY = (long) (iT / iQ);
+							vTexCoordX = _mm256_cvttps_epi32(_mm256_div_ps(vSacross, vQacross));
+							vTexCoordY = _mm256_cvttps_epi32(_mm256_div_ps(vTacross, vQacross));
+						}
+
+						//TexCoordY = ( ( TexCoordY < TexY_Min ) ? TexY_Min : TexCoordY );
+						//TexCoordY = ( ( TexCoordY > TexY_Max ) ? TexY_Max : TexCoordY );
+						//TexCoordY &= TexY_And;
+						//TexCoordY |= TexY_Or;
+
+						//TexCoordX = ( ( TexCoordX < TexX_Min ) ? TexX_Min : TexCoordX );
+						//TexCoordX = ( ( TexCoordX > TexX_Max ) ? TexX_Max : TexCoordX );
+						//TexCoordX &= TexX_And;
+						//TexCoordX |= TexX_Or;
+
+						vTexCoordY = _mm256_max_epi32(vTexCoordY, vTexY_Min);
+						vTexCoordY = _mm256_min_epi32(vTexCoordY, vTexY_Max);
+						vTexCoordY = _mm256_and_si256(vTexCoordY, vTexY_And);
+						vTexCoordY = _mm256_or_si256(vTexCoordY, vTexY_Or);
+
+						vTexCoordX = _mm256_max_epi32(vTexCoordX, vTexX_Min);
+						vTexCoordX = _mm256_min_epi32(vTexCoordX, vTexX_Max);
+						vTexCoordX = _mm256_and_si256(vTexCoordX, vTexX_And);
+						vTexCoordX = _mm256_or_si256(vTexCoordX, vTexX_Or);
+
+
+
+						// get texel from texture buffer (32-bit frame buffer) //
+						//bgr = pd ( ptr_texture32, TexCoordX, TexCoordY, TexBufWidth, ptr_clut16, TEXA64 );
+						vBgr = pd(ptr_texture32, vTexCoordX, vTexCoordY, vTexBufWidth, ptr_clut16, vTA0, vTA1, vEnable);
+
+
+
+
+						// texture function ??
+
+
+						// fog function ??
+
+						//if ( bgr )
+						//if ( bgr != -1ULL )
+						//{
+
+						if (SHADED)
+						{
+							vc1 = _mm256_srli_epi32(vRacross, 16);
+							vc2 = _mm256_srli_epi32(vGacross, 16);
+							vc3 = _mm256_srli_epi32(vBacross, 16);
+							vca = _mm256_srli_epi32(vAacross, 16);
+
+							//bgr = tf ( bgr, iR >> 16, iG >> 16, iB >> 16, iA >> 16 );
+							//bgr = _GPU->TextureFunc32 ( bgr, iR >> 16, iG >> 16, iB >> 16, iA >> 16 );
+							//}
+							//else
+							//{
+							//bgr = tf ( bgr, c1, c2, c3, ca );
+							//bgr = _GPU->TextureFunc32 ( bgr, c1, c2, c3, ca );
+						}
+
+						vBgr = tf(vBgr, vc1, vc2, vc3, vca);
+
+						if (FGE)
+						{
+
+							vBgr = FogFunc32_tx8(vBgr, _mm256_srli_epi32(vFacross, 16), vFOGCOLR, vFOGCOLG, vFOGCOLB);
+						}
+
+
+
+						PlotPixel_Gradient_tx8<0, ABE, ZMSK, FBPSM, ZBPSM>(buf32, zbuf32, vXacross, vYacross, vZacross, vBgr, vPixelOr32, vFrameBufferWidth_Pixels, vDA_Test, vAlphaXor32, vFrameBuffer_WriteMask32, vARef_SrcAlpha, at, zt, TEST_AFAIL, vAlphaSelect, uA, uB, uC, uD, vEnable, vYOffset, x_across);
+
+
+
+					}
+					else
+					{
+						if (SHADED)
+						{
+							//bgr = ( iR >> 16 ) | ( ( iG >> 16 ) << 8 ) | ( ( iB >> 16 ) << 16 ) | ( ( iA >> 16 ) << 24 );
+
+							vRed = _mm256_srli_epi32(_mm256_slli_epi32(vRacross, 8), 24);
+							vGreen = _mm256_srli_epi32(_mm256_slli_epi32(vGacross, 8), 24);
+							vBlue = _mm256_srli_epi32(_mm256_slli_epi32(vBacross, 8), 24);
+							vAlpha = _mm256_srli_epi32(_mm256_slli_epi32(vAacross, 8), 24);
+
+							vBgr = _mm256_or_si256(_mm256_or_si256(vRed, _mm256_slli_epi32(vGreen, 8)), _mm256_or_si256(_mm256_slli_epi32(vBlue, 16), _mm256_slli_epi32(vAlpha, 24)));
+						}
+
+						PlotPixel_Gradient_tx8<0, ABE, ZMSK, FBPSM, ZBPSM>(buf32, zbuf32, vXacross, vYacross, vZacross, vBgr, vPixelOr32, vFrameBufferWidth_Pixels, vDA_Test, vAlphaXor32, vFrameBuffer_WriteMask32, vARef_SrcAlpha, at, zt, TEST_AFAIL, vAlphaSelect, uA, uB, uC, uD, vEnable, vYOffset, x_across);
+
+					}	// end if ( TME )
+
+
+					//iZ += dzdx;
+					vXacross = _mm256_add_epi32(vXacross, vXInc);
+
+					vZacross0 = _mm256_add_epi64(vZacross0, vZInc);
+					vZacross1 = _mm256_add_epi64(vZacross1, vZInc);
+
+					if (TME)
+					{
+
+						if (FST)
+						{
+							//iU += dudx;
+							//iV += dvdx;
+							vUacross = _mm256_add_epi32(vUacross, vUInc);
+							vVacross = _mm256_add_epi32(vVacross, vVInc);
+						}
+						else
+						{
+							//iS += dSdx;
+							//iT += dTdx;
+							//iQ += dQdx;
+							vSacross = _mm256_add_ps(vSacross, vSInc);
+							vTacross = _mm256_add_ps(vTacross, vTInc);
+							vQacross = _mm256_add_ps(vQacross, vQInc);
+						}
+
+						if (FGE)
+						{
+							//iF += dfdx;
+							vFacross = _mm256_add_epi32(vFacross, vFInc);
+						}
+
+					}	// end if ( TME )
+
+					if (SHADED)
+					{
+						//iR += drdx;
+						//iG += dgdx;
+						//iB += dbdx;
+						//iA += dadx;
+						vRacross = _mm256_add_epi32(vRacross, vRInc);
+						vGacross = _mm256_add_epi32(vGacross, vGInc);
+						vBacross = _mm256_add_epi32(vBacross, vBInc);
+						vAacross = _mm256_add_epi32(vAacross, vAInc);
+					}
+
+				}
+
+			}
+
+			//////////////////////////////////
+			// draw next line
+			//Line++;
+
+			/////////////////////////////////////
+			// update x on left and right
+			//x_left += dx_left;
+			//x_right += dx_right;
+			x[0] += dxdy[0];
+			x[1] += dxdy[1];
+
+			z[0] += dzdy[0];
+
+			if (TME)
+			{
+
+				if (FST)
+				{
+					u[0] += dudy[0];
+					v[0] += dvdy[0];
+				}
+				else
+				{
+					fS[0] += dSdy[0];
+					fT[0] += dTdy[0];
+					fQ[0] += dQdy[0];
+				}
+
+				if (FGE)
+				{
+					fogc[0] += dfdy[0];
+				}
+
+			}
+
+			if (SHADED)
+			{
+				r[0] += drdy[0];
+				g[0] += dgdy[0];
+				b[0] += dbdy[0];
+				a[0] += dady[0];
+			}
+		}
+
+	} // if ( EndY >= StartY )
+
+
+	////////////////////////////////////////////////
+	// draw bottom part of triangle
+
+
+
+	// left point is included if points are equal
+	StartY = (y1 + 0xf) >> 4;
+	EndY = (y2 - 1) >> 4;
+
+
+	/////////////////////////////////////////////
+	// init x on the left and right
+
+
+	x[X1Index] = (((s64)x1) << 12);
+
+	z[X1Index] = (((s64)z1) << 16);
+
+	// offset
+	z[X1Index] += 0x8000;
+
+	if (TME)
+	{
+
+		if (FST)
+		{
+			//u [ X1Index ] = ( uv [ Coord1 ].U << 12 );
+			//v [ X1Index ] = ( uv [ Coord1 ].V << 12 );
+			u[X1Index] = (u1 << 12);
+			v[X1Index] = (v1 << 12);
+		}
+		else
+		{
+			fS[X1Index] = fS1;
+			fT[X1Index] = fT1;
+			fQ[X1Index] = fQ1;
+		}
+
+		if (FGE)
+		{
+			fogc[X1Index] = (((s64)f1) << 16);
+
+			// offset
+			fogc[X1Index] += 0x8000;
+		}
+
+	}
+
+	if (SHADED)
+	{
+		r[X1Index] = (r1 << 16);
+		g[X1Index] = (g1 << 16);
+		b[X1Index] = (b1 << 16);
+		a[X1Index] = (a1 << 16);
+
+		// offset 
+		r[X1Index] += 0x8000;
+		g[X1Index] += 0x8000;
+		b[X1Index] += 0x8000;
+		a[X1Index] += 0x8000;
+	}
+
+	if (y2 - y1)
+	{
+		// triangle is pointed on the bottom //
+		dxdy[X1Index] = (((s64)(x2 - x1)) << 16) / ((s64)(y2 - y1));
+
+		dzdy[X1Index] = (((s64)(z2 - z1)) << 20) / ((s64)(y2 - y1));
+
+		if (TME)
+		{
+
+			if (FST)
+			{
+				//dudy [ X1Index ] = (((s64)( uv [ Coord2 ].U - uv [ Coord1 ].U )) << 12 ) / ((s64)( y2 - y1 ));
+				//dvdy [ X1Index ] = (((s64)( uv [ Coord2 ].V - uv [ Coord1 ].V )) << 12 ) / ((s64)( y2 - y1 ));
+				dudy[X1Index] = (((s64)(u2 - u1)) << 16) / ((s64)(y2 - y1));
+				dvdy[X1Index] = (((s64)(v2 - v1)) << 16) / ((s64)(y2 - y1));
+			}
+			else
+			{
+				dSdy[X1Index] = (fS2 - fS1) / ((y2 - y1) / 16.0f);
+				dTdy[X1Index] = (fT2 - fT1) / ((y2 - y1) / 16.0f);
+				dQdy[X1Index] = (fQ2 - fQ1) / ((y2 - y1) / 16.0f);
+			}
+
+			if (FGE)
+			{
+				dfdy[X1Index] = (((s64)(f2 - f1)) << 20) / ((s64)(y2 - y1));
+			}
+
+		}
+
+		if (SHADED)
+		{
+			drdy[X1Index] = (((s64)(r2 - r1)) << 20) / ((s64)(y2 - y1));
+			dgdy[X1Index] = (((s64)(g2 - g1)) << 20) / ((s64)(y2 - y1));
+			dbdy[X1Index] = (((s64)(b2 - b1)) << 20) / ((s64)(y2 - y1));
+			dady[X1Index] = (((s64)(a2 - a1)) << 20) / ((s64)(y2 - y1));
+		}
+	}
+
+
+
+	// *** testing ***
+	//debug << "\r\nfixed: dR_across=" << dR_across << " dG_across=" << dG_across << " dB_across=" << dB_across;
+
+	// the line starts at y1 from here
+	//Line = y1;
+
+	//StartY = y1;
+	//EndY = y2;
+
+
+	Temp = (StartY << 4) - y1;
+
+
+	x[X1Index] += (dxdy[X1Index] >> 4) * Temp;
+
+	z[X1Index] += (dzdy[X1Index] >> 4) * Temp;
+
+	if (TME)
+	{
+
+		if (FST)
+		{
+			u[X1Index] += (dudy[X1Index] >> 4) * Temp;
+			v[X1Index] += (dvdy[X1Index] >> 4) * Temp;
+		}
+		else
+		{
+			fS[X1Index] += (dSdy[X1Index]) * (Temp / 16.0f);
+			fT[X1Index] += (dTdy[X1Index]) * (Temp / 16.0f);
+			fQ[X1Index] += (dQdy[X1Index]) * (Temp / 16.0f);
+		}
+
+		if (FGE)
+		{
+			fogc[X1Index] += (dfdy[X1Index] >> 4) * Temp;
+		}
+
+	}
+
+	if (SHADED)
+	{
+		r[X1Index] += (drdy[X1Index] >> 4) * Temp;
+		g[X1Index] += (dgdy[X1Index] >> 4) * Temp;
+		b[X1Index] += (dbdy[X1Index] >> 4) * Temp;
+		a[X1Index] += (dady[X1Index] >> 4) * Temp;
+	}
+
+
+
+	if (StartY < Window_YTop)
+	{
+		if (EndY < Window_YTop)
+		{
+			//Temp = EndY - StartY;
+			Temp = (EndY - StartY + 1) << 4;
+			//StartY = EndY;
+			StartY = EndY + 1;
+		}
+		else
+		{
+			Temp = (Window_YTop - StartY) << 4;
+			StartY = Window_YTop;
+		}
+
+		// dxdy is in .16, Temp is in .4, and x is in .16
+		x[0] += (dxdy[0] >> 4) * Temp;
+		x[1] += (dxdy[1] >> 4) * Temp;
+
+		z[0] += (dzdy[0] >> 4) * Temp;
+
+		if (TME)
+		{
+
+			if (FST)
+			{
+				u[0] += (dudy[0] >> 4) * Temp;
+				v[0] += (dvdy[0] >> 4) * Temp;
+			}
+			else
+			{
+				fS[0] += (dSdy[0]) * (Temp / 16.0f);
+				fT[0] += (dTdy[0]) * (Temp / 16.0f);
+				fQ[0] += (dQdy[0]) * (Temp / 16.0f);
+			}
+
+			if (FGE)
+			{
+				fogc[0] += (dfdy[0] >> 4) * Temp;
+			}
+
+		}
+
+		if (SHADED)
+		{
+			r[0] += (drdy[0] >> 4) * Temp;
+			g[0] += (dgdy[0] >> 4) * Temp;
+			b[0] += (dbdy[0] >> 4) * Temp;
+			a[0] += (dady[0] >> 4) * Temp;
+		}
+
+		//u [ 1 ] += ( dudy [ 1 ] >> 4 ) * Temp;
+		//v [ 1 ] += ( dvdy [ 1 ] >> 4 ) * Temp;
+	}
+
+
+	if (EndY > Window_YBottom)
+	{
+		//EndY = Window_YBottom + 1;
+		EndY = Window_YBottom;
+	}
+
+
+
+
+	if (EndY >= StartY)
+	{
+
+		//////////////////////////////////////////////
+		// draw down to y1
+		for (Line = StartY; Line <= EndY; Line++)
+		{
+			// left point is included if points are equal
+			StartX = (x[0] + 0xffffLL) >> 16;
+			EndX = (x[1] - 1) >> 16;
+			//StartX = ( x_left + 0xffffLL ) >> 16;
+			//EndX = ( x_right - 1 ) >> 16;
+
+
+			if (StartX <= Window_XRight && EndX >= Window_XLeft && EndX >= StartX)
+			{
+				iZ = z[0];
+
+				if (TME)
+				{
+
+					if (FST)
+					{
+						iU = u[0];
+						iV = v[0];
+					}
+					else
+					{
+						iS = fS[0];
+						iT = fT[0];
+						iQ = fQ[0];
+					}
+
+					if (FGE)
+					{
+						iF = fogc[0];
+					}
+
+				}
+
+
+				if (SHADED)
+				{
+					iR = r[0];
+					iG = g[0];
+					iB = b[0];
+					iA = a[0];
+				}
+
+
+
+				//Temp = ( StartX << 16 ) - x_left;
+				Temp = (StartX << 16) - x[0];
+
+				if (StartX < Window_XLeft)
+				{
+					Temp += (Window_XLeft - StartX) << 16;
+					StartX = Window_XLeft;
+				}
+
+				iZ += (dzdx >> 8) * (Temp >> 8);
+
+				if (TME)
+				{
+
+					if (FST)
+					{
+						iU += (dudx >> 8) * (Temp >> 8);
+						iV += (dvdx >> 8) * (Temp >> 8);
+					}
+					else
+					{
+						iS += (dSdx) * (Temp / 65536.0f);
+						iT += (dTdx) * (Temp / 65536.0f);
+						iQ += (dQdx) * (Temp / 65536.0f);
+					}
+
+					if (FGE)
+					{
+						iF += (dfdx >> 8) * (Temp >> 8);
+					}
+
+				}
+
+				if (SHADED)
+				{
+					iR += (drdx >> 8) * (Temp >> 8);
+					iG += (dgdx >> 8) * (Temp >> 8);
+					iB += (dbdx >> 8) * (Temp >> 8);
+					iA += (dadx >> 8) * (Temp >> 8);
+				}
+
+
+				if (EndX > Window_XRight)
+				{
+					//EndX = Window_XRight + 1;
+					EndX = Window_XRight;
+				}
+
+
+				/////////////////////////////////////////////////////
+				// update number of cycles used to draw polygon
+				//NumberOfPixelsDrawn += EndX - StartX + 1;
+
+				vYacross = _mm256_set1_epi32(Line);
+
+
+				//vYOffset_xor = _mm256_set1_epi32 ( LUT_YOFFSET [ ( Line & 0x3f ) | ( ( FBPSM >> 1 ) << 7 ) ] );
+				//vYOffset_add = _mm256_set1_epi32 ( ( Line & LUT_YNAND[ FBPSM >> 1 ] ) * FrameBufferWidthInPixels );
+				//vYOffset_add = _mm256_set1_epi32 ( LUT_YOFFSET [ ( y0 & 0x3f ) | ( ( FBPSM >> 1 ) << 7 ) ] + ( ( y0 & LUT_YNAND[ FBPSM >> 1 ] ) * FrameBufferWidthInPixels ) );
+
+				//vZYOffset_xor = _mm256_set1_epi32 ( LUT_YOFFSET [ ( Line & 0x3f ) | ( ( ( ZBPSM | 0x30 ) >> 1 ) << 7 ) ] );
+				//vZYOffset_add = _mm256_set1_epi32 ( ( Line & LUT_YNAND[ ( ZBPSM | 0x30 ) >> 1 ] ) * FrameBufferWidthInPixels );
+
+
+				switch (FBPSM)
+				{
+				case 0:
+				case 1:
+					vYOffset = _mm256_set1_epi32(CvtAddrPix32(0, Line, FrameBufferWidthInPixels));
+					break;
+
+				case 2:
+					vYOffset = _mm256_set1_epi32(CvtAddrPix16(0, Line, FrameBufferWidthInPixels));
+					break;
+
+				case 0xa:
+					vYOffset = _mm256_set1_epi32(CvtAddrPix16S(0, Line, FrameBufferWidthInPixels));
+					break;
+
+					/*
+					case 0x30:
+					case 0x31:
+						vYOffset = _mm256_set1_epi32 ( CvtAddrZBuf32 ( 0, Line, FrameBufferWidthInPixels ) );
+						break;
+
+					case 0x32:
+						vYOffset = _mm256_set1_epi32 ( CvtAddrZBuf16 ( 0, Line, FrameBufferWidthInPixels ) );
+						break;
+
+					case 0x3a:
+						vYOffset = _mm256_set1_epi32 ( CvtAddrZBuf16S ( 0, Line, FrameBufferWidthInPixels ) );
+						break;
+					*/
+				}
+
+				/*
+				switch ( ZBPSM )
+				{
+					case 0:
+					case 1:
+						vZYOffset = _mm256_set1_epi32 ( CvtAddrZBuf32 ( 0, Line, FrameBufferWidthInPixels ) );
+						break;
+
+					case 2:
+						vZYOffset = _mm256_set1_epi32 ( CvtAddrZBuf16 ( 0, Line, FrameBufferWidthInPixels ) );
+						break;
+
+					case 0xa:
+						vZYOffset = _mm256_set1_epi32 ( CvtAddrZBuf16S ( 0, Line, FrameBufferWidthInPixels ) );
+						break;
+				}
+				*/
+
+				vXacross = _mm256_add_epi32(_mm256_set1_epi32(StartX), vIdentity);
+				vXmax = _mm256_set1_epi32(EndX + 1);
+
+				vZacross0 = _mm256_add_epi64(_mm256_set1_epi64x(iZ), vZIdentity0);
+				vZacross1 = _mm256_add_epi64(_mm256_set1_epi64x(iZ), vZIdentity1);
+
+				if (TME)
+				{
+
+					if (FST)
+					{
+						vUacross = _mm256_add_epi32(_mm256_set1_epi32(iU), vUIdentity);
+						vVacross = _mm256_add_epi32(_mm256_set1_epi32(iV), vVIdentity);
+					}
+					else
+					{
+						vSacross = _mm256_add_ps(_mm256_set1_ps(iS), vSIdentity);
+						vTacross = _mm256_add_ps(_mm256_set1_ps(iT), vTIdentity);
+						vQacross = _mm256_add_ps(_mm256_set1_ps(iQ), vQIdentity);
+					}
+
+					if (FGE)
+					{
+						vFacross = _mm256_add_epi32(_mm256_set1_epi32(iF), vFIdentity);
+					}
+
+				}
+
+
+				if (SHADED)
+				{
+					vRacross = _mm256_add_epi32(_mm256_set1_epi32(iR), vRIdentity);
+					vGacross = _mm256_add_epi32(_mm256_set1_epi32(iG), vGIdentity);
+					vBacross = _mm256_add_epi32(_mm256_set1_epi32(iB), vBIdentity);
+					vAacross = _mm256_add_epi32(_mm256_set1_epi32(iA), vAIdentity);
+				}
+
+
+				// draw horizontal line
+				// x_left and x_right need to be rounded off
+				//for ( x_across = StartX; x_across < EndX; x_across++ )
+				for (x_across = StartX; x_across <= EndX; x_across += c_iVectorSize)
+				{
+					vEnable = _mm256_cmpgt_epi32(vXmax, vXacross);
+
+					//vZacross = _mm256_blend_epi16 ( _mm256_srli_epi64 ( vZacross0, 23 ), _mm256_slli_epi64 ( vZacross1, 9 ), 0xcc );
+					vZacross = _mm256_blend_epi16(_mm256_srli_epi64(vZacross0, 16), _mm256_slli_epi64(vZacross1, 16), 0xcc);
+
+					if (TME)
+					{
+
+						if (FST)
+						{
+							//TexCoordX = ( iU >> 16 );
+							//TexCoordY = ( iV >> 16 );
+							vTexCoordX = _mm256_srai_epi32(vUacross, 16);
+							vTexCoordY = _mm256_srai_epi32(vVacross, 16);
+						}
+						else
+						{
+							//TexCoordX = (long) (iS / iQ);
+							//TexCoordY = (long) (iT / iQ);
+							vTexCoordX = _mm256_cvttps_epi32(_mm256_div_ps(vSacross, vQacross));
+							vTexCoordY = _mm256_cvttps_epi32(_mm256_div_ps(vTacross, vQacross));
+						}
+
+						//TexCoordY = ( ( TexCoordY < TexY_Min ) ? TexY_Min : TexCoordY );
+						//TexCoordY = ( ( TexCoordY > TexY_Max ) ? TexY_Max : TexCoordY );
+						//TexCoordY &= TexY_And;
+						//TexCoordY |= TexY_Or;
+
+						//TexCoordX = ( ( TexCoordX < TexX_Min ) ? TexX_Min : TexCoordX );
+						//TexCoordX = ( ( TexCoordX > TexX_Max ) ? TexX_Max : TexCoordX );
+						//TexCoordX &= TexX_And;
+						//TexCoordX |= TexX_Or;
+
+						vTexCoordY = _mm256_max_epi32(vTexCoordY, vTexY_Min);
+						vTexCoordY = _mm256_min_epi32(vTexCoordY, vTexY_Max);
+						vTexCoordY = _mm256_and_si256(vTexCoordY, vTexY_And);
+						vTexCoordY = _mm256_or_si256(vTexCoordY, vTexY_Or);
+
+						vTexCoordX = _mm256_max_epi32(vTexCoordX, vTexX_Min);
+						vTexCoordX = _mm256_min_epi32(vTexCoordX, vTexX_Max);
+						vTexCoordX = _mm256_and_si256(vTexCoordX, vTexX_And);
+						vTexCoordX = _mm256_or_si256(vTexCoordX, vTexX_Or);
+
+
+
+						// get texel from texture buffer (32-bit frame buffer) //
+						//bgr = pd ( ptr_texture32, TexCoordX, TexCoordY, TexBufWidth, ptr_clut16, TEXA64 );
+						vBgr = pd(ptr_texture32, vTexCoordX, vTexCoordY, vTexBufWidth, ptr_clut16, vTA0, vTA1, vEnable);
+
+
+
+
+						// texture function ??
+
+
+						// fog function ??
+
+						//if ( bgr )
+						//if ( bgr != -1ULL )
+						//{
+
+						if (SHADED)
+						{
+							vc1 = _mm256_srli_epi32(vRacross, 16);
+							vc2 = _mm256_srli_epi32(vGacross, 16);
+							vc3 = _mm256_srli_epi32(vBacross, 16);
+							vca = _mm256_srli_epi32(vAacross, 16);
+
+							//bgr = tf ( bgr, iR >> 16, iG >> 16, iB >> 16, iA >> 16 );
+							//bgr = _GPU->TextureFunc32 ( bgr, iR >> 16, iG >> 16, iB >> 16, iA >> 16 );
+							//}
+							//else
+							//{
+							//bgr = tf ( bgr, c1, c2, c3, ca );
+							//bgr = _GPU->TextureFunc32 ( bgr, c1, c2, c3, ca );
+						}
+
+						vBgr = tf(vBgr, vc1, vc2, vc3, vca);
+
+						if (FGE)
+						{
+
+							vBgr = FogFunc32_tx8(vBgr, _mm256_srli_epi32(vFacross, 16), vFOGCOLR, vFOGCOLG, vFOGCOLB);
+						}
+
+
+
+						PlotPixel_Gradient_tx8<0, ABE, ZMSK, FBPSM, ZBPSM>(buf32, zbuf32, vXacross, vYacross, vZacross, vBgr, vPixelOr32, vFrameBufferWidth_Pixels, vDA_Test, vAlphaXor32, vFrameBuffer_WriteMask32, vARef_SrcAlpha, at, zt, TEST_AFAIL, vAlphaSelect, uA, uB, uC, uD, vEnable, vYOffset, x_across);
+
+
+					}
+					else
+					{
+						if (SHADED)
+						{
+							//bgr = ( iR >> 16 ) | ( ( iG >> 16 ) << 8 ) | ( ( iB >> 16 ) << 16 ) | ( ( iA >> 16 ) << 24 );
+
+							vRed = _mm256_srli_epi32(_mm256_slli_epi32(vRacross, 8), 24);
+							vGreen = _mm256_srli_epi32(_mm256_slli_epi32(vGacross, 8), 24);
+							vBlue = _mm256_srli_epi32(_mm256_slli_epi32(vBacross, 8), 24);
+							vAlpha = _mm256_srli_epi32(_mm256_slli_epi32(vAacross, 8), 24);
+
+							vBgr = _mm256_or_si256(_mm256_or_si256(vRed, _mm256_slli_epi32(vGreen, 8)), _mm256_or_si256(_mm256_slli_epi32(vBlue, 16), _mm256_slli_epi32(vAlpha, 24)));
+						}
+
+						PlotPixel_Gradient_tx8<0, ABE, ZMSK, FBPSM, ZBPSM>(buf32, zbuf32, vXacross, vYacross, vZacross, vBgr, vPixelOr32, vFrameBufferWidth_Pixels, vDA_Test, vAlphaXor32, vFrameBuffer_WriteMask32, vARef_SrcAlpha, at, zt, TEST_AFAIL, vAlphaSelect, uA, uB, uC, uD, vEnable, vYOffset, x_across);
+
+					}	// end if ( TME )
+
+
+					//iZ += dzdx;
+					vXacross = _mm256_add_epi32(vXacross, vXInc);
+
+					vZacross0 = _mm256_add_epi64(vZacross0, vZInc);
+					vZacross1 = _mm256_add_epi64(vZacross1, vZInc);
+
+					if (TME)
+					{
+
+						if (FST)
+						{
+							//iU += dudx;
+							//iV += dvdx;
+							vUacross = _mm256_add_epi32(vUacross, vUInc);
+							vVacross = _mm256_add_epi32(vVacross, vVInc);
+						}
+						else
+						{
+							//iS += dSdx;
+							//iT += dTdx;
+							//iQ += dQdx;
+							vSacross = _mm256_add_ps(vSacross, vSInc);
+							vTacross = _mm256_add_ps(vTacross, vTInc);
+							vQacross = _mm256_add_ps(vQacross, vQInc);
+						}
+
+						if (FGE)
+						{
+							//iF += dfdx;
+							vFacross = _mm256_add_epi32(vFacross, vFInc);
+						}
+
+					}	// end if ( TME )
+
+					if (SHADED)
+					{
+						//iR += drdx;
+						//iG += dgdx;
+						//iB += dbdx;
+						//iA += dadx;
+						vRacross = _mm256_add_epi32(vRacross, vRInc);
+						vGacross = _mm256_add_epi32(vGacross, vGInc);
+						vBacross = _mm256_add_epi32(vBacross, vBInc);
+						vAacross = _mm256_add_epi32(vAacross, vAInc);
+					}
+
+				}
+
+			}
+
+			//////////////////////////////////
+			// draw next line
+			//Line++;
+
+			/////////////////////////////////////
+			// update x on left and right
+			//x_left += dx_left;
+			//x_right += dx_right;
+			x[0] += dxdy[0];
+			x[1] += dxdy[1];
+
+			z[0] += dzdy[0];
+
+			if (TME)
+			{
+
+				if (FST)
+				{
+					u[0] += dudy[0];
+					v[0] += dvdy[0];
+				}
+				else
+				{
+					fS[0] += dSdy[0];
+					fT[0] += dTdy[0];
+					fQ[0] += dQdy[0];
+				}
+
+				if (FGE)
+				{
+					fogc[0] += dfdy[0];
+				}
+
+			}
+
+			if (SHADED)
+			{
+				r[0] += drdy[0];
+				g[0] += dgdy[0];
+				b[0] += dbdy[0];
+				a[0] += dady[0];
+			}
+		}
+
+	} // if ( EndY >= StartY )
+
+
+	return NumPixels;
+}
+
+#endif
+
 
 
 template<const long SHADED,const long TME,const long FST,const long FGE,const long ABE,const long ZMSK,const long FBPSM,const long ZBPSM>
 static u64 Render_Generic_Triangle_t ( u64* p_inputbuffer, u32 ulThreadNum )
 {
-#ifdef INLINE_DEBUG_PRIMITIVE2
-	debug << "-->DRAWRECTANGLE5";
-#endif
 
 	// before sse2, was sending 1 pixels at a time
 	static const int c_iVectorSize = 4;
+
+#ifdef _ENABLE_AVX2_GPU
+	if (iDrawVectorSize == 8)
+	{
+		return Render_Generic_Triangle_tx8<SHADED, TME, FST, FGE, ABE, ZMSK, FBPSM, ZBPSM>(p_inputbuffer, ulThreadNum);
+	}
+#endif
 
 	//u32 Pixel, TexelIndex,
 	
@@ -17108,7 +24150,7 @@ static u64 Render_Generic_Triangle_t ( u64* p_inputbuffer, u32 ulThreadNum )
 		debug << "\r\nERROR: INVALID PIXEL FORMAT: Pixel Format=" << hex << PixelFormat << " ClutFormat=" << CLUTPixelFormat;
 #endif
 
-		cout << "\nhps2x64: GPU: ERROR: INVALID PIXEL FORMAT: Pixel Format=" << hex << PixelFormat << " ClutFormat=" << CLUTPixelFormat;
+		cout << "\nhps2x64: GPU: ERROR: TRIANGLE4 INVALID PIXEL FORMAT: Pixel Format=" << hex << PixelFormat << " ClutFormat=" << CLUTPixelFormat;
 
 		return 0;
 	}
@@ -20853,13 +27895,844 @@ static u64 Select_CopyLocal_t ( u64* p_inputbuffer, u32 ulThreadNum )
 
 #ifdef USE_TEMPLATES_PS2_DRAWSCREEN
 
+
+#ifdef _ENABLE_AVX2_GPU
+
+template<const long DISPFBX_PSM, const long SMODE2_FFMD, const long SMODE2_INTER>
+static void Draw_Screen_thx8(u64* p_inputbuffer, u32 ulThreadNum, u32 SELECTION1, u32 SELECTION2)
+{
+	static const int c_iVisibleArea_StartY[] = { c_iVisibleArea_StartY_Pixel_NTSC, c_iVisibleArea_StartY_Pixel_PAL };
+	static const int c_iVisibleArea_EndY[] = { c_iVisibleArea_EndY_Pixel_NTSC, c_iVisibleArea_EndY_Pixel_PAL };
+
+
+#ifdef INLINE_DEBUG_DRAW_SCREEN
+	debug << "\r\n***Frame Draw***";
+	debug << " PMode=" << hex << GPURegs0.PMODE;
+	debug << " FBOffset1/2048=" << hex << GPURegs0.DISPFB1.FBP;
+	debug << " FBOffset2/2048=" << hex << GPURegs0.DISPFB2.FBP;
+	debug << " FBWidth1/64 (for screen output/in pixels)=" << dec << GPURegs0.DISPFB1.FBW;
+	debug << " FBWidth2/64 (for screen output/in pixels)=" << dec << GPURegs0.DISPFB2.FBW;
+	debug << " FBHeight1-1 (for screen output/in pixels)=" << dec << GPURegs0.DISPLAY1.DH;
+	debug << " FBHeight2-1 (for screen output/in pixels)=" << dec << GPURegs0.DISPLAY2.DH;
+	debug << " XPixel1=" << dec << GPURegs0.DISPFB1.DBX;
+	debug << " YPixel1=" << dec << GPURegs0.DISPFB1.DBY;
+	debug << " XPixel2=" << dec << GPURegs0.DISPFB2.DBX;
+	debug << " YPixel2=" << dec << GPURegs0.DISPFB2.DBY;
+	debug << " PixelFormat0=" << PixelFormat_Names[GPURegs0.DISPFB1.PSM];
+	debug << " PixelFormat1=" << PixelFormat_Names[GPURegs0.DISPFB2.PSM];
+	debug << " SELECTION1=" << hex << SELECTION1 << " SELECTION2=" << SELECTION2;
+#endif
+
+	int x, y;
+
+	u32* buf_ptr;
+	u32* buf_ptr32;
+	u16* buf_ptr16;
+
+	u32* buf_ptr_2;
+	u32* buf_ptr32_2;
+	u16* buf_ptr16_2;
+
+	s32 draw_buffer_offset;
+	s32 draw_width, draw_height;
+	s32 start_x, start_y;
+	s32 Index = 0;
+
+	s32 draw_buffer_offset_2;
+	s32 draw_width_2, draw_height_2;
+	s32 start_x_2, start_y_2;
+
+	u32 Pixel16, Pixel32;
+	//u32 PixelFormat;
+
+	u64 DISPFBX, DISPLAYX;
+	u64 DISPFB1, DISPLAY1;
+	u64 DISPFB2, DISPLAY2;
+
+	u32 DISPFBX_FBP, DISPFBX_FBW, DISPLAYX_DH, DISPFBX_DBX, DISPFBX_DBY;
+	u32 DISPFB1_FBP, DISPFB1_FBW, DISPLAY1_DH, DISPFB1_DBX, DISPFB1_DBY;
+	u32 DISPFB2_FBP, DISPFB2_FBW, DISPLAY2_DH, DISPFB2_DBX, DISPFB2_DBY;
+	u32 lScanline;
+
+	u32 DISPFB1_PSM, DISPFB2_PSM;
+
+	u32 PMODE;
+	u32 PMODE_MMOD, PMODE_AMOD, PMODE_SLBG, PMODE_ALP;
+	u32 BGCOLOR;
+
+	bool bEnableBlend;
+
+	u64* inputdata_ptr;
+
+	__m256i vZero;
+	vZero = _mm256_setzero_si256();
+
+	__m256i vIdentity;
+	vIdentity = _mm256_set_epi32(7, 6, 5, 4, 3, 2, 1, 0);
+
+	__m256i vXInc;
+	vXInc = _mm256_set1_epi32(8);
+
+	__m256i vEnable;
+	vEnable = _mm256_set1_epi32(-1);
+
+	__m256i vPixel32;
+	__m256i vX, vY;
+	__m256i vWidth, vOffset32;
+
+	__m256i vPixel32_2;
+
+	__m256i vRed, vGreen, vBlue, vAlpha;
+	__m256i vRed_2, vGreen_2, vBlue_2, vAlpha_2;
+	__m256i vALP, vALPR, vALP_MASK;
+	__m256i vBGCOLOR, vBGCOLOR_R, vBGCOLOR_G, vBGCOLOR_B;
+	__m256i vCOLOR;
+
+
+	// don't know yet if blending is needed
+	bEnableBlend = false;
+
+
+	PMODE = p_inputbuffer[0];
+	BGCOLOR = p_inputbuffer[6];
+
+	//if ( !( PMODE & 0x3 ) )
+	//{
+	//	return;
+	//}
+
+	PMODE_MMOD = (PMODE >> 5) & 1;
+	PMODE_AMOD = (PMODE >> 6) & 1;
+	PMODE_SLBG = (PMODE >> 7) & 1;
+	PMODE_ALP = (PMODE >> 8) & 0xff;
+
+
+	// set alp
+	vALP = _mm256_set1_epi32(PMODE_ALP << 24);
+
+	// set bg color
+	vBGCOLOR = _mm256_set1_epi32(BGCOLOR);
+
+
+	lScanline = p_inputbuffer[13];
+
+
+	DISPFBX = p_inputbuffer[11];
+	DISPLAYX = p_inputbuffer[12];
+
+
+	/*
+	DISPFBX_FBP = ( DISPFBX >> 0 ) & 0x1ff;
+	DISPFBX_FBW = ( DISPFBX >> 9 ) & 0x3f;
+	DISPFBX_DBX = ( DISPFBX >> 32 ) & 0x7ff;
+	DISPFBX_DBY = ( DISPFBX >> 43 ) & 0x7ff;
+
+	DISPLAYX_DH = ( DISPLAYX >> 44 ) & 0x7ff;
+
+
+	draw_buffer_offset = DISPFBX_FBP << 11;
+
+	buf_ptr = & ( _GPU->RAM32 [ draw_buffer_offset ] );
+
+	draw_width = DISPFBX_FBW << 6;
+	draw_height = DISPLAYX_DH + 1;
+	start_x = DISPFBX_DBX;
+	start_y = DISPFBX_DBY;
+
+	buf_ptr32 = buf_ptr;
+	buf_ptr16 = (u16*) buf_ptr;
+	*/
+
+	DISPFB1 = p_inputbuffer[1];
+	DISPLAY1 = p_inputbuffer[3];
+
+	DISPFB2 = p_inputbuffer[2];
+	DISPLAY2 = p_inputbuffer[4];
+
+
+	DISPFB1_FBP = (DISPFB1 >> 0) & 0x1ff;
+	DISPFB1_FBW = (DISPFB1 >> 9) & 0x3f;
+	DISPFB1_DBX = (DISPFB1 >> 32) & 0x7ff;
+	DISPFB1_DBY = (DISPFB1 >> 43) & 0x7ff;
+
+	DISPFB1_PSM = (DISPFB1 >> 15) & 0x1f;
+
+	DISPLAY1_DH = (DISPLAY1 >> 44) & 0x7ff;
+
+
+	DISPFB2_FBP = (DISPFB2 >> 0) & 0x1ff;
+	DISPFB2_FBW = (DISPFB2 >> 9) & 0x3f;
+	DISPFB2_DBX = (DISPFB2 >> 32) & 0x7ff;
+	DISPFB2_DBY = (DISPFB2 >> 43) & 0x7ff;
+
+	DISPFB2_PSM = (DISPFB2 >> 15) & 0x1f;
+
+	DISPLAY2_DH = (DISPLAY2 >> 44) & 0x7ff;
+
+
+	// check if laying down zero, rc1, rc2, or bgcolor for the first selection
+
+	if (SELECTION1 == 0)
+	{
+		// zero //
+		vCOLOR = _mm256_setzero_si256();
+	}
+
+	if (SELECTION1 == 4)
+	{
+		// bg color //
+		vCOLOR = vBGCOLOR;
+	}
+
+
+
+	// check if using ALP
+	vALP_MASK = _mm256_setzero_si256();
+	if (PMODE_MMOD)
+	{
+		// put in alp as the alpha //
+		//vCOLOR |= vALP;
+		vCOLOR = _mm256_or_si256(vCOLOR, vALP);
+
+		// also set alp mask
+		vALP_MASK = _mm256_set1_epi32(0xff << 24);
+	}
+
+
+	// determine if read circuit 1 is going down
+	if (SELECTION1 == 1)
+	{
+		DISPFBX = DISPFB1;
+		DISPLAYX = DISPLAY1;
+	}
+	else if (SELECTION1 == 2)
+	{
+		// otherwise assume read circuit 2 //
+
+		DISPFBX = DISPFB2;
+		DISPLAYX = DISPLAY2;
+	}
+
+
+	DISPFBX_FBP = (DISPFBX >> 0) & 0x1ff;
+	DISPFBX_FBW = (DISPFBX >> 9) & 0x3f;
+	DISPFBX_DBX = (DISPFBX >> 32) & 0x7ff;
+	DISPFBX_DBY = (DISPFBX >> 43) & 0x7ff;
+
+	DISPLAYX_DH = (DISPLAYX >> 44) & 0x7ff;
+
+
+	draw_buffer_offset = DISPFBX_FBP << 11;
+
+	buf_ptr = &(_GPU->RAM32[draw_buffer_offset]);
+
+
+	draw_width = DISPFBX_FBW << 6;
+	draw_height = DISPLAYX_DH + 1;
+	start_x = DISPFBX_DBX;
+	start_y = DISPFBX_DBY;
+
+	buf_ptr32 = buf_ptr;
+	buf_ptr16 = (u16*)buf_ptr;
+
+	//cout << "\ndraw_buffer_offset=" << hex << draw_buffer_offset;
+	//cout << "\ndraw_width=" << hex << draw_width;
+	//cout << "\ndraw_height=" << hex << draw_height;
+	//cout << "\nstart_x=" << hex << start_x;
+	//cout << "\nstart_y=" << hex << start_y;
+
+	//cout << "\nSELECTION1=" << hex << SELECTION1 << " SELECTION2=" << SELECTION2;
+	//cout << " DISPFBX_FBP=" << DISPFBX_FBP << " DISPFBX_FBW=" << DISPFBX_FBW << " DISPLAYX_DH=" << DISPLAYX_DH;
+
+
+	draw_buffer_offset_2 = DISPFB2_FBP << 11;
+
+	buf_ptr_2 = &(_GPU->RAM32[draw_buffer_offset_2]);
+
+	draw_width_2 = DISPFB2_FBW << 6;
+	draw_height_2 = DISPLAY2_DH + 1;
+	start_x_2 = DISPFB2_DBX;
+	start_y_2 = DISPFB2_DBY;
+
+	buf_ptr32_2 = buf_ptr_2;
+	buf_ptr16_2 = (u16*)buf_ptr_2;
+
+
+	// draw height can only be a maximum of 1024
+	draw_height = ((draw_height > c_iScreen_MaxHeight) ? c_iFrameBuffer_DisplayHeight : draw_height);
+
+	// draw width can only be a maximum of 1024
+	draw_width = ((draw_width > c_iScreen_MaxWidth) ? c_iFrameBuffer_DisplayWidth : draw_width);
+
+
+#ifdef ENABLE_PIXELBUF_INTERLACING
+	// if set to read every line, then half draw height for now
+	// *todo* need to take into account whether interlaced or not
+	// comment this out to show correct screen at top for now
+	//if ( GPURegs0.SMODE2.FFMD ) draw_height >>= 1;
+	// check if this is set to read every line
+	if (SMODE2_FFMD && SMODE2_INTER)
+	{
+		// only draw half the draw height for now
+		draw_height >>= 1;
+
+		// set to read every line, so need to skip lines when writing to pixel buffer for interlacing
+		if ((lScanline & 1))
+		{
+			Index += draw_width;
+		}
+	}
+#endif
+
+
+	{
+
+
+#ifdef INLINE_DEBUG_DRAW_SCREEN
+		debug << " draw_width=" << dec << draw_width;
+		debug << " draw_height=" << dec << draw_height;
+		debug << " PixelFormat=" << dec << PixelFormat;
+#endif
+
+		// draw starting from correct position
+		//buf_ptr = buf_ptr [ start_x + ( start_y * draw_width ) ];
+
+		// testing
+		//start_x = 0;
+		//start_y = 0;
+
+
+			// pad on the bottom with zeros if needed for now
+		y = 0;
+		while (y < start_y)
+		{
+#ifdef _ENABLE_SSE41
+			for (x = 0; x < (draw_width - 7); x += 8)
+			{
+				//PixelBuffer [ Index++ ] = 0;
+				//_mm256_storeu_si256 ( (__m128i*) & PixelBuffer [ Index ], vZero );
+				_mm256_store_si256((__m256i*) & PixelBuffer[Index], vZero);
+				Index += 8;
+			}
+			for (; x < draw_width; x++)
+			{
+				PixelBuffer[Index++] = 0;
+			}
+#else
+			for (x = 0; x < draw_width; x++)
+			{
+				PixelBuffer[Index++] = 0;
+			}
+#endif
+
+			y++;
+		} // end while ( y < start_y )
+
+
+		vWidth = _mm256_set1_epi32(draw_width);
+
+
+		if (DISPFBX_PSM < 2)
+		{
+#ifdef INLINE_DEBUG_DRAW_SCREEN
+			debug << " PIXEL32";
+#endif
+
+			// 24/32-bit pixels in frame buffer //
+
+			//buf_ptr32 = & ( RAM32 [ GPURegs0.DISPFB2.FBP >> 4 ] );
+
+
+
+			// copy the pixels into pixel buffer
+			//for ( y = start_y + ( draw_height - 1 ); y >= start_y; y-- )
+			for (y = draw_height - 1; y >= start_y; y--)
+			{
+#ifdef _ENABLE_SSE41
+
+#ifdef ENABLE_CALC_FULL_PIX_ADDR
+				vY = _mm256_set1_epi32(y);
+#else
+				vY = _mm256_set1_epi32(CvtAddrPix32(0, y, draw_width));
+#endif
+				vX = _mm256_set1_epi32(start_x);
+				vX = _mm256_add_epi32(vX, vIdentity);
+				for (x = start_x; x < (draw_width - 7); x += 8)
+				{
+
+					// check if first selection is a single color or from a buffer
+					//if ( ( SELECTION1 == 1 ) || ( SELECTION1 == 2 ) )
+					//{
+
+					//Pixel32 = buf_ptr32 [ CvtAddrPix32( x, y, draw_width ) ];
+#ifdef ENABLE_CALC_FULL_PIX_ADDR
+					vOffset32 = CvtAddrPix32x4(vX, vY, vWidth, vEnable);
+#else
+					vOffset32 = _mm256_loadu_si256((__m256i*) & ulLUT_OffsetPix32x[x]);
+					vOffset32 = _mm256_add_epi32(vOffset32, vY);
+#endif
+					//vPixel32 = _mm256_set_epi32(
+					//	buf_ptr32[_mm256_extract_epi32(vOffset32, 3)],
+					//	buf_ptr32[_mm256_extract_epi32(vOffset32, 2)],
+					//	buf_ptr32[_mm256_extract_epi32(vOffset32, 1)],
+					//	buf_ptr32[_mm256_extract_epi32(vOffset32, 0)]
+					//);
+
+					vPixel32 = _mm256_i32gather_epi32((int const*)buf_ptr32, vOffset32, 4);
+
+
+					//}	// end if ( ( SELECTION1 == 1 ) || ( SELECTION1 == 2 ) )
+					//else
+					//{
+					//	// single-color
+					//	vPixel32 = vCOLOR;
+					//}
+
+
+#ifdef ENABLE_READ_CIRCUIT_BLEND
+
+				//if ( bEnableBlend )
+					if (SELECTION2)
+					{
+						// alpha value coming from alp or from source pixel ?
+						//if ( !PMODE_MMOD )
+						//{
+						//	// alpha is from source pixel
+						//	cout << "\nhps2x64: GPU: **TODO*** DRAW_SCREEN alpha from source pixel\n";
+						//}
+
+						// blend with bg color or read circuit 2 ??
+						//if ( PMODE_SLBG )
+						if (SELECTION2 == 4)
+						{
+							// blend with bg color
+							//cout << "\nhps2x64: GPU: **TODO*** DRAW_SCREEN blend with bg color\n";
+							vPixel32_2 = vBGCOLOR;
+						}
+						else
+						{
+							//cout << "\nblend with read circuit 2 (32-bit pixel)";
+
+							// blend with read circuit 2
+							vPixel32_2 = _mm256_set_epi32(
+								buf_ptr32_2[_mm256_extract_epi32(vOffset32, 3)],
+								buf_ptr32_2[_mm256_extract_epi32(vOffset32, 2)],
+								buf_ptr32_2[_mm256_extract_epi32(vOffset32, 1)],
+								buf_ptr32_2[_mm256_extract_epi32(vOffset32, 0)]
+							);
+
+						}
+
+						// get red and blue components first
+						vRed = _mm256_srli_epi16(_mm256_slli_epi16(vPixel32, 8), 8);
+						vRed_2 = _mm256_srli_epi16(_mm256_slli_epi16(vPixel32_2, 8), 8);
+
+						// bring in ALPHA
+						vPixel32 = _mm256_blendv_epi8(vPixel32, vALP, vALP_MASK);
+
+						// get the alpha value
+						vALP = _mm256_srli_epi32(vPixel32, 24);
+
+						// get the 255 minus alpha
+						vALPR = _mm256_sub_epi32(_mm256_set1_epi32(0xff), vALP);
+
+						// multiply alpha
+						vRed = _mm256_mullo_epi16(vRed, vALP);
+						vRed = _mm256_srli_epi16(vRed, 8);
+
+						vRed_2 = _mm256_mullo_epi16(vRed_2, vALPR);
+						vRed_2 = _mm256_srli_epi16(vRed_2, 8);
+
+						// add in the buffer with saturation
+						vRed = _mm256_add_epi16(vRed, vRed_2);
+						//vRed = _mm256_packus_epi16 ( vRed, vRed );
+						//vRed = _mm256_unpacklo_epi16 ( vRed, vRed );
+						//vRed = _mm256_srli_epi16 ( vRed, 8 );
+
+						// do the green and alpha next
+						vGreen = _mm256_srli_epi16(vPixel32, 8);
+						vGreen_2 = _mm256_srli_epi16(vPixel32_2, 8);
+
+						// multiply alpha
+						vGreen = _mm256_mullo_epi16(vGreen, vALP);
+						vGreen = _mm256_srli_epi16(vGreen, 8);
+
+						vGreen_2 = _mm256_mullo_epi16(vGreen_2, vALPR);
+						vGreen_2 = _mm256_srli_epi16(vGreen_2, 8);
+
+						// add in the buffer with saturation
+						vGreen = _mm256_add_epi16(vGreen, vGreen_2);
+						//vGreen = _mm256_packus_epi16 ( vGreen, vGreen );
+						//vGreen = _mm256_unpacklo_epi16 ( vGreen, vGreen );
+						vGreen = _mm256_slli_epi16(vGreen, 8);
+
+						// combine the components
+						vPixel32 = _mm256_or_si256(vRed, vGreen);
+					}
+
+#endif	// end #ifdef ENABLE_READ_CIRCUIT_BLEND
+
+
+
+					_mm256_storeu_si256((__m256i*) & PixelBuffer[Index], vPixel32);
+					//_mm256_store_si256 ( (__m128i*) & PixelBuffer [ Index ], vPixel32 );
+
+					vX = _mm256_add_epi32(vX, vXInc);
+
+					Index += 8;
+				}
+				for (; x < draw_width; x++)
+				{
+					PixelBuffer[Index++] = buf_ptr32[CvtAddrPix32(x, y, draw_width)];
+				}
+				x = 0;
+				while (x < (start_x - 7))
+				{
+					_mm256_storeu_si256((__m256i*) & PixelBuffer[Index], vZero);
+					//_mm256_store_si256 ( (__m128i*) & PixelBuffer [ Index ], vZero );
+					Index += 8;
+					x += 8;
+				}
+#else
+				//for ( int x = start_x; x < ( start_x + draw_width ); x++ )
+				for (x = start_x; x < draw_width; x++)
+				{
+					Pixel32 = buf_ptr32[CvtAddrPix32(x, y, draw_width)];
+
+					_GPU->PixelBuffer[Index++] = Pixel32;
+				}
+
+				// pad on the right with zeros if needed for now
+				x = 0;
+#endif
+				while (x < start_x)
+				{
+					_GPU->PixelBuffer[Index++] = 0;
+					x++;
+				}
+
+#ifdef ENABLE_PIXELBUF_INTERLACING	
+				// if reading every other line, only copy every other line to pixel buffer
+				if (SMODE2_FFMD && SMODE2_INTER)
+				{
+					Index += draw_width;
+				}
+#endif
+
+			}
+		}
+		else
+		{
+#ifdef INLINE_DEBUG_DRAW_SCREEN
+			debug << " PIXEL16";
+#endif
+			//cout << "\nPIXEL16";
+
+					// assume 16-bit pixels for frame buffer for now //
+
+
+
+					//for ( y = start_y + ( draw_height - 1 ); y >= start_y; y-- )
+			for (y = draw_height - 1; y >= start_y; y--)
+			{
+#ifdef _ENABLE_SSE41
+				//_DRAWBUFFER16
+
+#ifdef ENABLE_CALC_FULL_PIX_ADDR
+				vY = _mm256_set1_epi32(y);
+#else
+				switch (DISPFBX_PSM)
+				{
+				case 2:
+					vY = _mm256_set1_epi32(CvtAddrPix16(0, y, draw_width));
+					break;
+				case 0xa:
+					//cout << "\ny=" << dec << y;
+					vY = _mm256_set1_epi32(CvtAddrPix16S(0, y, draw_width));
+					break;
+				}
+#endif
+				vX = _mm256_set1_epi32(start_x);
+				vX = _mm256_add_epi32(vX, vIdentity);
+
+				for (x = start_x; x < (draw_width - 7); x += 8)
+				{
+
+					// check if first selection is a single color or from a buffer
+					//if ( ( SELECTION1 == 1 ) || ( SELECTION1 == 2 ) )
+					//{
+
+					switch (DISPFBX_PSM)
+					{
+					case 2:
+						//Pixel16 = buf_ptr16 [ CvtAddrPix16( x, y, draw_width ) ];
+#ifdef ENABLE_CALC_FULL_PIX_ADDR
+						vOffset32 = CvtAddrPix16x4(vX, vY, vWidth, vEnable);
+#else
+						vOffset32 = _mm256_loadu_si256((__m256i*) & ulLUT_OffsetPix16x[x]);
+						vOffset32 = _mm256_add_epi32(vOffset32, vY);
+#endif
+						break;
+
+					case 0xa:
+						//cout << "\nCASE0XA";
+												//Pixel16 = buf_ptr16 [ CvtAddrPix16S( x, y, draw_width ) ];
+#ifdef ENABLE_CALC_FULL_PIX_ADDR
+						vOffset32 = CvtAddrPix16Sx4(vX, vY, vWidth, vEnable);
+#else
+						vOffset32 = _mm256_loadu_si256((__m256i*) & ulLUT_OffsetPix16Sx[x]);
+						vOffset32 = _mm256_add_epi32(vOffset32, vY);
+#endif
+						break;
+					}
+
+					//Pixel32 = buf_ptr32 [ CvtAddrPix32( x, y, draw_width ) ];
+					//vOffset32 = CvtAddrPix32x4 ( vX, vY, vWidth, vEnable );
+					//vPixel32 = _mm256_set_epi32(
+					//	buf_ptr16[_mm256_extract_epi32(vOffset32, 3)],
+					//	buf_ptr16[_mm256_extract_epi32(vOffset32, 2)],
+					//	buf_ptr16[_mm256_extract_epi32(vOffset32, 1)],
+					//	buf_ptr16[_mm256_extract_epi32(vOffset32, 0)]
+					//);
+
+					vPixel32 = _mm256_i32gather_epi32 ( (int const*)buf_ptr16, vOffset32, 2 );
+
+									// convert to 32-bit pixel
+					vRed = _mm256_srli_epi32(_mm256_slli_epi32(vPixel32, 27), 24);
+					vGreen = _mm256_srli_epi32(_mm256_slli_epi32(_mm256_srli_epi32(vPixel32, 5), 27), 16);
+					vBlue = _mm256_srli_epi32(_mm256_slli_epi32(_mm256_srli_epi32(vPixel32, 10), 27), 8);
+					vAlpha = _mm256_slli_epi32(_mm256_srli_epi32(vPixel32, 15), 31);
+
+					vPixel32 = _mm256_or_si256(_mm256_or_si256(vRed, vGreen), _mm256_or_si256(vBlue, vAlpha));
+
+					// bring in ALPHA
+					//vPixel32 = _mm256_blendv_epi8( vPixel32, vALP, vALP_MASK );
+
+					//}	// end if ( ( SELECTION1 == 1 ) || ( SELECTION1 == 2 ) )
+
+
+#ifdef ENABLE_READ_CIRCUIT_BLEND
+
+					if (SELECTION2)
+					{
+						// alpha value coming from alp or from source pixel ?
+						//if ( !PMODE_MMOD )
+						//{
+						//	// alpha is from source pixel
+						//	cout << "\nhps2x64: GPU: **TODO*** DRAW_SCREEN alpha from source pixel\n";
+						//}
+
+						// blend with bg color or read circuit 2 ??
+						//if ( PMODE_SLBG )
+						if (SELECTION2 == 4)
+						{
+							// blend with bg color
+							//cout << "\nhps2x64: GPU: **TODO*** DRAW_SCREEN blend with bg color\n";
+							vPixel32_2 = vBGCOLOR;
+						}
+						else
+						{
+							//cout << "\nblend with read circuit 2 (32-bit pixel)";
+
+							if (DISPFB2_PSM < 2)
+							{
+								// 32-bit pixels //
+
+								// blend with read circuit 2
+								vPixel32_2 = _mm256_set_epi32(
+									buf_ptr32_2[_mm256_extract_epi32(vOffset32, 3)],
+									buf_ptr32_2[_mm256_extract_epi32(vOffset32, 2)],
+									buf_ptr32_2[_mm256_extract_epi32(vOffset32, 1)],
+									buf_ptr32_2[_mm256_extract_epi32(vOffset32, 0)]
+								);
+							}
+							else
+							{
+								// 16-bit pixels //
+
+								vPixel32_2 = _mm256_set_epi32(
+									buf_ptr16_2[_mm256_extract_epi32(vOffset32, 3)],
+									buf_ptr16_2[_mm256_extract_epi32(vOffset32, 2)],
+									buf_ptr16_2[_mm256_extract_epi32(vOffset32, 1)],
+									buf_ptr16_2[_mm256_extract_epi32(vOffset32, 0)]
+								);
+
+								vRed = _mm256_srli_epi32(_mm256_slli_epi32(vPixel32_2, 27), 24);
+								vGreen = _mm256_srli_epi32(_mm256_slli_epi32(_mm256_srli_epi32(vPixel32_2, 5), 27), 16);
+								vBlue = _mm256_srli_epi32(_mm256_slli_epi32(_mm256_srli_epi32(vPixel32_2, 10), 27), 8);
+								vAlpha = _mm256_slli_epi32(_mm256_srli_epi32(vPixel32_2, 15), 31);
+
+								vPixel32_2 = _mm256_or_si256(_mm256_or_si256(vRed, vGreen), _mm256_or_si256(vBlue, vAlpha));
+
+							}
+
+						}	// end if ( SELECTION2 == 4 ) else
+
+						// get red and blue components first
+						vRed = _mm256_srli_epi16(_mm256_slli_epi16(vPixel32, 8), 8);
+						vRed_2 = _mm256_srli_epi16(_mm256_slli_epi16(vPixel32_2, 8), 8);
+
+						// bring in ALPHA
+						vPixel32 = _mm256_blendv_epi8(vPixel32, vALP, vALP_MASK);
+
+						// get the alpha value
+						vALP = _mm256_srli_epi32(vPixel32, 24);
+
+						// get the 255 minus alpha
+						vALPR = _mm256_sub_epi32(_mm256_set1_epi32(0xff), vALP);
+
+						// multiply alpha
+						vRed = _mm256_mullo_epi16(vRed, vALP);
+						vRed = _mm256_srli_epi16(vRed, 8);
+
+						vRed_2 = _mm256_mullo_epi16(vRed_2, vALPR);
+						vRed_2 = _mm256_srli_epi16(vRed_2, 8);
+
+						// add in the buffer with saturation
+						vRed = _mm256_add_epi16(vRed, vRed_2);
+						//vRed = _mm256_packus_epi16 ( vRed, vRed );
+						//vRed = _mm256_unpacklo_epi16 ( vRed, vRed );
+						//vRed = _mm256_srli_epi16 ( vRed, 8 );
+
+						// do the green and alpha next
+						vGreen = _mm256_srli_epi16(vPixel32, 8);
+						vGreen_2 = _mm256_srli_epi16(vPixel32_2, 8);
+
+						// multiply alpha
+						vGreen = _mm256_mullo_epi16(vGreen, vALP);
+						vGreen = _mm256_srli_epi16(vGreen, 8);
+
+						vGreen_2 = _mm256_mullo_epi16(vGreen_2, vALPR);
+						vGreen_2 = _mm256_srli_epi16(vGreen_2, 8);
+
+						// add in the buffer with saturation
+						vGreen = _mm256_add_epi16(vGreen, vGreen_2);
+						//vGreen = _mm256_packus_epi16 ( vGreen, vGreen );
+						//vGreen = _mm256_unpacklo_epi16 ( vGreen, vGreen );
+						vGreen = _mm256_slli_epi16(vGreen, 8);
+
+						// combine the components
+						vPixel32 = _mm256_or_si256(vRed, vGreen);
+					}
+
+#endif	// end #ifdef ENABLE_READ_CIRCUIT_BLEND
+
+					//PixelBuffer [ Index++ ] = Pixel32;
+					// had a crash here when using the aligned version - needs testing
+					_mm256_storeu_si256((__m256i*) & PixelBuffer[Index], vPixel32);
+					//_mm256_store_si256 ( (__m128i*) & PixelBuffer [ Index ], vPixel32 );
+
+	//cout << "\nPixel=" << hex << PixelBuffer [ Index ];
+
+					vX = _mm256_add_epi32(vX, vXInc);
+
+					Index += 8;
+				}
+				for (; x < draw_width; x++)
+				{
+					PixelBuffer[Index++] = buf_ptr32[CvtAddrPix32(x, y, draw_width)];
+				}
+				x = 0;
+				while (x < (start_x - 7))
+				{
+					_mm256_storeu_si256((__m256i*) & PixelBuffer[Index], vZero);
+					//_mm256_store_si256 ( (__m128i*) & PixelBuffer [ Index ], vZero );
+					Index += 8;
+					x += 8;
+				}
+#else
+				//for ( x = start_x; x < ( start_x + draw_width ); x++ )
+				for (x = start_x; x < draw_width; x++)
+				{
+					switch (DISPFBX_PSM)
+					{
+					case 2:
+						Pixel16 = buf_ptr16[CvtAddrPix16(x, y, draw_width)];
+						break;
+
+					case 0xa:
+						Pixel16 = buf_ptr16[CvtAddrPix16S(x, y, draw_width)];
+						break;
+					}
+
+					Pixel32 = ((Pixel16 & 0x1f) << 3) | (((Pixel16 >> 5) & 0x1f) << (8 + 3)) | (((Pixel16 >> 10) & 0x1f) << (16 + 3));
+					_GPU->PixelBuffer[Index++] = Pixel32;
+				}
+
+				// pad on the right with zeros if needed for now
+				x = 0;
+#endif	// end #ifdef _ENABLE_SSE41
+
+				while (x < start_x)
+				{
+					_GPU->PixelBuffer[Index++] = 0;
+					x++;
+				}
+
+#ifdef ENABLE_PIXELBUF_INTERLACING	
+				// if reading every other line, only copy every other line to pixel buffer
+				if (SMODE2_FFMD && SMODE2_INTER)
+				{
+					Index += draw_width;
+				}
+#endif
+
+			}
+		}
+
+	}
+
+
+#ifdef ENABLE_PIXELBUF_INTERLACING	
+	// for now, if interlaced, need to put the draw_height back
+	if (SMODE2_FFMD && SMODE2_INTER)
+	{
+		// only draw half the draw height for now
+		draw_height <<= 1;
+
+	}
+#endif
+
+
+
+	// *** output of pixel buffer to screen *** //
+
+	// make this the current window we are drawing to
+	DisplayOutput_Window->OpenGL_MakeCurrentWindow();
+
+
+	//glPixelZoom ( (float)MainProgramWindow_Width / (float)VisibleArea_Width, (float)MainProgramWindow_Height / (float)VisibleArea_Height );
+	glPixelZoom((float)MainProgramWindow_Width / (float)draw_width, (float)MainProgramWindow_Height / (float)draw_height);
+	//glDrawPixels ( VisibleArea_Width, VisibleArea_Height, GL_RGBA, GL_UNSIGNED_BYTE, (const GLvoid*) PixelBuffer );
+	glDrawPixels(draw_width, draw_height, GL_RGBA, GL_UNSIGNED_BYTE, (const GLvoid*)PixelBuffer);
+
+	// update screen
+	DisplayOutput_Window->FlipScreen();
+
+	// this is no longer the current window we are drawing to
+	DisplayOutput_Window->OpenGL_ReleaseWindow();
+
+}
+
+#endif
+
+
+
 template<const long DISPFBX_PSM,const long SMODE2_FFMD,const long SMODE2_INTER>
 static void Draw_Screen_th ( u64* p_inputbuffer, u32 ulThreadNum, u32 SELECTION1, u32 SELECTION2 )
 {
 	static const int c_iVisibleArea_StartY [] = { c_iVisibleArea_StartY_Pixel_NTSC, c_iVisibleArea_StartY_Pixel_PAL };
 	static const int c_iVisibleArea_EndY [] = { c_iVisibleArea_EndY_Pixel_NTSC, c_iVisibleArea_EndY_Pixel_PAL };
 	
-	
+#ifdef _ENABLE_AVX2
+	if (iDrawVectorSize == 8)
+	{
+		Draw_Screen_thx8<DISPFBX_PSM, SMODE2_FFMD, SMODE2_INTER>(p_inputbuffer, ulThreadNum, SELECTION1, SELECTION2);
+		return;
+	}
+#endif
+
+
 #ifdef INLINE_DEBUG_DRAW_SCREEN
 	debug << "\r\n***Frame Draw***";
 	debug << " PMode=" << hex << GPURegs0.PMODE;
@@ -20921,7 +28794,7 @@ static void Draw_Screen_th ( u64* p_inputbuffer, u32 ulThreadNum, u32 SELECTION1
 
 #ifdef _ENABLE_SSE41
 	__m128i vZero;
-	vZero = _mm_xor_si128( vZero, vZero );
+	vZero = _mm_setzero_si128 ();
 	
 	__m128i vIdentity;
 	vIdentity = _mm_set_epi32 (3, 2, 1, 0);
@@ -21048,7 +28921,8 @@ static void Draw_Screen_th ( u64* p_inputbuffer, u32 ulThreadNum, u32 SELECTION1
 	if ( PMODE_MMOD )
 	{
 		// put in alp as the alpha //
-		vCOLOR |= vALP;
+		//vCOLOR |= vALP;
+		vCOLOR = _mm_or_si128(vCOLOR, vALP);
 
 		// also set alp mask
 		vALP_MASK = _mm_set1_epi32 ( 0xff << 24 );
@@ -21735,25 +29609,6 @@ static void Draw_Screen_th ( u64* p_inputbuffer, u32 ulThreadNum, u32 SELECTION1
 	DisplayOutput_Window->OpenGL_MakeCurrentWindow ();
 	
 
-#ifdef ALLOW_OPENCL_PS2_DRAWSCREEN
-	if ( _GPU->bEnable_OpenCL )
-	{
-
-#ifdef ENABLE_OPENCL_ACTIVE_RENDER
-
-		glBlitFramebuffer( 0, 0, draw_width, draw_height, 0, 0, MainProgramWindow_Width, MainProgramWindow_Height, GL_COLOR_BUFFER_BIT, GL_NEAREST );
-
-		// update screen
-		DisplayOutput_Window->FlipScreen ();
-
-#endif
-
-		// this is no longer the current window we are drawing to
-		DisplayOutput_Window->OpenGL_ReleaseWindow ();
-	}
-	else
-#endif
-	{
 	//glPixelZoom ( (float)MainProgramWindow_Width / (float)VisibleArea_Width, (float)MainProgramWindow_Height / (float)VisibleArea_Height );
 	glPixelZoom ( (float)MainProgramWindow_Width / (float)draw_width, (float)MainProgramWindow_Height / (float)draw_height );
 	//glDrawPixels ( VisibleArea_Width, VisibleArea_Height, GL_RGBA, GL_UNSIGNED_BYTE, (const GLvoid*) PixelBuffer );
@@ -21764,8 +29619,6 @@ static void Draw_Screen_th ( u64* p_inputbuffer, u32 ulThreadNum, u32 SELECTION1
 
 	// this is no longer the current window we are drawing to
 	DisplayOutput_Window->OpenGL_ReleaseWindow ();
-	}
-
 	
 }
 
@@ -21796,11 +29649,20 @@ static void Select_DrawScreen_t ( u64* x_inputbuffer, u32 ulThreadNum )
 	u64 DISPFB1, DISPFB2;
 	u32 DISPFB1_FBW;
 	u32 DISPLAY1_DH;
-	u32 DISPFB1_PSM, DISPFB2_PSM, DISPFBX_PSM;
+	u32 DISPFB1_PSM, DISPFB2_PSM;
+	
+	// ***todo*** some issues with this not being initialized
+	// will zero for now, but remove the initial value and test later
+	u32 DISPFBX_PSM = 0;
+
 	u32 SMODE2_FFMD, SMODE2_INTER;
 	u32 Combine;
 
-	u32 SELECTION1, SELECTION2;
+	// ***todo*** some issues with this not being initialized
+	// will zero for now, but remove the initial value and test later
+	u32 SELECTION1 = 0;
+
+	u32 SELECTION2;
 	
 	//u64 arrTemp [ 16 ];
 	//u64 p_inputbuffer [ 16 ];
@@ -22140,6 +30002,14 @@ static void WriteInternalCLUT_t ( u64* p_inputbuffer )
 				
 				// 512-entry 16-bit pixels
 				_GPU->InternalCLUT [ ( CLUTOffset + lIndex ) & 511 ] = bgr;
+
+#ifdef ENABLE_CLUT_PRECALC
+				_GPU->InternalCLUT32[(CLUTOffset + lIndex) & 256] = _GPU->InternalCLUT[(CLUTOffset + lIndex) & 256] | (_GPU->InternalCLUT[((CLUTOffset + lIndex) & 256) + 256] << 16);
+
+				// convert to 32-bit
+				bgr32 = ((bgr & 0x1f) << 3) | ((bgr & 0x3e0) << 6) | ((bgr & 0x7c0) << 9) | ((bgr & 0x8000) << 16);
+				_GPU->InternalCLUT16[(CLUTOffset + lIndex) & 511] = bgr32;
+#endif
 			}
 
 		}
@@ -22170,6 +30040,17 @@ static void WriteInternalCLUT_t ( u64* p_inputbuffer )
 				
 				// the upper part of buffer gets the high bits
 				_GPU->InternalCLUT [ ( CLUTOffset + lIndex + 256 ) & 511 ] = ( bgr >> 16 );
+
+#ifdef ENABLE_CLUT_PRECALC
+			_GPU->InternalCLUT32[(CLUTOffset + lIndex) & 256] = bgr;
+
+			// convert to 32-bit
+			bgr32 = ((bgr & 0x1f) << 3) | ((bgr & 0x3e0) << 6) | ((bgr & 0x7c0) << 9) | ((bgr & 0x8000) << 16);
+			_GPU->InternalCLUT16[(CLUTOffset + lIndex) & 511] = bgr32;
+			bgr = bgr >> 16;
+			bgr32 = ((bgr & 0x1f) << 3) | ((bgr & 0x3e0) << 6) | ((bgr & 0x7c0) << 9) | ((bgr & 0x8000) << 16);
+			_GPU->InternalCLUT16[(CLUTOffset + lIndex + 256) & 511] = bgr32;
+#endif
 			}
 		}
 	}
@@ -22206,6 +30087,14 @@ static void WriteInternalCLUT_t ( u64* p_inputbuffer )
 			
 			// 512-entry 16-bit pixels
 			_GPU->InternalCLUT [ ( CLUTOffset + lIndex ) & 511 ] = bgr;
+
+#ifdef ENABLE_CLUT_PRECALC
+			_GPU->InternalCLUT32[(CLUTOffset + lIndex) & 256] = _GPU->InternalCLUT[(CLUTOffset + lIndex) & 256] | (_GPU->InternalCLUT[((CLUTOffset + lIndex) & 256) + 256] << 16);
+
+			// convert to 32-bit
+			bgr32 = ((bgr & 0x1f) << 3) | ((bgr & 0x3e0) << 6) | ((bgr & 0x7c0) << 9) | ((bgr & 0x8000) << 16);
+			_GPU->InternalCLUT16[(CLUTOffset + lIndex) & 511] = bgr32;
+#endif
 		}
 	}
 

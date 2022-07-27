@@ -70,6 +70,10 @@ using namespace std;
 #define ENABLE_R5900_ICACHE
 
 
+// interrupt testing
+//#define VERBOSE_MULTIPLE_INT_CAUSE
+
+
 // this one goes to cout and is good for bug reports
 #define INLINE_DEBUG_COUT
 
@@ -2682,7 +2686,9 @@ void Cpu::ProcessAsynchronousInterrupt ()
 	// debugging - check for multiple interrupt reasons
 	if ( ( CPR0.Regs [ 12 ] & CPR0.Regs [ 13 ] & 0xc00 ) == 0xc00 )
 	{
+		cout << "\n******************************************";
 		cout << "\nhps2x64: R5900: multiple interrupt causes.\n";
+		cout << "********************************************\n";
 	}
 #endif
 	

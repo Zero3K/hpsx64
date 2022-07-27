@@ -46,6 +46,9 @@ using namespace Playstation2;
 
 #define ENABLE_FDEC_ON_BCLR
 
+// just transfer out 8 qwords at a time
+#define USE_FIFO_OUT_SIZE_FOR_TRANSFER
+
 
 
 #ifdef _DEBUG_VERSION_
@@ -803,12 +806,19 @@ u32 IPU::DMA_ReadBlock ( u64* Data, u32 QuadwordCount )
 
 	u64* OutputData;
 	
-	
+#ifdef USE_FIFO_OUT_SIZE_FOR_TRANSFER
 	// check if the amount to read is greater than amount of data in output fifo
 	if ( QuadwordCount > _IPU->FifoOut_Size )
 	{
 		QuadwordCount = _IPU->FifoOut_Size;
 	}
+#else
+	// transfer all the data to be output at once
+	if ( QuadwordCount > decoder->ipu0_data )
+	{
+		QuadwordCount = decoder->ipu0_data;
+	}
+#endif
 	
 	// get a pointer into data to read
 	OutputData = decoder->GetIpuDataPtr();
@@ -1192,7 +1202,9 @@ u64 IPU::PeekBE ( u64 iBits, u32 uBitPosition )
 	debug << " uBitPosition=" << dec << uBitPosition;
 #endif
 
-	u64 uResult64;
+	// ***todo*** uninitialized variable issue - will research
+	u64 uResult64 = 0;
+
 	//u32 uBitsSkip;
 	//s32 sBitsRemaining;
 	u32 BytePosition;
@@ -1550,6 +1562,18 @@ void IPU::Update_IFC ()
 		
 		// request a transfer from DMA channel#4 (intoIPU)
 		//Dma::_DMA->Transfer ( 4 );
+
+		// ***testing***
+		// check if dma channel#4 is active
+		if ( !Dma::_DMA->pRegData [ 4 ]->CHCR.STR )
+		{
+			//cout << "\nhps2x64: IPU: Data requested while DMA#4 IPU-IN is not started.\n";
+
+#ifndef DISABLE_INTERRUPTS
+				// trigger interrupt
+				SetInterrupt ();
+#endif
+		}
 		
 		// input fifo is 8 QWs
 		// continue what we were doing after data has transferred
@@ -2083,7 +2107,16 @@ void IPU::Write ( u32 Address, u64 Data, u64 Mask )
 
 #ifdef VERBOSE_IPU_IDEC
 	cout << "\nIPUCMD: IDEC";
-	cout << " Cycle#" << dec << *_DebugCycleCount;
+	//cout << " PCT=" << _IPU->Regs.CTRL.PCT;
+	cout << " MP1=" << _IPU->Regs.CTRL.MP1;
+	cout << " QST=" << _IPU->Regs.CTRL.QST;
+	cout << " IVF=" << _IPU->Regs.CTRL.IVF;
+	cout << " AS=" << _IPU->Regs.CTRL.AS;
+	cout << " IDP=" << _IPU->Regs.CTRL.IDP;
+	//cout << " DCR=" << _IPU->Regs.CTRL.DCR;
+	//cout << " DT=" << _IPU->Regs.CTRL.DT;
+	//cout << " MBI=" << _IPU->Regs.CTRL.MBI;
+	//cout << " Cycle#" << dec << *_DebugCycleCount;
 #endif
 
 					// the max value for FB is 32 for this command
@@ -2143,7 +2176,16 @@ void IPU::Write ( u32 Address, u64 Data, u64 Mask )
 
 #ifdef VERBOSE_IPU_BDEC
 	cout << "\nIPUCMD: BDEC";
-	cout << " Cycle#" << dec << *_DebugCycleCount;
+	cout << " PCT=" << _IPU->Regs.CTRL.PCT;
+	cout << " MP1=" << _IPU->Regs.CTRL.MP1;
+	cout << " QST=" << _IPU->Regs.CTRL.QST;
+	cout << " IVF=" << _IPU->Regs.CTRL.IVF;
+	cout << " AS=" << _IPU->Regs.CTRL.AS;
+	cout << " IDP=" << _IPU->Regs.CTRL.IDP;
+	cout << " DCR=" << _IPU->CMD_Write.DCR;
+	cout << " DT=" << _IPU->CMD_Write.DT;
+	cout << " MBI=" << _IPU->CMD_Write.MBI;
+	//cout << " Cycle#" << dec << *_DebugCycleCount;
 #endif
 
 					// the max value for FB is 32 for this command
@@ -2157,8 +2199,8 @@ void IPU::Write ( u32 Address, u64 Data, u64 Mask )
 					_IPU->Set_Busy ();
 					
 					// ripped from pcsx2
-					//decoder->coding_type			= I_TYPE;
-					decoder->coding_type		= _IPU->Regs.CTRL.PCT;
+					decoder->coding_type			= I_TYPE;
+					//decoder->coding_type		= _IPU->Regs.CTRL.PCT;
 					decoder->mpeg1				= _IPU->Regs.CTRL.MP1;
 					decoder->q_scale_type		= _IPU->Regs.CTRL.QST;
 					decoder->intra_vlc_format	= _IPU->Regs.CTRL.IVF;
@@ -2175,8 +2217,8 @@ void IPU::Write ( u32 Address, u64 Data, u64 Mask )
 
 					//memzero_sse_a(decoder->mb8);
 					//memzero_sse_a(decoder->mb16);
-					//memset ( decoder->mb8.b, 0, sizeof( decoder->mb8 ) );
-					//memset ( decoder->mb16.b, 0, sizeof( decoder->mb16 ) );
+					memset ( decoder->mb8.b, 0, sizeof( decoder->mb8 ) );
+					memset ( decoder->mb16.b, 0, sizeof( decoder->mb16 ) );
 					
 					// init decoding states
 					//ipu_cmd.pos [ 0 ] = 0;
@@ -2717,9 +2759,9 @@ u32 IPU::CSC ( u32 YCbCr )
 		for ( ix = 0; ix < 16; ix++ )
 		{
 			// get y,cb,cr
-			Y = mb8.Y [ iy ] [ ix ];
-			Cb = mb8.Cb [ iy >> 1 ] [ ix >> 1 ];
-			Cr = mb8.Cr [ iy >> 1 ] [ ix >> 1 ];
+			Y = (u32) mb8.Y [ iy ] [ ix ];
+			Cb = (s32) mb8.Cb [ iy >> 1 ] [ ix >> 1 ];
+			Cr = (s32) mb8.Cr [ iy >> 1 ] [ ix >> 1 ];
 			
 			// remove bias of 128 from Cr,Cb
 			Cr -= 128;
@@ -2739,6 +2781,8 @@ u32 IPU::CSC ( u32 YCbCr )
 			
 			// removed bias of 16 from Y
 			Y -= 16;
+			//Y = std::max( 0, Y );
+			Y = ( Y < 0 ) ? 0 : Y;
 			
 			// multiply by coefficient
 			Y2 = 0x095 * Y;
@@ -2953,7 +2997,8 @@ s32 SBITS ( unsigned long Bits )
 	u32 uBitPosition;
 	
 	uBitPosition = IPU::_IPU->BitPosition;
-	
+
+	/*	
 #ifdef USE_PEEK_LE
 	Result = IPU::EndianSwap32 ( IPU::_IPU->Peek ( 32, uBitPosition & ~7 ) );
 #else
@@ -2962,6 +3007,12 @@ s32 SBITS ( unsigned long Bits )
 
 	Result <<= ( uBitPosition & 7 );
 	Result >>= ( 32 - Bits );
+	*/
+
+	Result = UBITS( Bits );
+	Result <<= ( 32 - Bits );
+	Result >>= ( 32 - Bits );
+
 	return Result;
 }
 

@@ -19,6 +19,8 @@
 #ifndef _GNUASMUTILITY_X64_H_
 #define _GNUASMUTILITY_X64_H_
 
+#define GCC_OR_CLANG_COMPILER (defined(__GNUC__) || defined(__clang__))
+
 namespace x64Asm
 {
 
@@ -26,7 +28,8 @@ namespace x64Asm
 	{
 		// use these for modifying variables that are thread sensitive
 		
-		
+#if GCC_OR_CLANG_COMPILER
+
 		inline unsigned long POPCNT ( long Op1 )
 		{
 			unsigned long ReturnValue;
@@ -90,9 +93,51 @@ namespace x64Asm
 							//: "0"	// clobbered register is same as output, so don't specify
 							);
 		}
-	}
 
-}
+#else
+
+		inline unsigned long POPCNT(long Op1)
+		{
+			unsigned long ReturnValue;
+			ReturnValue = _mm_popcnt_u32(Op1);
+			return ReturnValue;
+		}
+
+		//inline unsigned long BSR(long Op1)
+		//{
+		//	unsigned long ReturnValue = 0;
+		//	return ReturnValue;
+		//}
+
+		/////////////////////////////////////////////
+		// saturating decrement
+		//inline long sdec32(long Op1)
+		//{
+		//	return Op1;
+		//}
+
+		//////////////////////////////////////////////////
+		// exchange
+		static inline void Exchange32(unsigned long& Value, unsigned long& Op2)
+		{
+			_InterlockedExchange(&Value, Op2);
+		}
+
+		static inline void Exchange32(signed long& Value, signed long& Op2)
+		{
+			_InterlockedExchange(&Value, Op2);
+		}
+
+		static inline void Exchange64(long long& Value , long long& Op2)
+		{
+			_InterlockedExchange64(&Value, Op2);
+		}
+
+#endif
+
+	}	// end namespace Utilities
+
+}	// end namespace x64Asm
 
 #endif
 

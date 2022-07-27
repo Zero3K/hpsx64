@@ -1270,6 +1270,10 @@ cout << " EndAddress=" << hex << NextPC;
 		// also make sure interrupts are enabled
 		if ( Status.isExternalInterrupt )
 		{
+			Status.isExternalInterrupt >>= 1;
+
+			if ( !Status.isExternalInterrupt )
+			{
 			
 			///////////////////////
 			// *** IMPORTANT *** /////////////////////////////////////////////////////////////////////
@@ -1325,7 +1329,10 @@ cout << " EndAddress=" << hex << NextPC;
 
 					return;
 				}
-			}
+
+			}	// end if ( ( ( Bus->Read ( NextPC ) >> 24 ) & 0xfe ) != 0x4a )
+
+			}	// end if ( !Status.isExternalInterrupt )
 			
 		}
 		

@@ -8,7 +8,7 @@ using namespace R3000A::Instruction;
 
 bool Lookup::c_bObjectInitialized = false;
 
-u8 Lookup::LookupTable [ c_iLookupTable_Size ];
+alignas(32) u8 Lookup::LookupTable [ c_iLookupTable_Size ];
 
 
 // in format: instruction name, opcode, rs, funct, rt

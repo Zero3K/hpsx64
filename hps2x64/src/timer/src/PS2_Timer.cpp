@@ -953,7 +953,14 @@ void Timer::UpdateTimer ()
 	// note: timer should be updated before reading value/mode. Should also be updated periodically to maintain a good speed. per scanline or per frame is probably good.
 
 	//pt = TimerPtrs [ TIMERNUMBER ];
-	
+
+	// get the value you started at for timer
+	lInitialValue = StartValue;
+
+	// get the current cycle //
+	lCurrentCycle = *_DebugCycleCount;
+
+
 	// if timer is not enabled or otherwise frozen then do not count
 	if ( !MODE.CounterEnable )
 	{
@@ -966,11 +973,6 @@ void Timer::UpdateTimer ()
 		return;
 	}
 	
-	// get the value you started at for timer
-	lInitialValue = StartValue;
-
-	// get the current cycle //
-	lCurrentCycle = *_DebugCycleCount;
 	
 	// if in free run mode, or this is timer 2, then can calculate like free run
 	if ( !MODE.Gate )

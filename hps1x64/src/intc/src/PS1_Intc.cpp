@@ -19,6 +19,11 @@
 
 #include "PS1_Intc.h"
 
+
+// testing
+#include "PS1_Dma.h"
+
+
 using namespace Playstation1;
 
 
@@ -39,7 +44,7 @@ using namespace Playstation1;
 
 /*
 #define INLINE_DEBUG_WRITE
-#define INLINE_DEBUG_READ
+//#define INLINE_DEBUG_READ
 
 #define INLINE_DEBUG_UPDATE
 */
@@ -314,7 +319,34 @@ void Intc::UpdateInts ()
 	
 	// master -> stat first
 	//_INTC->I_STAT_Reg.Value |= _INTC->uiIntcMaster;
-	
+
+
+	// check if dma interrupt is cleared
+	/*
+	if ( !( _INTC->I_STAT_Reg.Value & 0x8 ) )
+	{
+		// check if dma is interrupting
+		if ( Playstation1::Dma::_DMA->DMARegs0.ICR.Value & 0x80000000 )
+		{
+#ifdef INLINE_DEBUG_UPDATE
+	debug << "\r\n***PS1 INTC DMA BIT CLEAR WITH DMA INTERRUPTING***";
+	debug << " ICR=" << hex << Playstation1::Dma::_DMA->DMARegs0.ICR.Value;
+	//debug << " ISTAT=" << hex << _INTC->I_STAT_Reg.Value;
+	//debug << " IMASK=" << hex << _INTC->I_MASK_Reg.Value;
+#endif
+
+			// shouldn't happen??
+			cout << "\n*************************************************************************";
+			cout << "\nhps1x64: ALERT: INTC PS1 DMA bit is clear while PS1 DMA is interrupting.\n";
+			cout << "*************************************************************************\n";
+
+			// put the bit back in
+			_INTC->I_STAT_Reg.Value |= 0x8;
+		}
+	}
+	*/
+
+
 	// if interrupts are still set, then set them back when cleared
 	if ( ( _INTC->I_STAT_Reg.Value & _INTC->I_MASK_Reg.Value )
 #ifdef PS2_COMPILE
@@ -364,6 +396,9 @@ void Intc::UpdateInts ()
 		*_ProcStatus &= ~( 1 << 20 );
 	}
 	*/
+
+
+
 	
 #ifdef PS2_COMPILE
 #ifdef ENABLE_SBUS_INT

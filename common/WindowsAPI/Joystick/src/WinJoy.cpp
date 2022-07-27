@@ -2,6 +2,9 @@
 
 #include "WinJoy.h"
 
+#pragma comment(lib, "winmm")
+
+
 using namespace WinApi;
 
 

@@ -40,6 +40,8 @@
 
 #include "PS2_IPU.h"
 
+#include <emmintrin.h>
+
 
 using namespace Playstation2;
 
@@ -167,8 +169,8 @@ int get_macroblock_modes()
 			else if (decoder->frame_pred_frame_dct)
 			{
 				// commenting this out since it does not look like it should return this in the return value ??
-				//if (macroblock_modes & MACROBLOCK_MOTION_FORWARD)
-				//	macroblock_modes |= MC_FRAME;
+				if (macroblock_modes & MACROBLOCK_MOTION_FORWARD)
+					macroblock_modes |= MC_FRAME;
 
 				// the length is supposed to go into upper 16-bits ??
 				macroblock_modes |= ( ( (u32) tab->len ) << 16 );
@@ -242,7 +244,7 @@ int get_macroblock_modes()
 				/* if (! (macroblock_modes & MACROBLOCK_INTRA)) */
 				
 				// commenting this out since it does not look like it should be there for ps2?
-				//macroblock_modes |= MC_FRAME;
+				macroblock_modes |= MC_FRAME;
 				
 #ifdef INLINE_DEBUG_IPU
 	IPU::debug << " Output=" << hex << (macroblock_modes | (tab->len << 16));

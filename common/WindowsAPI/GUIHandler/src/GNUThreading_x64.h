@@ -19,31 +19,33 @@
 #ifndef _GNUTHREADING_X64_H_
 #define _GNUTHREADING_X64_H_
 
+
+#define GCC_OR_CLANG_COMPILER (defined(__GNUC__) || defined(__clang__))
+
+
+#include <intrin.h>
+
+
 namespace x64ThreadSafe
 {
 
 	namespace Utilities
 	{
 		// use these for modifying variables that are thread sensitive
-		
+
+#if GCC_OR_CLANG_COMPILER
+
 		inline void PAUSE ()
 		{
-			asm volatile ( "pause\n"
-							//: "+m" (Value)	// output to register a
-							//: "q" (Op2)	// input registers
-							//: "eax"	// clobbered register is same as output, so don't specify
-							);
+			asm volatile ( "pause\n" );
 		}
 		
 		inline void Store_Fence ()
 		{
-			asm volatile ( "sfence\n"
-							//: "+m" (Value)	// output to register a
-							//: "q" (Op2)	// input registers
-							//: "eax"	// clobbered register is same as output, so don't specify
-							);
+			asm volatile ( "sfence\n" );
 		}
 		
+		/*
 		inline void Lock_OR32 ( long& Value, long Op2 )
 		{
 			asm volatile ( "lock or %1, %0\n"
@@ -116,6 +118,7 @@ namespace x64ThreadSafe
 							//: "eax"	// clobbered register is same as output, so don't specify
 							);
 		}
+		*/
 		
 		inline long Lock_Exchange32 ( long& Value, long Op2 )
 		{
@@ -164,10 +167,85 @@ namespace x64ThreadSafe
 							);
 			return Out;
 		}
-	
-	}
 
-}
+#else
+
+
+		inline void PAUSE()
+		{
+		}
+
+		inline void Store_Fence()
+		{
+		}
+
+		inline void Lock_OR32(long& Value, long Op2)
+		{
+		}
+
+		inline void Lock_OR32_Imm(long& Value, const long Op2)
+		{
+		}
+
+		inline void Lock_OR64(long long& Value, long long Op2)
+		{
+		}
+
+		// you can only do this with a 32-bit constant
+		inline void Lock_OR64_Imm(long long& Value, const long Op2)
+		{
+		}
+
+		inline void Lock_AND32(long& Value, long Op2)
+		{
+		}
+
+		inline void Lock_XOR32(long& Value, long Op2)
+		{
+		}
+
+		inline void Lock_BitSet32(long& Value, const int BitToSet)
+		{
+		}
+
+		inline void Lock_BitSet64(long long& Value, const int BitToSet)
+		{
+		}
+
+		inline long Lock_Exchange32(long& Value, long Op2)
+		{
+			long Out;
+			Out = _InterlockedExchange(&Value, Op2);
+			return Out;
+		}
+
+		inline long Lock_ExchangeAdd32(long& Value, long Op2)
+		{
+			long Out;
+			Out = _InterlockedExchangeAdd(&Value, Op2);
+			return Out;
+		}
+
+		inline long long Lock_Exchange64(long long& Value, long long Op2)
+		{
+			long long Out;
+			Out = _InterlockedExchange64(&Value, Op2);
+			return Out;
+		}
+
+		inline long long Lock_ExchangeAdd64(long long& Value, long long Op2)
+		{
+			long long Out;
+			Out = _InterlockedExchangeAdd64(&Value, Op2);
+			return Out;
+		}
+
+
+#endif
+	
+	}	// end namespace Utilities
+
+}	// end namespace x64ThreadSafe
 
 #endif
 

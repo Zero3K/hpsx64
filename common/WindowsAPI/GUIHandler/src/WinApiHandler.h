@@ -31,9 +31,9 @@
 #include <windowsx.h>
 #include <CommCtrl.h>
 
-//#include <gl/gl.h>
+#include <gl/gl.h>
 // Include GLEW
-#include <GL/glew.h>
+//#include <GL/glew.h>
 
 
 #include <string>
@@ -44,7 +44,9 @@
 #include "Debug.h"
 
 
+#include "json.hpp"
 
+using json = nlohmann::ordered_json;
 
 
 
@@ -92,14 +94,16 @@ using namespace std;
 			u32 MenuBarId;
 			u32 ParentId;
 		
-			u32 Id;
+			unsigned long long Id;
 			string Caption;
 			Function CallbackFunc;
 			
 			HMENU Menu;
 			
-			
-			MenuBarItem* AddItem ( string _Caption, Function _CallbackFunc = NULL, u32 _Id = NULL );
+			// _Caption - what the text of the menu item should show
+			// sKey - what unique text should be used to refer back to the menu item later (not always same as caption)
+			// _CallbackFunc - function to call when menu item is clicked, or else NULL
+			MenuBarItem* AddItem ( string _Caption, string sKey, Function _CallbackFunc = NULL, u32 _Id = NULL );
 			
 			// a menu it different from a menu bar item because it presents another menu with more options to click on
 			MenuBarItem* AddMenu ( string _Caption, u32 _Id = NULL );
@@ -201,7 +205,7 @@ using namespace std;
 		{
 			HWND hwndParent;
 			HWND hwndCtrl;
-			int id;
+			long long id;
 			unsigned int message;
 			EventFunction ef;
 			
@@ -211,7 +215,9 @@ using namespace std;
 		
 		// *** TODO *** Don't forget to delete the events associated with windows when destroying the window
 		static vector<Event*> EventList;
-		
+
+		void CreateMenuFromJson( json jsnMenu, const char* sLanguage );
+
 		static void OutputAllDisplayModes ();
 
 		// this will add an event for a window/control
@@ -220,7 +226,7 @@ using namespace std;
 		
 		// this will remove all events for an identifier
 		// returns true on success and false otherwise
-		static bool RemoveEvent ( HWND hParentWindow, int id, unsigned int message );
+		static bool RemoveEvent ( HWND hParentWindow, long long id, unsigned int message );
 	
 		
 		HWND CreateControl ( const char* ClassName, int x, int y, int width, int height, const char* Caption, int flags, HMENU hMenu = NULL );
@@ -329,11 +335,9 @@ using namespace std;
 
 
 		// *** Dialog Boxes *** //
-		string ShowFileOpenDialog_BIOS ();
-		string ShowFileOpenDialog_Image ();
-		string ShowFileOpenDialog_Savestate ();
+		string ShowFileOpenDialog ();
 		vector<string> ShowFileOpenDialogMultiSelect ();
-		string ShowFileSaveDialog_Savestate ();
+		string ShowFileSaveDialog ();
 
 
 
@@ -362,6 +366,7 @@ using namespace std;
 		// *** Window Functions *** //
 		
 		// modifier is CTRL key as default
+		// modifier: 1 - alt, 2 - control, 4 - shift
 		void AddShortcutKey ( Function CallbackFunc, unsigned int key, unsigned int modifier = 0 );
 
 		
@@ -549,22 +554,22 @@ using namespace std;
 		Window* Parent;
 
 		HWND hWnd;
-		int id;
+		long long id;
 		int x, y, width, height;
 		char caption [ 256 ];
 		
 	public:
 		
 		// this will create a command button on the window
-		HWND Create_CmdButton ( Window* ParentWindow, int x, int y, int width, int height, const char* Caption = NULL, int id = NULL, int flags = DefaultFlags_CmdButton );
+		HWND Create_CmdButton ( Window* ParentWindow, int x, int y, int width, int height, const char* Caption = NULL, long long id = NULL, int flags = DefaultFlags_CmdButton );
 		
 		// this will create a radio button on the window
 		// to start a group of radio buttons, use the WS_GROUP style for the first radio button in the group
-		HWND Create_RadioButtonGroup ( Window* ParentWindow, int x, int y, int width = NULL, int height = NULL, const char* Caption = NULL, int id = NULL, int flags = DefaultFlags_RadioButtonGroup );
-		HWND Create_RadioButton ( Window* ParentWindow, int x, int y, int width = NULL, int height = NULL, const char* Caption = NULL, int id = NULL, int flags = DefaultFlags_RadioButton );
+		HWND Create_RadioButtonGroup ( Window* ParentWindow, int x, int y, int width = NULL, int height = NULL, const char* Caption = NULL, long long id = NULL, int flags = DefaultFlags_RadioButtonGroup );
+		HWND Create_RadioButton ( Window* ParentWindow, int x, int y, int width = NULL, int height = NULL, const char* Caption = NULL, long long id = NULL, int flags = DefaultFlags_RadioButton );
 		
 		// this will create a check box on the window
-		HWND Create_CheckBox ( Window* ParentWindow, int x, int y, int width = NULL, int height = NULL, const char* Caption = NULL, int id = NULL, int flags = DefaultFlags_CheckBox );
+		HWND Create_CheckBox ( Window* ParentWindow, int x, int y, int width = NULL, int height = NULL, const char* Caption = NULL, long long id = NULL, int flags = DefaultFlags_CheckBox );
 		
 		HWND GetHandleToParent () { return GetParent( hWnd ); }
 		
@@ -628,14 +633,14 @@ using namespace std;
 		Window* Parent;
 		
 		HWND hWnd;
-		int id;
+		long long id;
 		int x, y, width, height;
 		char caption [ 256 ];
 		
 	public:
 		
-		HWND Create_Text ( Window* ParentWindow, int x, int y, int width, int height, const char* Caption = NULL, int id = NULL, int flags = DefaultFlags_Text );
-		HWND Create_Bitmap ( Window* ParentWindow, int x, int y, int width, int height, const char* Caption = NULL, int id = NULL, int flags = DefaultFlags_Bitmap );
+		HWND Create_Text ( Window* ParentWindow, int x, int y, int width, int height, const char* Caption = NULL, long long id = NULL, int flags = DefaultFlags_Text );
+		HWND Create_Bitmap ( Window* ParentWindow, int x, int y, int width, int height, const char* Caption = NULL, long long id = NULL, int flags = DefaultFlags_Bitmap );
 		
 		HWND GetHandleToParent () { return GetParent( hWnd ); }
 
@@ -665,13 +670,13 @@ using namespace std;
 		Window* Parent;
 		
 		HWND hWnd;
-		int id;
+		long long id;
 		int x, y, width, height;
 		char caption [ MaxStringLength ];
 		
 	public:
 		
-		HWND Create ( Window* ParentWindow, int x, int y, int width, int height, const char* Caption = NULL, int id = NULL, int flags = DefaultFlags );
+		HWND Create ( Window* ParentWindow, int x, int y, int width, int height, const char* Caption = NULL, long long id = NULL, int flags = DefaultFlags );
 		
 		HWND GetHandleToParent () { return GetParent( hWnd ); }
 		
@@ -712,15 +717,15 @@ using namespace std;
 		Window* Parent;
 		
 		HWND hWnd;
-		int id;
+		long long id;
 		int x, y, width, height;
 		char caption [ MaxStringLength ];
 		
 	public:
 		
-		HWND Create_Simple ( Window* ParentWindow, int x, int y, int width, int height, const char* Caption = NULL, int id = NULL, int flags = DefaultFlags_Simple );
-		HWND Create_DropDown ( Window* ParentWindow, int x, int y, int width, int height, const char* Caption = NULL, int id = NULL, int flags = DefaultFlags_DropDown );
-		HWND Create_DropDownList ( Window* ParentWindow, int x, int y, int width, int height, const char* Caption = NULL, int id = NULL, int flags = DefaultFlags_DropDownList );
+		HWND Create_Simple ( Window* ParentWindow, int x, int y, int width, int height, const char* Caption = NULL, long long id = NULL, int flags = DefaultFlags_Simple );
+		HWND Create_DropDown ( Window* ParentWindow, int x, int y, int width, int height, const char* Caption = NULL, long long id = NULL, int flags = DefaultFlags_DropDown );
+		HWND Create_DropDownList ( Window* ParentWindow, int x, int y, int width, int height, const char* Caption = NULL, long long id = NULL, int flags = DefaultFlags_DropDownList );
 		
 		HWND GetHandleToParent () { return GetParent( hWnd ); }
 		
@@ -766,11 +771,11 @@ using namespace std;
 		Window* Parent;
 		
 		HWND hWnd;
-		int id;
+		long long id;
 		int x, y, width, height;
 		char caption [ 256 ];
 		
-		HWND Create ( Window* ParentWindow, int x, int y, int width, int height, const char* Caption = NULL, int id = NULL, int flags = DefaultFlags );
+		HWND Create ( Window* ParentWindow, int x, int y, int width, int height, const char* Caption = NULL, long long id = NULL, int flags = DefaultFlags );
 		
 		HWND GetHandleToParent () { return GetParent( hWnd ); }
 		
@@ -799,7 +804,7 @@ using namespace std;
 		Window* Parent;
 		
 		HWND hWnd;
-		int id;
+		long long id;
 		int x, y, width, height;
 		char caption [ MaxStringLength ];
 		
@@ -808,9 +813,9 @@ using namespace std;
 		
 	public:
 		
-		HWND Create_wHeader ( Window* ParentWindow, int x, int y, int width, int height, const char* Caption = "", int id = NULL, int flags = DefaultFlags_Report_wHeader );
-		HWND Create_NoHeader ( Window* ParentWindow, int x, int y, int width, int height, const char* Caption = "", int id = NULL, int flags = DefaultFlags_Report_NoHeader );
-		HWND Create_Dynamic_wHeader ( Window* ParentWindow, int x, int y, int width, int height, const char* Caption = "", int id = NULL, int flags = DefaultFlags_Report_Dynamic_wHeader );
+		HWND Create_wHeader ( Window* ParentWindow, int x, int y, int width, int height, const char* Caption = "", long long id = NULL, int flags = DefaultFlags_Report_wHeader );
+		HWND Create_NoHeader ( Window* ParentWindow, int x, int y, int width, int height, const char* Caption = "", long long id = NULL, int flags = DefaultFlags_Report_NoHeader );
+		HWND Create_Dynamic_wHeader ( Window* ParentWindow, int x, int y, int width, int height, const char* Caption = "", long long id = NULL, int flags = DefaultFlags_Report_Dynamic_wHeader );
 		
 		HWND GetHandleToParent () { return GetParent( hWnd ); }
 		
@@ -904,11 +909,11 @@ using namespace std;
 		Window* Parent;
 		
 		HWND hWnd;
-		int id;
+		long long id;
 		int x, y, width, height;
 		char caption [ 256 ];
 		
-		HWND Create ( Window* ParentWindow, int x, int y, int width, int height, const char* Caption = NULL, int id = NULL, int flags = DefaultFlags );
+		HWND Create ( Window* ParentWindow, int x, int y, int width, int height, const char* Caption = NULL, long long id = NULL, int flags = DefaultFlags );
 		
 		inline bool Set_XY ( int x, int y ) { return SetWindowPos ( hWnd, NULL, x, y, NULL, NULL, SWP_NOSIZE | SWP_NOZORDER ); }
 		inline bool Set_Size ( int width, int height ) { return SetWindowPos ( hWnd, NULL, NULL, NULL, width, height, SWP_NOMOVE | SWP_NOZORDER ); }

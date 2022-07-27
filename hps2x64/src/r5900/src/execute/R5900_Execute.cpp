@@ -185,7 +185,7 @@ using namespace PS2Float;
 #define INLINE_DEBUG_BREAK
 #define INLINE_DEBUG_INVALID
 #define INLINE_DEBUG_UNIMPLEMENTED
-#define INLINE_DEBUG_ERET
+//#define INLINE_DEBUG_ERET
 //#define INLINE_DEBUG_INTEGER_VECTOR
 //#define INLINE_DEBUG_VU0
 //#define INLINE_DEBUG_VUEXECUTE
@@ -8055,7 +8055,7 @@ void Execute::DI ( Instruction::Format i )
 		r->CPR0.Status.EIE = 0;
 
 		// interrupt status changed
-		//r->UpdateInterrupt ();
+		r->UpdateInterrupt ();
 	}
 
 }
@@ -8088,6 +8088,8 @@ void Execute::SYNC ( Instruction::Format i )
 	debug << "\r\n" << hex << setw( 8 ) << r->PC << " " << dec << r->CycleCount << " " << Print::PrintInstruction ( i.Value ).c_str () << "; " << hex << i.Value;
 #endif
 
+		// interrupt status changed
+		r->UpdateInterrupt ();
 }
 
 
@@ -8559,6 +8561,16 @@ void Execute::ERET ( Instruction::Format i )
 	
 #ifdef ENABLE_R5900_BRANCH_PREDICTION
 	r->CycleCount += r->c_ullLatency_BranchMisPredict;
+#endif
+
+
+//#define VERBOSE_UNHANDLED_INT
+#ifdef VERBOSE_UNHANDLED_INT
+	// check for an interrupt after eret
+	if ( r->Status.Value & 1 )
+	{
+		cout << "\nhps2x64: ALERT: R5900: Interrupt unhandled before ERET. DATA=" << hex << (r->CPR0.Regs [ 13 ] & 0x8c00);
+	}
 #endif
 
 #if defined INLINE_DEBUG_ERET || defined INLINE_DEBUG_R5900
@@ -11913,7 +11925,7 @@ void Execute::VIADD ( Instruction::Format i )
 #endif
 	{
 	i.Value = 0x80000000 | ( i.Value & 0x01ffffff );
-	Vu::Instruction::Execute::IADD ( VU0::_VU0, (Vu::Instruction::Format&) i );
+	Vu::Instruction::Execute::VIADD ( VU0::_VU0, (Vu::Instruction::Format&) i );
 	
 #ifdef ENABLE_STALLS
 	// update pipeline in macro mode ??
@@ -11940,7 +11952,7 @@ void Execute::VISUB ( Instruction::Format i )
 #endif
 	{
 	i.Value = 0x80000000 | ( i.Value & 0x01ffffff );
-	Vu::Instruction::Execute::ISUB ( VU0::_VU0, (Vu::Instruction::Format&) i );
+	Vu::Instruction::Execute::VISUB ( VU0::_VU0, (Vu::Instruction::Format&) i );
 	
 #ifdef ENABLE_STALLS
 	// update pipeline in macro mode ??
@@ -11967,7 +11979,7 @@ void Execute::VIADDI ( Instruction::Format i )
 #endif
 	{
 	i.Value = 0x80000000 | ( i.Value & 0x01ffffff );
-	Vu::Instruction::Execute::IADDI ( VU0::_VU0, (Vu::Instruction::Format&) i );
+	Vu::Instruction::Execute::VIADDI ( VU0::_VU0, (Vu::Instruction::Format&) i );
 	
 #ifdef ENABLE_STALLS
 	// update pipeline in macro mode ??
@@ -11994,7 +12006,7 @@ void Execute::VIAND ( Instruction::Format i )
 #endif
 	{
 	i.Value = 0x80000000 | ( i.Value & 0x01ffffff );
-	Vu::Instruction::Execute::IAND ( VU0::_VU0, (Vu::Instruction::Format&) i );
+	Vu::Instruction::Execute::VIAND ( VU0::_VU0, (Vu::Instruction::Format&) i );
 	
 #ifdef ENABLE_STALLS
 	// update pipeline in macro mode ??
@@ -12021,7 +12033,7 @@ void Execute::VIOR ( Instruction::Format i )
 #endif
 	{
 	i.Value = 0x80000000 | ( i.Value & 0x01ffffff );
-	Vu::Instruction::Execute::IOR ( VU0::_VU0, (Vu::Instruction::Format&) i );
+	Vu::Instruction::Execute::VIOR ( VU0::_VU0, (Vu::Instruction::Format&) i );
 	
 #ifdef ENABLE_STALLS
 	// update pipeline in macro mode ??
@@ -12057,7 +12069,10 @@ void Execute::VCALLMS ( Instruction::Format i )
 #ifdef VERBOSE_VCALLMS
 		cout << "\nhps2x64 ALERT: R5900/VU0: VCALLMS while VU0 is already running!";
 #endif
-		
+
+		// tell vu0 not to reset instr count since it is going to continue execution
+		VU0::_VU0->bContinueVU0 = 1;
+
 		// this is probably supposed to wait until vu0 is done and then execute
 		r->NextPC = r->PC;
 		
@@ -12065,6 +12080,7 @@ void Execute::VCALLMS ( Instruction::Format i )
 		// when vu is not running, cycle# is just -1
 		if ( VU0::_VU0->Running )
 		{
+
 		// do a more passive wait
 		if ( r->CycleCount < VU0::_VU0->CycleCount )
 		{
@@ -12125,7 +12141,10 @@ void Execute::VCALLMSR ( Instruction::Format i )
 #ifdef VERBOSE_VCALLMSR
 		cout << "\nhps2x64 ALERT: R5900/VU0: VCALLMSR while VU0 is already running!";
 #endif
-		
+
+		// tell vu0 not to reset instr count since it is going to continue execution
+		VU0::_VU0->bContinueVU0 = 1;
+
 		// this is probably supposed to wait until vu0 is done and then execute
 		r->NextPC = r->PC;
 		
@@ -12407,7 +12426,7 @@ void Execute::VMOVE ( Instruction::Format i )
 #endif
 	{
 	i.Value = 0x80000000 | ( i.Value & 0x01ffffff );
-	Vu::Instruction::Execute::MOVE ( VU0::_VU0, (Vu::Instruction::Format&) i );
+	Vu::Instruction::Execute::VMOVE ( VU0::_VU0, (Vu::Instruction::Format&) i );
 	
 #ifdef ENABLE_STALLS
 	// update pipeline in macro mode ??
@@ -12434,7 +12453,7 @@ void Execute::VLQI ( Instruction::Format i )
 #endif
 	{
 	i.Value = 0x80000000 | ( i.Value & 0x01ffffff );
-	Vu::Instruction::Execute::LQI ( VU0::_VU0, (Vu::Instruction::Format&) i );
+	Vu::Instruction::Execute::VLQI ( VU0::_VU0, (Vu::Instruction::Format&) i );
 	
 #ifdef ENABLE_STALLS
 	// update pipeline in macro mode ??
@@ -12494,7 +12513,7 @@ void Execute::VMTIR ( Instruction::Format i )
 #endif
 	{
 	i.Value = 0x80000000 | ( i.Value & 0x01ffffff );
-	Vu::Instruction::Execute::MTIR ( VU0::_VU0, (Vu::Instruction::Format&) i );
+	Vu::Instruction::Execute::VMTIR ( VU0::_VU0, (Vu::Instruction::Format&) i );
 	
 #ifdef ENABLE_STALLS
 	// update pipeline in macro mode ??
@@ -12548,7 +12567,7 @@ void Execute::VMR32 ( Instruction::Format i )
 #endif
 	{
 	i.Value = 0x80000000 | ( i.Value & 0x01ffffff );
-	Vu::Instruction::Execute::MR32 ( VU0::_VU0, (Vu::Instruction::Format&) i );
+	Vu::Instruction::Execute::VMR32 ( VU0::_VU0, (Vu::Instruction::Format&) i );
 	
 #ifdef ENABLE_STALLS
 	// update pipeline in macro mode ??
@@ -12575,7 +12594,7 @@ void Execute::VSQI ( Instruction::Format i )
 #endif
 	{
 	i.Value = 0x80000000 | ( i.Value & 0x01ffffff );
-	Vu::Instruction::Execute::SQI ( VU0::_VU0, (Vu::Instruction::Format&) i );
+	Vu::Instruction::Execute::VSQI ( VU0::_VU0, (Vu::Instruction::Format&) i );
 	
 #ifdef ENABLE_STALLS
 	// update pipeline in macro mode ??
@@ -13554,7 +13573,7 @@ void Execute::VLQD ( Instruction::Format i )
 #endif
 	{
 	i.Value = 0x80000000 | ( i.Value & 0x01ffffff );
-	Vu::Instruction::Execute::LQD ( VU0::_VU0, (Vu::Instruction::Format&) i );
+	Vu::Instruction::Execute::VLQD ( VU0::_VU0, (Vu::Instruction::Format&) i );
 	
 #ifdef ENABLE_STALLS
 	// update pipeline in macro mode ??
@@ -13734,7 +13753,7 @@ void Execute::VSQD ( Instruction::Format i )
 #endif
 	{
 	i.Value = 0x80000000 | ( i.Value & 0x01ffffff );
-	Vu::Instruction::Execute::SQD ( VU0::_VU0, (Vu::Instruction::Format&) i );
+	Vu::Instruction::Execute::VSQD ( VU0::_VU0, (Vu::Instruction::Format&) i );
 	
 #ifdef ENABLE_STALLS
 	// update pipeline in macro mode ??

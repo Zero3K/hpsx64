@@ -46,6 +46,9 @@
 //#define ENABLE_DMA_END_REMOTE
 
 
+#define VERBOSE_CHANNEL_INTERRUPTED
+
+
 #define VERBOSE_CHAIN
 
 //#define VERBOSE_CYCLESTEAL
@@ -303,9 +306,9 @@ const u64 Dma::c_iDeviceBufferSize [ c_iNumberOfChannels ] =
 16,
 // dma2 - gpu
 1000000,	//16,
-// dma 3
+// dma 3 - MDEC/IPU out	
 8,
-// dma 4
+// dma 4 - MDEC/IPU in
 8,
 // dma 5 - sif0 iop->ee
 8,
@@ -983,7 +986,26 @@ void Dma::Write ( u32 Address, u64 Data, u64 Mask )
 
 				_DMA->CheckTransfer ();
 			}
-			
+
+#ifdef VERBOSE_CHANNEL_INTERRUPTED
+			// check if a channel got interrupted during transfer
+			if ( Data & 0x10000 )
+			{
+				// dma halted //
+				for ( int iIdx = 0; iIdx < c_iNumberOfChannels; iIdx++ )
+				{
+					if ( pRegData [ iIdx ]->CHCR.STR && ( iIdx != 5 ) )
+					{
+						//cout << "\nhps2x64: ALERT: DMA#" << dec << iIdx << " HALTED during transfer";
+
+#if defined INLINE_DEBUG_WRITE
+			debug << "\r\nhps2x64: ALERT: DMA#" << dec << iIdx << " HALTED during transfer\r\n";
+#endif
+					}
+				}
+			}
+#endif
+
 			/*
 			// check if there is a transition from one to zero
 			//if ( ( Data ^ 0x10000 ) & _DMA->lDMAC_ENABLE & 0x10000 )
@@ -1747,37 +1769,41 @@ u32 Dma::DMA5_WriteBlock ( u64* Data64, u32 QWC_Count )
 
 			// check the ID
 			//switch ( _DMA->SourceDMATag [ 5 ].ID )
-			switch ( pRegData [ 5 ]->CHCR.ID )
+			switch (pRegData[5]->CHCR.ID)
 			{
 				// ID: CNTS
-				case 0:
+			case 0:
 #ifdef INLINE_DEBUG_RUN_DMA5
-	debug << "; ID=CNTS";
-	debug << "; NOT IMPLEMENTED";
+				debug << "; ID=CNTS";
+				debug << "; NOT IMPLEMENTED";
 #endif
 
-					// need some type of message here..
-					cout << "\nhps2x64: ***ALERT***: PS2DMA#5 Destination Tag CNTS not implemented\n";
-					
-					// STALL CONTROL //
-					// since chain transfer, first check that tag is cnts (destination tag=0)
-					// if channel is a stall source channel, then copy MADR to STADR
-					//if ( _DMA->DMARegs.CTRL.STS == 1 )
-					//{
-					//	_DMA->DMARegs.STADR = pRegData [ 5 ]->MADR.Value;
-					//}
+				// need some type of message here..
+				//cout << "\nhps2x64: ***ALERT***: PS2DMA#5 Destination Tag CNTS not implemented\n";
+				//break;
+				// fall-through
 
-					break;
-					
-				// ID: CNT
-				case 1:
-				
+			// ID: CNT
+			case 1:
+
 				// ID: END
-				//case 7:
-				
+			case 7:
+
 #ifdef INLINE_DEBUG_RUN_DMA5
+if (pRegData[5]->CHCR.ID == 1)
+{
 	debug << "; ID=CNT";
+}
 #endif
+
+#ifdef INLINE_DEBUG_RUN_DMA5
+if (pRegData[5]->CHCR.ID == 7)
+{
+	debug << "; ID=END";
+	//debug << "; NOT IMPLEMENTED";
+}
+#endif
+
 
 					//TransferCount = ( QWC_Count > DmaCh [ 5 ].QWCRemaining ) ? DmaCh [ 5 ].QWCRemaining : QWC_Count;
 					TransferCount = ( QWC_Count > pRegData [ 5 ]->QWC.QWC ) ? pRegData [ 5 ]->QWC.QWC : QWC_Count;
@@ -1814,10 +1840,24 @@ u32 Dma::DMA5_WriteBlock ( u64* Data64, u32 QWC_Count )
 					pRegData [ 5 ]->QWC.QWC -= TransferCount;
 
 
+					// check if cnts
+					if (!pRegData[5]->CHCR.ID)
+					{
+						// STALL CONTROL //
+						// since chain transfer, first check that tag is cnts (destination tag=0)
+						// if channel is a stall source channel, then copy MADR to STADR
+						if ( _DMA->DMARegs.CTRL.STS == 1 )
+						{
+							_DMA->DMARegs.STADR = pRegData [ 5 ]->MADR.Value;
+						}
+					}
+
+
+
 					// set amount of time bus will be busy for
 					if ( TotalTransferred )
 					{
-						DataBus::_BUS->ReserveBus_DMA ( *_DebugCycleCount, TotalTransferred << 4 );
+						DataBus::_BUS->ReserveBus_DMA ( *_DebugCycleCount, TotalTransferred );
 					}
 
 					
@@ -1838,8 +1878,8 @@ u32 Dma::DMA5_WriteBlock ( u64* Data64, u32 QWC_Count )
 						//if ( SourceDMATag [ 5 ].IRQ && DmaCh [ 5 ].CHCR_Reg.TIE )
 						if (
 							( pRegData [ 5 ]->CHCR.IRQ && pRegData [ 5 ]->CHCR.TIE )
-							// ||
-							// ( _DMA->SourceDMATag [ 5 ].ID == 7 )
+							 ||
+							 ( pRegData[5]->CHCR.ID == 7 )
 						)
 						{
 #ifdef ENABLE_SIF_DMA_TIMING
@@ -1902,6 +1942,7 @@ u32 Dma::DMA5_WriteBlock ( u64* Data64, u32 QWC_Count )
 
 					
 				// ID: END
+					/*
 				case 7:
 #ifdef INLINE_DEBUG_RUN_DMA5
 	debug << "; ID=END";
@@ -1911,6 +1952,7 @@ u32 Dma::DMA5_WriteBlock ( u64* Data64, u32 QWC_Count )
 					// need some type of message here..
 					cout << "\nhps2x64: ***ALERT***: PS2DMA#5 Destination Tag END not implemented\n";
 					break;
+					*/
 				
 				
 				default:
@@ -3508,7 +3550,15 @@ cout << "\nhps2x64: ALERT: PCE is non-zero in dma tag!!!";
 				{
 					// CNTS
 					case 0:
-						cout << "\nhps2x64: ALERT: DMA: PS2DMA#8 CNTS destination tag not implemented yet.\n";
+						//cout << "\nhps2x64: ALERT: DMA: PS2DMA#8 CNTS destination tag not implemented yet.\n";
+
+						// STALL CONTROL //
+						// since chain transfer, first check that tag is cnts (destination tag=0)
+						// if channel is a stall source channel, then copy MADR to STADR
+						if (_DMA->DMARegs.CTRL.STS == 2)
+						{
+							_DMA->DMARegs.STADR = pRegData[8]->MADR.Value;
+						}
 						break;
 
 					// if the tag is end, then end the transfer

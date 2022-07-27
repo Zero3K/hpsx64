@@ -1,0 +1,296 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav</Extensions>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="common\breakpoint\src\breakpoint.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="common\config\src\ConfigFile.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="common\debug\src\Debug.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="common\diskimage\cd\src\cdimage.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="common\stringutilities\StringUtils.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="common\windowsapi\breakpointwindow\src\BreakpointWindow.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="common\windowsapi\debugmemoryviewer\src\DebugMemoryViewer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="common\windowsapi\debugvaluelist\src\DebugValueList.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="common\windowsapi\disassemblyviewer\src\DisassemblyViewer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="common\windowsapi\guihandler\src\MultiThread.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="common\windowsapi\guihandler\src\WinApiHandler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="common\windowsapi\infinitelistview\src\InfiniteListView.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="common\windowsapi\inputbox\src\InputBox.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="common\windowsapi\joystick\src\DJoySticks.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="common\windowsapi\joystick\src\WinJoy.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="common\windowsapi\winfile\src\WinFile.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="common\x64encoder\src\x64Encoder.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="hps1x64\src\cd\src\PS1_CD.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="hps1x64\src\databus\src\PS1DataBus.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="hps1x64\src\dma\src\PS1_Dma.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="hps1x64\src\gpu\src\PS1_Gpu.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="hps1x64\src\hps1x64\src\hps1x64.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="hps1x64\src\intc\src\PS1_Intc.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="hps1x64\src\mdec\src\PS1_MDEC.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="hps1x64\src\pio\src\PS1_PIO.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="hps1x64\src\r3000a\src\R3000A.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="hps1x64\src\r3000a\src\cop2\R3000A_COP2.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="hps1x64\src\r3000a\src\execute\R3000A_Execute.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="hps1x64\src\r3000a\src\lookup\R3000A_Lookup.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="hps1x64\src\r3000a\src\print\R3000ADebugPrint.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="hps1x64\src\r3000a\src\recompile\R3000A_Recompiler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="hps1x64\src\sio\src\PS1_SIO.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="hps1x64\src\spu\src\adpcm.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="hps1x64\src\spu\src\gx.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="hps1x64\src\spu\src\PS1_SPU.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="hps1x64\src\system\src\ps1_system.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="hps1x64\src\timer\src\PS1_Timer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="common\guicon.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="common\GeneralEmuDataStructures.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="common\GNUAsmUtility_x64.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="common\LowPassFilter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="common\MipsOpcode.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="common\PS2Float.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="common\Reciprocal.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="common\types.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="common\json.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="common\breakpoint\src\breakpoint.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="common\config\src\ConfigFile.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="common\debug\src\Debug.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="common\diskimage\cd\src\cdimage.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="common\stringutilities\GeneralUtilities.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="common\stringutilities\StringUtils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="common\windowsapi\breakpointwindow\src\BreakpointWindow.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="common\windowsapi\debugmemoryviewer\src\DebugMemoryViewer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="common\windowsapi\debugvaluelist\src\DebugValueList.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="common\windowsapi\disassemblyviewer\src\DisassemblyViewer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="common\windowsapi\guihandler\src\GNUThreading_x64.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="common\windowsapi\guihandler\src\MultiThread.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="common\windowsapi\guihandler\src\MultithreadComm.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="common\windowsapi\guihandler\src\WinApiHandler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="common\windowsapi\infinitelistview\src\InfiniteListView.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="common\windowsapi\inputbox\src\InputBox.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="common\windowsapi\joystick\src\DJoySticks.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="common\windowsapi\joystick\src\WinJoy.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="common\windowsapi\winfile\src\WinFile.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="common\x64encoder\src\x64Encoder.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="common\x64encoder\src\x64Instructions.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="hps1x64\src\cd\src\PS1_CD.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="hps1x64\src\databus\src\PS1DataBus.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="hps1x64\src\dma\src\PS1_Dma.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="hps1x64\src\gpu\src\PS1_Gpu.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="hps1x64\src\hps1x64\src\hps1x64.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="hps1x64\src\intc\src\PS1_Intc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="hps1x64\src\mdec\src\PS1_MDEC.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="hps1x64\src\pio\src\PS1_PIO.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="hps1x64\src\r3000a\src\R3000A.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="hps1x64\src\r3000a\src\cache\R3000A_ICache.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="hps1x64\src\r3000a\src\cop2\R3000A_COP2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="hps1x64\src\r3000a\src\execute\R3000A_Execute.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="hps1x64\src\r3000a\src\execute\R3000A_Instruction.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="hps1x64\src\r3000a\src\lookup\R3000A_Lookup.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="hps1x64\src\r3000a\src\old\GenericDataPort.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="hps1x64\src\r3000a\src\old\GNUSignExtend_x64.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="hps1x64\src\r3000a\src\print\R3000ADebugPrint.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="hps1x64\src\r3000a\src\recompile\R3000A_Recompiler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="hps1x64\src\sio\src\PS1_SIO.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="hps1x64\src\spu\src\adpcm.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="hps1x64\src\spu\src\PS1_SPU.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="hps1x64\src\system\src\ps1_system.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="hps1x64\src\timer\src\PS1_Timer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="common\guicon.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+  </ItemGroup>
+</Project>

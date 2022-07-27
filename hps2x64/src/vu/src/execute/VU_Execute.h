@@ -96,12 +96,6 @@ namespace Vu
 
 #ifdef DELAY_FLAG_UPDATE
 
-#ifdef ENABLE_NEW_FLAG_BUFFER
-
-				v->Temp_StatusFlag = 0;
-				v->Temp_MacFlag = 0;
-				
-#else
 
 #ifdef ENABLE_SNAPSHOTS
 				// clear affected non-sticky status flags (O,U,S,Z)
@@ -130,8 +124,8 @@ namespace Vu
 
 				// *new* set cycle number change should take place at
 				v->FlagSave [ v->iFlagSave_Index & v->c_lFlag_Delay_Mask ].ullBusyUntil_Cycle = v->CycleCount + VU::c_ullFloatPipeline_Cycles;
-#endif
-#endif
+
+#endif	// end ENABLE_SNAPSHOTS
 
 #else
 				// clear affected non-sticky status flags (O,U,S,Z)
@@ -141,10 +135,12 @@ namespace Vu
 				// clear MAC flag - this should be the correct operation
 				// note: this must only be cleared before execution of instruction
 				v->vi [ 17 ].uLo = 0;
-#endif
+
+#endif	// end DELAY_FLAG_UPDATE
 				
-#endif
-			}
+#endif	// end ENABLE_VUFLAG_CLEAR
+
+			}	// end inline static void ClearFlags ( VU *v )
 			
 			
 			// takes the MAC flag results, and uses it to set the status flags
@@ -163,7 +159,6 @@ namespace Vu
 			{
 #ifdef DELAY_FLAG_UPDATE
 
-//#ifdef ENABLE_NEW_FLAG_BUFFER
 #ifdef ENABLE_SNAPSHOTS
 				//return OpFunc0 ( fs, ft, index, &v->Temp_StatusFlag, &v->Temp_MacFlag );
 				if ( !v->Status.SetStatus_Flag )
@@ -186,7 +181,6 @@ namespace Vu
 			{
 #ifdef DELAY_FLAG_UPDATE
 
-//#ifdef ENABLE_NEW_FLAG_BUFFER
 #ifdef ENABLE_SNAPSHOTS
 				//return OpFunc0 ( ACC, fd, fs, ft, index, &v->Temp_StatusFlag, &v->Temp_MacFlag );
 				if ( !v->Status.SetStatus_Flag )
@@ -256,18 +250,6 @@ namespace Vu
 				// the accompanying lower instruction can't modify the same register
 				v->LastModifiedRegister = i.Fd;
 				
-				
-#ifdef ENABLE_NEW_FLAG_BUFFER
-				// get/set flags
-				v->Get_MFBuffer ( 0 );
-				v->Set_MFBuffer ( v->Temp_MacFlag );
-				
-				if ( VU::CurInstLO.Opcode != 21 )
-				{
-					v->Get_SFBuffer ( 0 );
-					v->Set_SFBuffer ( v->Temp_StatusFlag, 0xfc0 );
-				}
-#endif
 			}
 
 			inline static void VuUpperOpI ( VU *v, Instruction::Format i, OpType0 OpFunc0 )
@@ -275,11 +257,6 @@ namespace Vu
 				
 #ifdef ENABLE_STALLS
 
-#ifdef ENABLE_NEW_FLAG_BUFFER
-
-				// ***TODO*** get bitmap (must do first, or not??)
-				
-#else
 	
 				// set the source register(s)
 				v->Set_SrcReg ( i.Value, i.Fs );
@@ -298,7 +275,7 @@ namespace Vu
 				// set the destination register(s)
 				// note: can only set this once the pipeline is not stalled since it modifies the pipeline stage bitmap
 				v->Set_DestReg_Upper ( i.Value, i.Fd );
-#endif
+
 #endif
 
 				// clear flags
@@ -328,18 +305,6 @@ namespace Vu
 				// the accompanying lower instruction can't modify the same register
 				v->LastModifiedRegister = i.Fd;
 				
-				
-#ifdef ENABLE_NEW_FLAG_BUFFER
-				// get flags
-				v->Get_MFBuffer ( 0 );
-				v->Set_MFBuffer ( v->Temp_MacFlag );
-				
-				if ( VU::CurInstLO.Opcode != 21 )
-				{
-					v->Get_SFBuffer ( 0 );
-					v->Set_SFBuffer ( v->Temp_StatusFlag, 0xfc0 );
-				}
-#endif
 			}
 
 			inline static void VuUpperOpQ ( VU *v, Instruction::Format i, OpType0 OpFunc0 )
@@ -374,6 +339,9 @@ namespace Vu
 
 #endif
 
+				// update q first
+				//v->UpdateQ_Micro ();
+
 				// clear flags
 				ClearFlags ( v );
 
@@ -401,18 +369,6 @@ namespace Vu
 				// the accompanying lower instruction can't modify the same register
 				v->LastModifiedRegister = i.Fd;
 				
-				
-#ifdef ENABLE_NEW_FLAG_BUFFER
-				// get flags
-				v->Get_MFBuffer ( 0 );
-				v->Set_MFBuffer ( v->Temp_MacFlag );
-				
-				if ( VU::CurInstLO.Opcode != 21 )
-				{
-					v->Get_SFBuffer ( 0 );
-					v->Set_SFBuffer ( v->Temp_StatusFlag, 0xfc0 );
-				}
-#endif
 			}
 
 			inline static void VuUpperOpX ( VU *v, Instruction::Format i, OpType0 OpFunc0 )
@@ -470,18 +426,6 @@ namespace Vu
 				// the accompanying lower instruction can't modify the same register
 				v->LastModifiedRegister = i.Fd;
 				
-				
-#ifdef ENABLE_NEW_FLAG_BUFFER
-				// get flags
-				v->Get_MFBuffer ( 0 );
-				v->Set_MFBuffer ( v->Temp_MacFlag );
-				
-				if ( VU::CurInstLO.Opcode != 21 )
-				{
-					v->Get_SFBuffer ( 0 );
-					v->Set_SFBuffer ( v->Temp_StatusFlag, 0xfc0 );
-				}
-#endif
 			}
 
 			inline static void VuUpperOpY ( VU *v, Instruction::Format i, OpType0 OpFunc0 )
@@ -539,18 +483,6 @@ namespace Vu
 				// the accompanying lower instruction can't modify the same register
 				v->LastModifiedRegister = i.Fd;
 				
-				
-#ifdef ENABLE_NEW_FLAG_BUFFER
-				// get flags
-				v->Get_MFBuffer ( 0 );
-				v->Set_MFBuffer ( v->Temp_MacFlag );
-				
-				if ( VU::CurInstLO.Opcode != 21 )
-				{
-					v->Get_SFBuffer ( 0 );
-					v->Set_SFBuffer ( v->Temp_StatusFlag, 0xfc0 );
-				}
-#endif
 			}
 
 			inline static void VuUpperOpZ ( VU *v, Instruction::Format i, OpType0 OpFunc0 )
@@ -608,18 +540,6 @@ namespace Vu
 				// the accompanying lower instruction can't modify the same register
 				v->LastModifiedRegister = i.Fd;
 				
-				
-#ifdef ENABLE_NEW_FLAG_BUFFER
-				// get flags
-				v->Get_MFBuffer ( 0 );
-				v->Set_MFBuffer ( v->Temp_MacFlag );
-				
-				if ( VU::CurInstLO.Opcode != 21 )
-				{
-					v->Get_SFBuffer ( 0 );
-					v->Set_SFBuffer ( v->Temp_StatusFlag, 0xfc0 );
-				}
-#endif
 			}
 
 			inline static void VuUpperOpW ( VU *v, Instruction::Format i, OpType0 OpFunc0 )
@@ -677,18 +597,6 @@ namespace Vu
 				// the accompanying lower instruction can't modify the same register
 				v->LastModifiedRegister = i.Fd;
 				
-				
-#ifdef ENABLE_NEW_FLAG_BUFFER
-				// get flags
-				v->Get_MFBuffer ( 0 );
-				v->Set_MFBuffer ( v->Temp_MacFlag );
-				
-				if ( VU::CurInstLO.Opcode != 21 )
-				{
-					v->Get_SFBuffer ( 0 );
-					v->Set_SFBuffer ( v->Temp_StatusFlag, 0xfc0 );
-				}
-#endif
 			}
 
 // -------------------------------------------
@@ -739,17 +647,6 @@ namespace Vu
 					v->dACC [ 3 ].f = OpFunc0_st ( OpFunc0, v, v->vf [ i.Fs ].fw,  v->vf [ i.Ft ].fw, 0 );
 				}
 				
-#ifdef ENABLE_NEW_FLAG_BUFFER
-				// get flags
-				v->Get_MFBuffer ( 0 );
-				v->Set_MFBuffer ( v->Temp_MacFlag );
-				
-				if ( VU::CurInstLO.Opcode != 21 )
-				{
-					v->Get_SFBuffer ( 0 );
-					v->Set_SFBuffer ( v->Temp_StatusFlag, 0xfc0 );
-				}
-#endif
 			}
 
 			inline static void VuUpperOpI_A ( VU *v, Instruction::Format i, OpType0A OpFunc0 )
@@ -797,17 +694,6 @@ namespace Vu
 					v->dACC [ 3 ].f = OpFunc0_st ( OpFunc0, v, v->vf [ i.Fs ].fw, v->vi [ 21 ].f, 0 );
 				}
 				
-#ifdef ENABLE_NEW_FLAG_BUFFER
-				// get flags
-				v->Get_MFBuffer ( 0 );
-				v->Set_MFBuffer ( v->Temp_MacFlag );
-				
-				if ( VU::CurInstLO.Opcode != 21 )
-				{
-					v->Get_SFBuffer ( 0 );
-					v->Set_SFBuffer ( v->Temp_StatusFlag, 0xfc0 );
-				}
-#endif
 			}
 
 			inline static void VuUpperOpQ_A ( VU *v, Instruction::Format i, OpType0A OpFunc0 )
@@ -839,6 +725,9 @@ namespace Vu
 				
 #endif
 
+				// update q first
+				//v->UpdateQ_Micro ();
+
 				// clear flags
 				ClearFlags ( v );
 				
@@ -862,17 +751,6 @@ namespace Vu
 					v->dACC [ 3 ].f = OpFunc0_st ( OpFunc0, v, v->vf [ i.Fs ].fw, v->vi [ 22 ].f, 0 );
 				}
 				
-#ifdef ENABLE_NEW_FLAG_BUFFER
-				// get flags
-				v->Get_MFBuffer ( 0 );
-				v->Set_MFBuffer ( v->Temp_MacFlag );
-				
-				if ( VU::CurInstLO.Opcode != 21 )
-				{
-					v->Get_SFBuffer ( 0 );
-					v->Set_SFBuffer ( v->Temp_StatusFlag, 0xfc0 );
-				}
-#endif
 			}
 
 			inline static void VuUpperOpX_A ( VU *v, Instruction::Format i, OpType0A OpFunc0 )
@@ -920,17 +798,6 @@ namespace Vu
 					v->dACC [ 3 ].f = OpFunc0_st ( OpFunc0, v, v->vf [ i.Fs ].fw,  v->vf [ i.Ft ].fx, 0 );
 				}
 				
-#ifdef ENABLE_NEW_FLAG_BUFFER
-				// get flags
-				v->Get_MFBuffer ( 0 );
-				v->Set_MFBuffer ( v->Temp_MacFlag );
-				
-				if ( VU::CurInstLO.Opcode != 21 )
-				{
-					v->Get_SFBuffer ( 0 );
-					v->Set_SFBuffer ( v->Temp_StatusFlag, 0xfc0 );
-				}
-#endif
 			}
 
 			inline static void VuUpperOpY_A ( VU *v, Instruction::Format i, OpType0A OpFunc0 )
@@ -978,17 +845,6 @@ namespace Vu
 					v->dACC [ 3 ].f = OpFunc0_st ( OpFunc0, v, v->vf [ i.Fs ].fw,  v->vf [ i.Ft ].fy, 0 );
 				}
 				
-#ifdef ENABLE_NEW_FLAG_BUFFER
-				// get flags
-				v->Get_MFBuffer ( 0 );
-				v->Set_MFBuffer ( v->Temp_MacFlag );
-				
-				if ( VU::CurInstLO.Opcode != 21 )
-				{
-					v->Get_SFBuffer ( 0 );
-					v->Set_SFBuffer ( v->Temp_StatusFlag, 0xfc0 );
-				}
-#endif
 			}
 
 			inline static void VuUpperOpZ_A ( VU *v, Instruction::Format i, OpType0A OpFunc0 )
@@ -1036,17 +892,6 @@ namespace Vu
 					v->dACC [ 3 ].f = OpFunc0_st ( OpFunc0, v, v->vf [ i.Fs ].fw,  v->vf [ i.Ft ].fz, 0 );
 				}
 				
-#ifdef ENABLE_NEW_FLAG_BUFFER
-				// get flags
-				v->Get_MFBuffer ( 0 );
-				v->Set_MFBuffer ( v->Temp_MacFlag );
-				
-				if ( VU::CurInstLO.Opcode != 21 )
-				{
-					v->Get_SFBuffer ( 0 );
-					v->Set_SFBuffer ( v->Temp_StatusFlag, 0xfc0 );
-				}
-#endif
 			}
 
 			inline static void VuUpperOpW_A ( VU *v, Instruction::Format i, OpType0A OpFunc0 )
@@ -1094,17 +939,6 @@ namespace Vu
 					v->dACC [ 3 ].f = OpFunc0_st ( OpFunc0, v, v->vf [ i.Fs ].fw,  v->vf [ i.Ft ].fw, 0 );
 				}
 				
-#ifdef ENABLE_NEW_FLAG_BUFFER
-				// get flags
-				v->Get_MFBuffer ( 0 );
-				v->Set_MFBuffer ( v->Temp_MacFlag );
-				
-				if ( VU::CurInstLO.Opcode != 21 )
-				{
-					v->Get_SFBuffer ( 0 );
-					v->Set_SFBuffer ( v->Temp_StatusFlag, 0xfc0 );
-				}
-#endif
 			}
 			
 
@@ -1366,8 +1200,23 @@ namespace Vu
 			static void ERLENG ( VU *v, Instruction::Format i );
 			static void WAITP ( VU *v, Instruction::Format i );
 			
-			
-			
+			// with the static-analysis, need some functions to be separate for calls from R5900
+			static void VMR32 ( VU *v, Instruction::Format i );
+			static void VMOVE ( VU *v, Instruction::Format i );
+
+			static void VMTIR ( VU *v, Instruction::Format i );
+			static void VIADD ( VU *v, Instruction::Format i );
+			static void VISUB ( VU *v, Instruction::Format i );
+			static void VIADDI ( VU *v, Instruction::Format i );
+			static void VIAND ( VU *v, Instruction::Format i );
+			static void VIOR ( VU *v, Instruction::Format i );
+
+			static void VLQI ( VU *v, Instruction::Format i );
+			static void VLQD ( VU *v, Instruction::Format i );
+			static void VSQI ( VU *v, Instruction::Format i );
+			static void VSQD ( VU *v, Instruction::Format i );
+
+
 			
 			inline static void VuUpperOp ( VU *v, Instruction::Format i, OpType1 OpFunc0 )
 			{
@@ -1419,18 +1268,6 @@ namespace Vu
 				// the accompanying lower instruction can't modify the same register
 				v->LastModifiedRegister = i.Fd;
 				
-				
-#ifdef ENABLE_NEW_FLAG_BUFFER
-				// get flags
-				v->Get_MFBuffer ( 0 );
-				v->Set_MFBuffer ( v->Temp_MacFlag );
-				
-				if ( VU::CurInstLO.Opcode != 21 )
-				{
-					v->Get_SFBuffer ( 0 );
-					v->Set_SFBuffer ( v->Temp_StatusFlag, 0xfc0 );
-				}
-#endif
 			}
 
 			inline static void VuUpperOpI ( VU *v, Instruction::Format i, OpType1 OpFunc0 )
@@ -1483,18 +1320,6 @@ namespace Vu
 				// the accompanying lower instruction can't modify the same register
 				v->LastModifiedRegister = i.Fd;
 				
-				
-#ifdef ENABLE_NEW_FLAG_BUFFER
-				// get flags
-				v->Get_MFBuffer ( 0 );
-				v->Set_MFBuffer ( v->Temp_MacFlag );
-				
-				if ( VU::CurInstLO.Opcode != 21 )
-				{
-					v->Get_SFBuffer ( 0 );
-					v->Set_SFBuffer ( v->Temp_StatusFlag, 0xfc0 );
-				}
-#endif
 			}
 
 			inline static void VuUpperOpQ ( VU *v, Instruction::Format i, OpType1 OpFunc0 )
@@ -1526,6 +1351,9 @@ namespace Vu
 
 #endif
 
+				// update q first
+				//v->UpdateQ_Micro ();
+
 				// clear flags
 				ClearFlags ( v );
 				
@@ -1553,18 +1381,6 @@ namespace Vu
 				// the accompanying lower instruction can't modify the same register
 				v->LastModifiedRegister = i.Fd;
 				
-				
-#ifdef ENABLE_NEW_FLAG_BUFFER
-				// get flags
-				v->Get_MFBuffer ( 0 );
-				v->Set_MFBuffer ( v->Temp_MacFlag );
-				
-				if ( VU::CurInstLO.Opcode != 21 )
-				{
-					v->Get_SFBuffer ( 0 );
-					v->Set_SFBuffer ( v->Temp_StatusFlag, 0xfc0 );
-				}
-#endif
 			}
 
 			inline static void VuUpperOpX ( VU *v, Instruction::Format i, OpType1 OpFunc0 )
@@ -1621,18 +1437,6 @@ namespace Vu
 				// the accompanying lower instruction can't modify the same register
 				v->LastModifiedRegister = i.Fd;
 				
-				
-#ifdef ENABLE_NEW_FLAG_BUFFER
-				// get flags
-				v->Get_MFBuffer ( 0 );
-				v->Set_MFBuffer ( v->Temp_MacFlag );
-				
-				if ( VU::CurInstLO.Opcode != 21 )
-				{
-					v->Get_SFBuffer ( 0 );
-					v->Set_SFBuffer ( v->Temp_StatusFlag, 0xfc0 );
-				}
-#endif
 			}
 
 			inline static void VuUpperOpY ( VU *v, Instruction::Format i, OpType1 OpFunc0 )
@@ -1689,18 +1493,6 @@ namespace Vu
 				// the accompanying lower instruction can't modify the same register
 				v->LastModifiedRegister = i.Fd;
 				
-				
-#ifdef ENABLE_NEW_FLAG_BUFFER
-				// get flags
-				v->Get_MFBuffer ( 0 );
-				v->Set_MFBuffer ( v->Temp_MacFlag );
-				
-				if ( VU::CurInstLO.Opcode != 21 )
-				{
-					v->Get_SFBuffer ( 0 );
-					v->Set_SFBuffer ( v->Temp_StatusFlag, 0xfc0 );
-				}
-#endif
 			}
 
 			inline static void VuUpperOpZ ( VU *v, Instruction::Format i, OpType1 OpFunc0 )
@@ -1757,18 +1549,6 @@ namespace Vu
 				// the accompanying lower instruction can't modify the same register
 				v->LastModifiedRegister = i.Fd;
 				
-				
-#ifdef ENABLE_NEW_FLAG_BUFFER
-				// get flags
-				v->Get_MFBuffer ( 0 );
-				v->Set_MFBuffer ( v->Temp_MacFlag );
-				
-				if ( VU::CurInstLO.Opcode != 21 )
-				{
-					v->Get_SFBuffer ( 0 );
-					v->Set_SFBuffer ( v->Temp_StatusFlag, 0xfc0 );
-				}
-#endif
 			}
 
 			inline static void VuUpperOpW ( VU *v, Instruction::Format i, OpType1 OpFunc0 )
@@ -1825,18 +1605,6 @@ namespace Vu
 				// the accompanying lower instruction can't modify the same register
 				v->LastModifiedRegister = i.Fd;
 				
-				
-#ifdef ENABLE_NEW_FLAG_BUFFER
-				// get flags
-				v->Get_MFBuffer ( 0 );
-				v->Set_MFBuffer ( v->Temp_MacFlag );
-				
-				if ( VU::CurInstLO.Opcode != 21 )
-				{
-					v->Get_SFBuffer ( 0 );
-					v->Set_SFBuffer ( v->Temp_StatusFlag, 0xfc0 );
-				}
-#endif
 			}
 			
 // ------------------------------------------------------
@@ -1886,17 +1654,6 @@ namespace Vu
 					v->dACC [ 3 ].f = OpFunc0_st ( OpFunc0, v, v->dACC [ 3 ].f, v->dACC [ 3 ].f, v->vf [ i.Fs ].fw,  v->vf [ i.Ft ].fw, 0 );
 				}
 				
-#ifdef ENABLE_NEW_FLAG_BUFFER
-				// get flags
-				v->Get_MFBuffer ( 0 );
-				v->Set_MFBuffer ( v->Temp_MacFlag );
-				
-				if ( VU::CurInstLO.Opcode != 21 )
-				{
-					v->Get_SFBuffer ( 0 );
-					v->Set_SFBuffer ( v->Temp_StatusFlag, 0xfc0 );
-				}
-#endif
 			}
 
 			inline static void VuUpperOpI_A ( VU *v, Instruction::Format i, OpType1A OpFunc0 )
@@ -1943,17 +1700,6 @@ namespace Vu
 					v->dACC [ 3 ].f = OpFunc0_st ( OpFunc0, v, v->dACC [ 3 ].f, v->dACC [ 3 ].f, v->vf [ i.Fs ].fw, v->vi [ 21 ].f, 0 );
 				}
 				
-#ifdef ENABLE_NEW_FLAG_BUFFER
-				// get flags
-				v->Get_MFBuffer ( 0 );
-				v->Set_MFBuffer ( v->Temp_MacFlag );
-				
-				if ( VU::CurInstLO.Opcode != 21 )
-				{
-					v->Get_SFBuffer ( 0 );
-					v->Set_SFBuffer ( v->Temp_StatusFlag, 0xfc0 );
-				}
-#endif
 			}
 
 			inline static void VuUpperOpQ_A ( VU *v, Instruction::Format i, OpType1A OpFunc0 )
@@ -1983,6 +1729,9 @@ namespace Vu
 
 #endif
 
+				// update q first
+				//v->UpdateQ_Micro ();
+
 				// clear flags
 				ClearFlags ( v );
 				
@@ -2006,17 +1755,6 @@ namespace Vu
 					v->dACC [ 3 ].f = OpFunc0_st ( OpFunc0, v, v->dACC [ 3 ].f, v->dACC [ 3 ].f, v->vf [ i.Fs ].fw, v->vi [ 22 ].f, 0 );
 				}
 				
-#ifdef ENABLE_NEW_FLAG_BUFFER
-				// get flags
-				v->Get_MFBuffer ( 0 );
-				v->Set_MFBuffer ( v->Temp_MacFlag );
-				
-				if ( VU::CurInstLO.Opcode != 21 )
-				{
-					v->Get_SFBuffer ( 0 );
-					v->Set_SFBuffer ( v->Temp_StatusFlag, 0xfc0 );
-				}
-#endif
 			}
 
 			inline static void VuUpperOpX_A ( VU *v, Instruction::Format i, OpType1A OpFunc0 )
@@ -2063,17 +1801,6 @@ namespace Vu
 					v->dACC [ 3 ].f = OpFunc0_st ( OpFunc0, v, v->dACC [ 3 ].f, v->dACC [ 3 ].f, v->vf [ i.Fs ].fw, v->vf [ i.Ft ].fx, 0 );
 				}
 				
-#ifdef ENABLE_NEW_FLAG_BUFFER
-				// get flags
-				v->Get_MFBuffer ( 0 );
-				v->Set_MFBuffer ( v->Temp_MacFlag );
-				
-				if ( VU::CurInstLO.Opcode != 21 )
-				{
-					v->Get_SFBuffer ( 0 );
-					v->Set_SFBuffer ( v->Temp_StatusFlag, 0xfc0 );
-				}
-#endif
 			}
 
 			inline static void VuUpperOpY_A ( VU *v, Instruction::Format i, OpType1A OpFunc0 )
@@ -2120,17 +1847,6 @@ namespace Vu
 					v->dACC [ 3 ].f = OpFunc0_st ( OpFunc0, v, v->dACC [ 3 ].f, v->dACC [ 3 ].f, v->vf [ i.Fs ].fw, v->vf [ i.Ft ].fy, 0 );
 				}
 				
-#ifdef ENABLE_NEW_FLAG_BUFFER
-				// get flags
-				v->Get_MFBuffer ( 0 );
-				v->Set_MFBuffer ( v->Temp_MacFlag );
-				
-				if ( VU::CurInstLO.Opcode != 21 )
-				{
-					v->Get_SFBuffer ( 0 );
-					v->Set_SFBuffer ( v->Temp_StatusFlag, 0xfc0 );
-				}
-#endif
 			}
 
 			inline static void VuUpperOpZ_A ( VU *v, Instruction::Format i, OpType1A OpFunc0 )
@@ -2177,17 +1893,6 @@ namespace Vu
 					v->dACC [ 3 ].f = OpFunc0_st ( OpFunc0, v, v->dACC [ 3 ].f, v->dACC [ 3 ].f, v->vf [ i.Fs ].fw, v->vf [ i.Ft ].fz, 0 );
 				}
 				
-#ifdef ENABLE_NEW_FLAG_BUFFER
-				// get flags
-				v->Get_MFBuffer ( 0 );
-				v->Set_MFBuffer ( v->Temp_MacFlag );
-				
-				if ( VU::CurInstLO.Opcode != 21 )
-				{
-					v->Get_SFBuffer ( 0 );
-					v->Set_SFBuffer ( v->Temp_StatusFlag, 0xfc0 );
-				}
-#endif
 			}
 
 			inline static void VuUpperOpW_A ( VU *v, Instruction::Format i, OpType1A OpFunc0 )
@@ -2234,17 +1939,6 @@ namespace Vu
 					v->dACC [ 3 ].f = OpFunc0_st ( OpFunc0, v, v->dACC [ 3 ].f, v->dACC [ 3 ].f, v->vf [ i.Fs ].fw, v->vf [ i.Ft ].fw, 0 );
 				}
 				
-#ifdef ENABLE_NEW_FLAG_BUFFER
-				// get flags
-				v->Get_MFBuffer ( 0 );
-				v->Set_MFBuffer ( v->Temp_MacFlag );
-				
-				if ( VU::CurInstLO.Opcode != 21 )
-				{
-					v->Get_SFBuffer ( 0 );
-					v->Set_SFBuffer ( v->Temp_StatusFlag, 0xfc0 );
-				}
-#endif
 			}
 			
 			
@@ -2295,17 +1989,6 @@ namespace Vu
 				//	v->dACC [ 3 ].f = OpFunc0_st ( OpFunc0, v, v->vf [ i.Fs ].fw,  v->vf [ i.Ft ].fw, 0 );
 				//}
 				
-#ifdef ENABLE_NEW_FLAG_BUFFER
-				// get flags
-				v->Get_MFBuffer ( 0 );
-				v->Set_MFBuffer ( v->Temp_MacFlag );
-				
-				if ( VU::CurInstLO.Opcode != 21 )
-				{
-					v->Get_SFBuffer ( 0 );
-					v->Set_SFBuffer ( v->Temp_StatusFlag, 0xfc0 );
-				}
-#endif
 			}
 			
 			inline static void VuUpperOp_MSUB ( VU *v, Instruction::Format i, OpType1 OpFunc0 )
@@ -2365,17 +2048,6 @@ namespace Vu
 				// the accompanying lower instruction can't modify the same register
 				v->LastModifiedRegister = i.Fd;
 				
-#ifdef ENABLE_NEW_FLAG_BUFFER
-				// get flags
-				v->Get_MFBuffer ( 0 );
-				v->Set_MFBuffer ( v->Temp_MacFlag );
-				
-				if ( VU::CurInstLO.Opcode != 21 )
-				{
-					v->Get_SFBuffer ( 0 );
-					v->Set_SFBuffer ( v->Temp_StatusFlag, 0xfc0 );
-				}
-#endif
 			}
 			
 

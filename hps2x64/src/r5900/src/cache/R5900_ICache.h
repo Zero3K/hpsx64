@@ -53,20 +53,20 @@ namespace R5900
 		static const u32 ICacheLineCount = ICache_Size / ICache_Line_Size;
 
 		// marks if a cache line is valid or not
-		u8 Valid [ ICacheLineCount ] __attribute__ ((aligned (32)));
+		alignas(32) u8 Valid [ ICacheLineCount ];
 		
 		// flips when data is loaded
-		u8 LRF [ ICacheLineCount ] __attribute__ ((aligned (32)));
+		alignas(32) u8 LRF [ ICacheLineCount ];
 
 		// the block address for the blocks of data in ICache
 		// 16 bytes per cache line
 		// 256 Cache Blocks, so this has 256 entries in the array
-		u32 PFN [ ICacheLineCount ] __attribute__ ((aligned (32)));
+		alignas(32) u32 PFN [ ICacheLineCount ];
 		
 		
 		// the data in ICache
 		// has 1024 entries
-		u32 Data [ ICache_Size / sizeof(u32) ] __attribute__ ((aligned (32)));
+		alignas(32) u32 Data [ ICache_Size / sizeof(u32) ];
 		
 		u64 BTAC [ ICacheLineCount ];
 		

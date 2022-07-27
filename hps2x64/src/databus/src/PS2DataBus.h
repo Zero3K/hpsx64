@@ -176,15 +176,15 @@ namespace Playstation2
 			u32** pRegPtrs;
 		};
 
-		static DataBusEntry LUT_DataBus_Read [ c_LUT_Bus_Size ] __attribute__ ((aligned (16)));
-		static DataBusEntry LUT_DataBus_Write [ c_LUT_Bus_Size ] __attribute__ ((aligned (16)));
+		alignas(16) static DataBusEntry LUT_DataBus_Read [ c_LUT_Bus_Size ];
+		alignas(16) static DataBusEntry LUT_DataBus_Write [ c_LUT_Bus_Size ];
 		
 		
 		// references to the registers for reading
 		// registers are placed 16-bytes apart, so can shift down by 4
-		static u32* pRegRefList0x1000_Read [ 65536 >> 4 ] __attribute__ ((aligned (16)));
-		static u32* pRegRefList0x1100_Read [ 65536 >> 4 ] __attribute__ ((aligned (16)));
-		static u32* pRegRefList0x1200_Read [ 65536 >> 4 ] __attribute__ ((aligned (16)));
+		alignas(16) static u32* pRegRefList0x1000_Read [ 65536 >> 4 ];
+		alignas(16) static u32* pRegRefList0x1100_Read [ 65536 >> 4 ];
+		alignas(16) static u32* pRegRefList0x1200_Read [ 65536 >> 4 ];
 		
 		
 		// connect device with bus
@@ -294,78 +294,78 @@ namespace Playstation2
 		
 		union _MainMemory
 		{
-			u8 b8 [ MainMemory_Size ];
-			u16 b16 [ MainMemory_Size / sizeof ( u16 ) ];
-			u32 b32 [ MainMemory_Size / sizeof ( u32 ) ];
-			u64 b64 [ MainMemory_Size / sizeof ( u64 ) ];
-			s8 sb8 [ MainMemory_Size ];
-			s16 sb16 [ MainMemory_Size / sizeof ( s16 ) ];
-			s32 sb32 [ MainMemory_Size / sizeof ( s32 ) ];
-			s64 sb64 [ MainMemory_Size / sizeof ( s64 ) ];
-		} __attribute__ ((aligned (16)));
+			alignas(16) u8 b8 [ MainMemory_Size ];
+			alignas(16) u16 b16 [ MainMemory_Size / sizeof ( u16 ) ];
+			alignas(16) u32 b32 [ MainMemory_Size / sizeof ( u32 ) ];
+			alignas(16) u64 b64 [ MainMemory_Size / sizeof ( u64 ) ];
+			alignas(16) s8 sb8 [ MainMemory_Size ];
+			alignas(16) s16 sb16 [ MainMemory_Size / sizeof ( s16 ) ];
+			alignas(16) s32 sb32 [ MainMemory_Size / sizeof ( s32 ) ];
+			alignas(16) s64 sb64 [ MainMemory_Size / sizeof ( s64 ) ];
+		};
 		
 		union _BIOS
 		{
-			u8 b8 [ BIOS_Size ];
-			u16 b16 [ BIOS_Size / sizeof ( u16 ) ];
-			u32 b32 [ BIOS_Size / sizeof ( u32 ) ];
-			u64 b64 [ BIOS_Size / sizeof ( u64 ) ];
-			s8 sb8 [ BIOS_Size ];
-			s16 sb16 [ BIOS_Size / sizeof ( s16 ) ];
-			s32 sb32 [ BIOS_Size / sizeof ( s32 ) ];
-			s64 sb64 [ BIOS_Size / sizeof ( s64 ) ];
-		} __attribute__ ((aligned (16)));
+			alignas(16) u8 b8 [ BIOS_Size ];
+			alignas(16) u16 b16 [ BIOS_Size / sizeof ( u16 ) ];
+			alignas(16) u32 b32 [ BIOS_Size / sizeof ( u32 ) ];
+			alignas(16) u64 b64 [ BIOS_Size / sizeof ( u64 ) ];
+			alignas(16) s8 sb8 [ BIOS_Size ];
+			alignas(16) s16 sb16 [ BIOS_Size / sizeof ( s16 ) ];
+			alignas(16) s32 sb32 [ BIOS_Size / sizeof ( s32 ) ];
+			alignas(16) s64 sb64 [ BIOS_Size / sizeof ( s64 ) ];
+		};
 
 		union _ScratchPad
 		{
-			u8 b8 [ ScratchPad_Size ];
-			u16 b16 [ ScratchPad_Size / sizeof ( u16 ) ];
-			u32 b32 [ ScratchPad_Size / sizeof ( u32 ) ];
-			u64 b64 [ ScratchPad_Size / sizeof ( u64 ) ];
-			s8 sb8 [ ScratchPad_Size ];
-			s16 sb16 [ ScratchPad_Size / sizeof ( s16 ) ];
-			s32 sb32 [ ScratchPad_Size / sizeof ( s32 ) ];
-			s64 sb64 [ ScratchPad_Size / sizeof ( s64 ) ];
-		} __attribute__ ((aligned (16)));
+			alignas(16) u8 b8 [ ScratchPad_Size ];
+			alignas(16) u16 b16 [ ScratchPad_Size / sizeof ( u16 ) ];
+			alignas(16) u32 b32 [ ScratchPad_Size / sizeof ( u32 ) ];
+			alignas(16) u64 b64 [ ScratchPad_Size / sizeof ( u64 ) ];
+			alignas(16) s8 sb8 [ ScratchPad_Size ];
+			alignas(16) s16 sb16 [ ScratchPad_Size / sizeof ( s16 ) ];
+			alignas(16) s32 sb32 [ ScratchPad_Size / sizeof ( s32 ) ];
+			alignas(16) s64 sb64 [ ScratchPad_Size / sizeof ( s64 ) ];
+		};
 		
 		union _MicroMem0
 		{
-			u8 b8 [ MicroMem0_Size ];
-			u16 b16 [ MicroMem0_Size / sizeof ( u16 ) ];
-			u32 b32 [ MicroMem0_Size / sizeof ( u32 ) ];
-			u64 b64 [ MicroMem0_Size / sizeof ( u64 ) ];
-			s8 sb8 [ MicroMem0_Size ];
-			s16 sb16 [ MicroMem0_Size / sizeof ( s16 ) ];
-			s32 sb32 [ MicroMem0_Size / sizeof ( s32 ) ];
-			s64 sb64 [ MicroMem0_Size / sizeof ( s64 ) ];
-		} __attribute__ ((aligned (16)));
+			alignas(16) u8 b8 [ MicroMem0_Size ];
+			alignas(16) u16 b16 [ MicroMem0_Size / sizeof ( u16 ) ];
+			alignas(16) u32 b32 [ MicroMem0_Size / sizeof ( u32 ) ];
+			alignas(16) u64 b64 [ MicroMem0_Size / sizeof ( u64 ) ];
+			alignas(16) s8 sb8 [ MicroMem0_Size ];
+			alignas(16) s16 sb16 [ MicroMem0_Size / sizeof ( s16 ) ];
+			alignas(16) s32 sb32 [ MicroMem0_Size / sizeof ( s32 ) ];
+			alignas(16) s64 sb64 [ MicroMem0_Size / sizeof ( s64 ) ];
+		};
 
 
 		union _MicroMem1
 		{
-			u8 b8 [ MicroMem1_Size ];
-			u16 b16 [ MicroMem1_Size / sizeof ( u16 ) ];
-			u32 b32 [ MicroMem1_Size / sizeof ( u32 ) ];
-			u64 b64 [ MicroMem1_Size / sizeof ( u64 ) ];
-			s8 sb8 [ MicroMem1_Size ];
-			s16 sb16 [ MicroMem1_Size / sizeof ( s16 ) ];
-			s32 sb32 [ MicroMem1_Size / sizeof ( s32 ) ];
-			s64 sb64 [ MicroMem1_Size / sizeof ( s64 ) ];
-		} __attribute__ ((aligned (16)));
+			alignas(16) u8 b8 [ MicroMem1_Size ];
+			alignas(16) u16 b16 [ MicroMem1_Size / sizeof ( u16 ) ];
+			alignas(16) u32 b32 [ MicroMem1_Size / sizeof ( u32 ) ];
+			alignas(16) u64 b64 [ MicroMem1_Size / sizeof ( u64 ) ];
+			alignas(16) s8 sb8 [ MicroMem1_Size ];
+			alignas(16) s16 sb16 [ MicroMem1_Size / sizeof ( s16 ) ];
+			alignas(16) s32 sb32 [ MicroMem1_Size / sizeof ( s32 ) ];
+			alignas(16) s64 sb64 [ MicroMem1_Size / sizeof ( s64 ) ];
+		};
 
 		
 		
 		union _DirectCacheMem
 		{
-			u8 b8 [ DirectCacheMem_Size ];
-			u16 b16 [ DirectCacheMem_Size / sizeof ( u16 ) ];
-			u32 b32 [ DirectCacheMem_Size / sizeof ( u32 ) ];
-			u64 b64 [ DirectCacheMem_Size / sizeof ( u64 ) ];
-			s8 sb8 [ DirectCacheMem_Size ];
-			s16 sb16 [ DirectCacheMem_Size / sizeof ( s16 ) ];
-			s32 sb32 [ DirectCacheMem_Size / sizeof ( s32 ) ];
-			s64 sb64 [ DirectCacheMem_Size / sizeof ( s64 ) ];
-		} __attribute__ ((aligned (16)));
+			alignas(16) u8 b8 [ DirectCacheMem_Size ];
+			alignas(16) u16 b16 [ DirectCacheMem_Size / sizeof ( u16 ) ];
+			alignas(16) u32 b32 [ DirectCacheMem_Size / sizeof ( u32 ) ];
+			alignas(16) u64 b64 [ DirectCacheMem_Size / sizeof ( u64 ) ];
+			alignas(16) s8 sb8 [ DirectCacheMem_Size ];
+			alignas(16) s16 sb16 [ DirectCacheMem_Size / sizeof ( s16 ) ];
+			alignas(16) s32 sb32 [ DirectCacheMem_Size / sizeof ( s32 ) ];
+			alignas(16) s64 sb64 [ DirectCacheMem_Size / sizeof ( s64 ) ];
+		};
 		
 
 		
@@ -390,7 +390,7 @@ namespace Playstation2
 		
 		
 		// temp buffer used for 128-bit reads when needed
-		u32 TempBuffer [ 4 ] __attribute__ ((aligned (16)));
+		alignas(16) u32 TempBuffer [ 4 ];
 		
 		_DirectCacheMem DirectCacheMem;
 		
@@ -440,7 +440,7 @@ namespace Playstation2
 		// this can be static since it is read right after it is written to
 		static u32 Latency;
 		
-		u64 Dummy128 [ 2 ] __attribute__ ((aligned (16)));
+		alignas(16) u64 Dummy128 [ 2 ];
 		
 		bool isReady ();
 		
@@ -472,15 +472,15 @@ namespace Playstation2
 
 		union _Invalidate
 		{
-			u8 b8 [ c_iInvalidate_Size ];
-			u16 b16 [ c_iInvalidate_Size / sizeof ( u16 ) ];
-			u32 b32 [ c_iInvalidate_Size / sizeof ( u32 ) ];
-			u64 b64 [ c_iInvalidate_Size / sizeof ( u64 ) ];
-			s8 sb8 [ c_iInvalidate_Size ];
-			s16 sb16 [ c_iInvalidate_Size / sizeof ( s16 ) ];
-			s32 sb32 [ c_iInvalidate_Size / sizeof ( s32 ) ];
-			s64 sb64 [ c_iInvalidate_Size / sizeof ( s64 ) ];
-		} __attribute__ ((aligned (16)));
+			alignas(16) u8 b8 [ c_iInvalidate_Size ];
+			alignas(16) u16 b16 [ c_iInvalidate_Size / sizeof ( u16 ) ];
+			alignas(16) u32 b32 [ c_iInvalidate_Size / sizeof ( u32 ) ];
+			alignas(16) u64 b64 [ c_iInvalidate_Size / sizeof ( u64 ) ];
+			alignas(16) s8 sb8 [ c_iInvalidate_Size ];
+			alignas(16) s16 sb16 [ c_iInvalidate_Size / sizeof ( s16 ) ];
+			alignas(16) s32 sb32 [ c_iInvalidate_Size / sizeof ( s32 ) ];
+			alignas(16) s64 sb64 [ c_iInvalidate_Size / sizeof ( s64 ) ];
+		};
 		
 		static _Invalidate InvalidArray;
 		static _Invalidate Dummy_InvalidArray;

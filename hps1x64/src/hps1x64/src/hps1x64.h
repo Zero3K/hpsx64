@@ -20,6 +20,10 @@
 
 #include "ps1_system.h"
 
+#include "json.hpp"
+
+using json = nlohmann::ordered_json;
+
 
 namespace Playstation1
 {
@@ -28,7 +32,8 @@ namespace Playstation1
 	class hps1x64
 	{
 	public:
-	
+
+
 		static const unsigned long long CyclesToRunContinuous = 500000;
 
 		static const int ProgramWindow_X = 10;
@@ -141,6 +146,9 @@ namespace Playstation1
 		void Reset ();
 	
 		void Update_CheckMarksOnMenu ();
+
+		static void CreateMenuFromJson( WindowClass::Window* oPrgWindow, json jsnMenu, const char* sLanguage );
+
 		
 		int InitializeProgram ();
 

@@ -188,7 +188,6 @@ namespace Playstation2
 		
 		static const int c_iExeMaxPathLength = 2048;
 		static string ExecutablePath;
-		static string BiosPath;
 		
 		// events for menu items //
 		

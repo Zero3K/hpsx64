@@ -145,6 +145,14 @@ using namespace Vu;
 
 
 
+#define USE_NEW_RECOMPILE2
+
+
+// comment out to disable re-arranging exe order based on static analysis results
+#define USE_NEW_RECOMPILE2_EXEORDER
+
+
+
 //#define ENABLE_PASSIVE_WAIT
 
 
@@ -161,34 +169,42 @@ using namespace Vu;
 
 //#define INLINE_DEBUG
 
+//#define INLINE_DEBUG_RECOMPILE2
 
 /*
+#define INLINE_DEBUG_VURUN
+
+
+#define INLINE_DEBUG_INTDELAYSLOT
+
+
+//#define INLINE_DEBUG_PIPELINE
+
+
 #define INLINE_DEBUG_READ
 #define INLINE_DEBUG_WRITE
 
 //#define INLINE_DEBUG_DMA_READ
 
-#define INLINE_DEBUG_DMA_WRITE
-#define INLINE_DEBUG_DMA_WRITE_READY
+//#define INLINE_DEBUG_DMA_WRITE
+//#define INLINE_DEBUG_DMA_WRITE_READY
 
 #define INLINE_DEBUG_VUCOM
 //#define INLINE_DEBUG_VUCOM_MT
 
 
 
-#define INLINE_DEBUG_VURUN
 
 
-#define INLINE_DEBUG_PIPELINE
 //#define INLINE_DEBUG_FIFO
 
 //#define INLINE_DEBUG_ADVANCE_CYCLE
 
 
-#define INLINE_DEBUG_UNPACK
-#define INLINE_DEBUG_UNPACK_2
-#define INLINE_DEBUG_UNPACK_3
-
+//#define INLINE_DEBUG_UNPACK
+//#define INLINE_DEBUG_UNPACK_2
+//#define INLINE_DEBUG_UNPACK_3
+*/
 
 // this sends info to the vu execute debug on when vu gets started, etc
 #define INLINE_DEBUG_VUEXECUTE
@@ -198,7 +214,7 @@ using namespace Vu;
 #define INLINE_DEBUG_GETMEMPTR_INVALID
 #define INLINE_DEBUG_INVALID
 #define INLINE_DEBUG_INVALID_MT
-*/
+
 
 #endif
 
@@ -226,6 +242,9 @@ volatile u32 VU::pCommandBuffer32 [ VU::c_ullCommBufSize ];
 
 
 VU *VU::_VU [ VU::c_iMaxInstances ];
+
+
+u32 *VU::pStaticInfo [ 2 ];
 
 
 //Vu::Instruction::Format2 VU::CurInstLOHI;
@@ -265,7 +284,7 @@ volatile u32 VU::ulKillVuThread;
 
 
 
-u64 VU::ReadData128 [ 2 ];
+alignas(16) u64 VU::ReadData128 [ 2 ];
 
 
 
@@ -341,11 +360,6 @@ void VU::Reset ()
 	//cout << "\nsizeof( vu_recompiler_cache )= " << dec << sizeof( vu_recompiler_cache );
 	//memset ( vu_recompiler_cache, 0, sizeof( vu_recompiler_cache ) );
 
-	// reset new buffers for the flags
-	Reset_CFBuffer ();
-	Reset_MFBuffer ();
-	Reset_SFBuffer ();
-	Reset_BFBuffer ();
 	
 	// initialize random value to zero?
 	vi [ VU::REG_R ].u = ( 0x7f << 23 ) | 0;
@@ -447,6 +461,7 @@ void VU::Start ( int iNumber )
 			for( int i = 0; i < 32; i++ )
 			{
 				vu_recompiler_cache [ i ] [ Number ] = new Recompiler ( this, 0, 21, 11 );
+				//vu_recompiler_cache [ i ] [ Number ]->SetOptimizationLevel ( this, 0 );
 				vu_recompiler_cache [ i ] [ Number ]->SetOptimizationLevel ( this, 1 );
 				vu_recompiler_cache [ i ] [ Number ]->ullChecksum = -1ull;
 			}
@@ -467,6 +482,7 @@ void VU::Start ( int iNumber )
 			for( int i = 0; i < 32; i++ )
 			{
 				vu_recompiler_cache [ i ] [ Number ] = new Recompiler ( this, 0, 21, 9 );
+				//vu_recompiler_cache [ i ] [ Number ]->SetOptimizationLevel ( this, 0 );
 				vu_recompiler_cache [ i ] [ Number ]->SetOptimizationLevel ( this, 1 );
 				vu_recompiler_cache [ i ] [ Number ]->ullChecksum = -1ull;
 			}
@@ -1266,7 +1282,10 @@ u32 VU::VIF_FIFO_ExecuteMT ( u32* pData, u64 iStartIndex, u64 iMask, u64 ullCycl
 	u64 iVifIdx = 0;
 	
 	u32 lWordsLeft = SizeInWords32;
-	
+
+	static const int c_iSTROW_CommandSize = 5;
+	static const int c_iSTCOL_CommandSize = 5;
+
 	// also need to subtract lVifIdx & 0x3 from the words left
 	// to take over where we left off at
 	//lWordsLeft -= ( lVifIdx & 0x3 );
@@ -1452,7 +1471,6 @@ u32 VU::VIF_FIFO_ExecuteMT ( u32* pData, u64 iStartIndex, u64 iMask, u64 ullCycl
 	debug << " STROW";
 #endif
 
-				static const int c_iSTROW_CommandSize = 5;
 
 				// Vu0 and Vu1
 				if ( !iVifCodeState )
@@ -1508,7 +1526,6 @@ u32 VU::VIF_FIFO_ExecuteMT ( u32* pData, u64 iStartIndex, u64 iMask, u64 ullCycl
 	debug << " STCOL";
 #endif
 
-				static const int c_iSTCOL_CommandSize = 5;
 
 				// Vu0 and Vu1
 				
@@ -2357,6 +2374,9 @@ u32 VU::VIF_FIFO_ExecuteMT ( u32* pData, u64 iStartIndex, u64 iMask, u64 ullCycl
 // need this to return the number of quadwords read and update the offset so it points to correct data for next time
 u32 VU::VIF_FIFO_Execute ( u32* Data, u32 SizeInWords32 )
 {
+	static const int c_iSTROW_CommandSize = 5;
+	static const int c_iSTCOL_CommandSize = 5;
+
 	u32 ulTemp;
 	u32 *DstPtr32;
 	
@@ -3355,7 +3375,6 @@ u32 VU::VIF_FIFO_Execute ( u32* Data, u32 SizeInWords32 )
 	debug << " STROW";
 #endif
 
-				static const int c_iSTROW_CommandSize = 5;
 
 				// Vu0 and Vu1
 				
@@ -3406,7 +3425,6 @@ u32 VU::VIF_FIFO_Execute ( u32* Data, u32 SizeInWords32 )
 	debug << " STCOL";
 #endif
 
-				static const int c_iSTCOL_CommandSize = 5;
 
 				// Vu0 and Vu1
 				
@@ -5034,7 +5052,6 @@ void VU::Update_QWBuffer ()
 }
 
 
-
 void VU::Run ()
 {
 	u32 Index;
@@ -5155,15 +5172,133 @@ void VU::Run ()
 
 
 	//cout << "\nVU -> running=" << Running;
-	
+
+
+	// check that static analysis has been run //
+
+		// check that address block is encoded
+		//if ( ! vrs [ Number ]->isRecompiled ( PC ) )
+		if ( bCodeModified [ Number ] )
+		{
+#ifdef INLINE_DEBUG
+	debug << ";NOT Recompiled";
+#endif
+			// VU code memory has been modified since the last time it was recompiled //
+
+			if ( bRecompilerCacheEnabled )
+			{
+				// VU code caching ENABLED for recompiler //
+
+				// get/calculate checksum for current contents of vu code memory
+				ullRunningChecksum = Vu::Recompiler::Calc_Checksum( this );
+
+				if ( vrs[ Number ]->ullChecksum != ullRunningChecksum )
+				{
+					// check if checksum for those vu code memory contents are already recompiled (todo: bloom filter??)
+					for ( iMatch = 0; iMatch < 32; iMatch++ )
+					{
+						// check if checksum matches for any vu code that has already been recompiled
+						if ( vu_recompiler_cache [ iMatch ] [ Number ]->ullChecksum == ullRunningChecksum )
+						{
+							break;
+						}
+					}
+
+					if ( iMatch < 32 )
+					{
+						// VU code memory contents were already cached //
+
+						vrs [ Number ] = vu_recompiler_cache [ iMatch ] [ Number ];
+
+						pStaticInfo [ Number ] = vrs [ Number ]->LUT_StaticInfo;
+						pLUT_StaticInfo = pStaticInfo [ Number ];
+
+#ifdef VERBOSE_CHECKSUM
+			cout << "\nhps2x64: VU#" << Number << ": SUCCESS: found checksum match= " << hex << ullRunningChecksum;
+#endif
+
+#ifdef INLINE_DEBUG_VURUN
+			debug << "\r\n***VU#" << Number << ": SUCCESS: found checksum match= " << hex << ullRunningChecksum << " iMatch=" << dec << iMatch;
+#endif
+
+					}
+					else
+					{
+						// VU code memory contents NOT already cached, so need to recompile //
+
+						// make this the current recompiled code that the vu is going to use
+						vrs [ Number ] = vu_recompiler_cache [ iNextRecompile & 31 ] [ Number ];
+
+						// perform static analysis
+						vrs [ Number ]->StaticAnalysis ( this );
+
+						pStaticInfo [ Number ] = vrs [ Number ]->LUT_StaticInfo;
+						pLUT_StaticInfo = pStaticInfo [ Number ];
+
+						// perform recompile
+						vrs [ Number ]->Recompile( this, PC );
+						//vrs [ Number ]->Recompile2( this, PC );
+
+						// set checksum for the recompiled code
+						vrs [ Number ]->ullChecksum = ullRunningChecksum;
+
+
+
+						// use a different cache block next time we do the recompile
+						iNextRecompile++;
+
+#ifdef VERBOSE_CHECKSUM
+			cout << "\nhps2x64: VU#" << Number << ": FAIL: no checksum match= " << hex << ullRunningChecksum;
+#endif
+
+#ifdef INLINE_DEBUG_VURUN
+			debug << "\r\n***VU#" << Number << ": FAIL: no checksum match= " << hex << ullRunningChecksum;
+#endif
+
+					}	// end if ( iMatch < 32 ) else
+
+				}	// end if ( vrs[ Number ]->ullChecksum != ullRunningChecksum )
+
+			}
+			else
+			{
+				// VU code caching DISABLED for recompiler //
+
+				// perform static analysis
+				vrs [ Number ]->StaticAnalysis ( this );
+
+				pStaticInfo [ Number ] = vrs [ Number ]->LUT_StaticInfo;
+				pLUT_StaticInfo = pStaticInfo [ Number ];
+
+				// recompile block
+				vrs [ Number ]->Recompile ( this, PC );
+				//vrs [ Number ]->Recompile2( this, PC );
+
+
+
+				// this way, if caching gets re-enabled it will start all over again
+				vrs [ Number ]->ullChecksum = -1ull;
+
+			}	// end if ( bRecompilerCacheEnabled ) else
+			
+			// code has been recompiled so only need to recompile again if modified
+			bCodeModified [ Number ] = 0;
+
+#ifdef VERBOSE_RECOMPILE
+			cout << "\nhps2x64: VU: ALERT: code has been recompiled.";
+#endif
+#ifdef VERBOSE_CHECKSUM
+			cout << "\nhps2x64: VU#" << Number << ": ALERT: checksum for new code= " << hex << Vu::Recompiler::Calc_Checksum( this );
+			//cout << "\nhps2x64: VU#" << Number << ": ALERT: running checksum for new code= " << hex << ullRunningChecksum;
+#endif
+
+		}	// end if ( bCodeModified [ Number ] )
+
 	
 	/////////////////////////
 	// Execute Instruction //
 	/////////////////////////
 	
-	
-	// execute instruction
-	//NextPC = PC + 4;
 	
 #ifdef INLINE_DEBUG
 	debug << ";Execute";
@@ -5183,37 +5318,21 @@ void VU::Run ()
 	NextPC = PC + 8;
 
 #ifdef ENABLE_RECOMPILER_VU
-	if ( !bEnableRecompiler )
+	if ( ( Status.Value ) || ( !bEnableRecompiler ) )
 	{
-#endif
-	
-	//cout << "\nVU -> load lo";
-	
-	// load LO instruction
-	//CurInstLO.Value = MicroMem32 [ PC >> 2 ];
-	
-	//cout << "\nVU -> load hi";
-	
-	// load HI instruction
-	//CurInstHI.Value = MicroMem32 [ ( PC + 4 ) >> 2 ];
-	
-	CurInstLOHI.ValueLoHi = MicroMem64 [ PC >> 3 ];
-	
-	//cout << "\nVU -> execute lo";
-	
-	// check if E-bit is set (means end of execution after E-bit delay slot)
-	//if ( CurInstHI.E )
-	if ( CurInstLOHI.E )
-	{
-#ifdef INLINE_DEBUG
-	debug << "; ***E-BIT SET***";
 #endif
 
-		Status.EBitDelaySlot_Valid |= 0x2;
-	}
+	// VU recompiler is DISABLED //
+
+
+	//cout << "\nVU -> load instruction";
 	
-	// alert if d or t is set
-	//if ( CurInstHI.D )
+	// get the instruction to execute
+	CurInstLOHI.ValueLoHi = MicroMem64 [ PC >> 3 ];
+	
+	
+	
+	// alert if D-bit set //
 	if ( CurInstLOHI.D )
 	{
 		// register #28 is the FBRST register
@@ -5237,265 +5356,109 @@ void VU::Run ()
 			}
 		}
 	}
-	
-	//if ( CurInstHI.T )
+
+	// alert if T-bit set //
 	if ( CurInstLOHI.T )
 	{
 		cout << "\nhps2x64: ALERT: VU#" << Number << " T-bit is set!\n";
 	}
+
+
+	u32 RecompileCount;
+	RecompileCount = ( PC & ulVuMem_Mask ) >> 3;
+
+
 	
+
+	// check if E-bit is set (means end of execution after E-bit delay slot)
+	if (CurInstLOHI.E)
+	{
+#ifdef INLINE_DEBUG
+		debug << "; ***E-BIT SET***";
+#endif
+
+		Status.EBitDelaySlot_Valid |= 0x2;
+	}
+
+
 	
 	// execute HI instruction first ??
 	
 	// check if Immediate or End of execution bit is set
-	//if ( CurInstHI.I )
 	if ( CurInstLOHI.I )
 	{
 		// lower instruction contains an immediate value //
 		
 		// *important* MUST execute the HI instruction BEFORE storing the immediate
-		//Instruction::Execute::ExecuteInstructionHI ( this, CurInstHI );
 		Instruction::Execute::ExecuteInstructionHI ( this, CurInstLOHI.Hi );
 		
 		// load immediate regiser with LO instruction
-		//vi [ 21 ].u = CurInstLO.Value;
 		vi [ 21 ].u = CurInstLOHI.Lo.Value;
 	}
 	else
 	{
 		// execute lo/hi instruction normally //
 		// unsure of order
+
+#ifdef USE_NEW_RECOMPILE2_EXEORDER
+
+
+		// check if instruction order got swapped (analysis bit 20) //
+		if ( pLUT_StaticInfo[ RecompileCount ] & ( 1 << 20 ) )
+		{
+#ifdef INLINE_DEBUG_RECOMPILE2
+	debug << "\r\n>EXE-ORDER-SWAP";
+#endif
+
+			// execute HI instruction
+			Instruction::Execute::ExecuteInstructionHI ( this, CurInstLOHI.Hi );
+		}
+
+
+		// check if should ignore lower instruction (analysis bit 4)
+		if ( !( pLUT_StaticInfo[ RecompileCount ] & ( 1 << 4 ) ) )
+		{
+			// execute LO instruction since it is an instruction rather than an immediate value
+			Instruction::Execute::ExecuteInstructionLO ( this, CurInstLOHI.Lo );
+		}
 		
-		// set the lo instruction
-		//CurInstLO.Value = CurInstLOHI.Lo.Value;
-		
-		// execute LO instruction since it is an instruction rather than an immediate value
-		//Instruction::Execute::ExecuteInstructionLO ( this, CurInstLO );
+		if ( !( pLUT_StaticInfo[ RecompileCount ] & ( 1 << 20 ) ) )
+		{
+			// execute HI instruction
+			Instruction::Execute::ExecuteInstructionHI ( this, CurInstLOHI.Hi );
+		}
+
+
+
+#else
+
 		Instruction::Execute::ExecuteInstructionLO ( this, CurInstLOHI.Lo );
-		
-		// execute HI instruction
-		//Instruction::Execute::ExecuteInstructionHI ( this, CurInstHI );
 		Instruction::Execute::ExecuteInstructionHI ( this, CurInstLOHI.Hi );
+#endif
+
 		
-		// needs to be cleared to zero when done with it, since it is just to let hi instruction know what is going on
-		//CurInstLO.Value = 0;
 	}
+
+
 	
-	//cout << "\nVU -> execute hi";
-	
-	
-	//cout << "\nVU -> update pc";	
-	
-	// update instruction
-	//NextPC = PC + 8;
 
 
 #ifdef ENABLE_RECOMPILER_VU
-	}
+	}	// end if ( !bEnableRecompiler )
 	else
 	{
-// no need to interpret while single-stepping during testing
-#ifdef ALLOW_RECOMPILE_INTERPRETER
-		if ( Status.Value )
+
+	// VU recompiler is ENABLED //
+
 		{
-#ifdef INLINE_DEBUG
-	debug << ";Interpret";
-	debug << " Status=" << hex << Status.Value;
-#endif
-
-			// load the instruction
-			CurInstLOHI.ValueLoHi = MicroMem64 [ PC >> 3 ];
-			
-
-			// check if E-bit is set (means end of execution after E-bit delay slot)
-			//if ( CurInstHI.E )
-			if ( CurInstLOHI.E )
-			{
-#ifdef INLINE_DEBUG
-			debug << "; ***E-BIT SET***";
-#endif
-
-				Status.EBitDelaySlot_Valid |= 0x2;
-			}
-			
-
-			if ( CurInstLOHI.I )
-			{
-				// lower instruction contains an immediate value //
-				
-				// *important* MUST execute the HI instruction BEFORE storing the immediate
-				//Instruction::Execute::ExecuteInstructionHI ( this, CurInstHI );
-				Instruction::Execute::ExecuteInstructionHI ( this, CurInstLOHI.Hi );
-				
-				// load immediate regiser with LO instruction
-				//vi [ 21 ].u = CurInstLO.Value;
-				vi [ 21 ].u = CurInstLOHI.Lo.Value;
-			}
-			else
-			{
-				// execute lo/hi instruction normally //
-				// unsure of order
-				
-				// set the lo instruction
-				//CurInstLO.Value = CurInstLOHI.Lo.Value;
-				
-#ifdef ENABLE_XGKICK_WAIT
-				if ( !Status.XgKick_Wait )
-				{
-#endif
-
-				// execute LO instruction since it is an instruction rather than an immediate value
-				//Instruction::Execute::ExecuteInstructionLO ( this, CurInstLO );
-				Instruction::Execute::ExecuteInstructionLO ( this, CurInstLOHI.Lo );
-
-#ifdef ENABLE_XGKICK_WAIT
-				}
-#endif
-				
-				// execute HI instruction
-				//Instruction::Execute::ExecuteInstructionHI ( this, CurInstHI );
-				Instruction::Execute::ExecuteInstructionHI ( this, CurInstLOHI.Hi );
-				
-				// needs to be cleared to zero when done with it, since it is just to let hi instruction know what is going on
-				//CurInstLO.Value = 0;
-			}
-		}
-		else
-#endif
-		{
-		
-		// check that address block is encoded
-		//if ( ! vrs [ Number ]->isRecompiled ( PC ) )
-		if ( bCodeModified [ Number ] )
-		{
-#ifdef INLINE_DEBUG
-	debug << ";NOT Recompiled";
-#endif
-			// address is NOT encoded //
-
-			if ( bRecompilerCacheEnabled )
-			{
-				// get/calculate checksum
-				ullRunningChecksum = Vu::Recompiler::Calc_Checksum( this );
-
-				if ( vrs[ Number ]->ullChecksum != ullRunningChecksum )
-				{
-					// check if checksum already recompiled (todo: bloom filter??)
-					for ( iMatch = 0; iMatch < 32; iMatch++ )
-					{
-						if ( vu_recompiler_cache [ iMatch ] [ Number ]->ullChecksum == ullRunningChecksum )
-						{
-							break;
-						}
-					}
-
-					if ( iMatch < 32 )
-					{
-						vrs [ Number ] = vu_recompiler_cache [ iMatch ] [ Number ];
-
-#ifdef VERBOSE_CHECKSUM
-			cout << "\nhps2x64: VU#" << Number << ": SUCCESS: found checksum match= " << hex << ullRunningChecksum;
-#endif
-
-#ifdef INLINE_DEBUG_VURUN
-			debug << "\r\n***VU#" << Number << ": SUCCESS: found checksum match= " << hex << ullRunningChecksum << " iMatch=" << dec << iMatch;
-#endif
-
-					}
-					else
-					{
-						vu_recompiler_cache [ iNextRecompile & 31 ] [ Number ]->Recompile( this, PC );
-						vu_recompiler_cache [ iNextRecompile & 31 ] [ Number ]->ullChecksum = ullRunningChecksum;
-						vrs [ Number ] = vu_recompiler_cache [ iNextRecompile & 31 ] [ Number ];
-
-						iNextRecompile++;
-
-#ifdef VERBOSE_CHECKSUM
-			cout << "\nhps2x64: VU#" << Number << ": FAIL: no checksum match= " << hex << ullRunningChecksum;
-#endif
-
-#ifdef INLINE_DEBUG_VURUN
-			debug << "\r\n***VU#" << Number << ": FAIL: no checksum match= " << hex << ullRunningChecksum;
-#endif
-
-					}
-
-				}
 
 
-				/*
-				if ( vrs [ Number ]->ullChecksum != ullRunningChecksum )
-				{
-					vrs [ Number ]->Recompile( this, PC );
-					//vrs [ Number ] = vu_recompiler_cache [ 0 ] [ Number ];
-
-					// set the new checksum
-					vrs [ Number ]->ullChecksum = ullRunningChecksum;
-
-#ifdef VERBOSE_CHECKSUM
-			cout << "\nhps2x64: VU#" << Number << ": FAIL: no checksum match= " << hex << ullRunningChecksum;
-#endif
-				}
-				else
-				{
-
-#ifdef VERBOSE_CHECKSUM
-			cout << "\nhps2x64: VU#" << Number << ": SUCCESS: found checksum match= " << hex << ullRunningChecksum;
-#endif
-				}
-				*/
+	u32 RecompileCount;
+	RecompileCount = ( PC & ulVuMem_Mask ) >> 3;
 
 
-				// if checksum not recompiled, then recompile
-				/*
-				if ( iMatch < 32 )
-				{
-					// checksum found
-					vrs [ Number ] = vu_recompiler_cache [ iMatch ] [ Number ];
 
-#ifdef VERBOSE_CHECKSUM
-			cout << "\nhps2x64: VU#" << Number << ": SUCCESS: found checksum match= " << hex << ullRunningChecksum;
-#endif
-				}
-				else
-				{
-					vu_recompiler_cache [ iNextRecompile & 31 ] [ Number ]->Recompile( this, PC );
-					vrs [ Number ] = vu_recompiler_cache [ iNextRecompile & 31 ] [ Number ];
 
-					// set the new checksum
-					vu_recompiler_cache [ iNextRecompile & 31 ] [ Number ]->ullChecksum = ullRunningChecksum;
-
-					iNextRecompile++;
-
-#ifdef VERBOSE_CHECKSUM
-			cout << "\nhps2x64: VU#" << Number << ": FAIL: no checksum match= " << hex << ullRunningChecksum;
-#endif
-				}
-				*/
-			}
-			else
-			{
-				// recompile block
-				//vrs [ Number ]->Recompile ( this, PC );
-				vrs [ Number ]->Recompile( this, PC );
-				//vrs [ Number ] = vu_recompiler_cache [ 0 ] [ Number ];
-
-				// this way, if caching gets re-enabled it will start all over again
-				vrs [ Number ]->ullChecksum = -1ull;
-			}
-			
-			// code has been recompiled so only need to recompile again if modified
-			bCodeModified [ Number ] = 0;
-
-#ifdef VERBOSE_RECOMPILE
-			cout << "\nhps2x64: VU: ALERT: code has been recompiled.";
-#endif
-#ifdef VERBOSE_CHECKSUM
-			cout << "\nhps2x64: VU#" << Number << ": ALERT: checksum for new code= " << hex << Vu::Recompiler::Calc_Checksum( this );
-			//cout << "\nhps2x64: VU#" << Number << ": ALERT: running checksum for new code= " << hex << ullRunningChecksum;
-#endif
-		}
-		
 #ifdef INLINE_DEBUG
 	debug << ";Recompiled";
 	debug << ";PC=" << hex << PC;
@@ -5511,19 +5474,41 @@ void VU::Run ()
 
 #ifdef INLINE_DEBUG
 	debug << ";Index(dec)=" << dec << Index;
-	debug << ";Index(hex)=" << hex << Index;
+	//debug << ";Index(hex)=" << hex << Index;
+	debug << " CntOffset=" << dec << vrs [ Number ]->CycleCount [ Index ];
+	debug << " codeptr=" << hex << ((u64) vrs [ Number ]->pCodeStart [ Index ]);
 #endif
-		
+
+
+#ifdef INLINE_DEBUG_RECOMPILE2
+	debug << " InstrCount=" << dec << InstrCount << " " << hex << InstrCount;
+	debug << " RecCycleCnt=" << dec << vrs [ Number ]->CycleCount [ Index ] << " " << hex << vrs [ Number ]->CycleCount [ Index ];
+	debug << " Index=" << dec << Index;
+	debug << " Number=" << dec << Number;
+#endif
+
+
 		// offset cycles before the run, so that it updates to the correct value
-		//CycleCount -= rs->CycleCount [ Index ];
+		// note: needs to be commented out if updating cyclecount in recompiler
+		//CycleCount -= vrs [ Number ]->CycleCount [ Index ];
+
+		// offset instruction count
+		InstrCount -= vrs [ Number ]->CycleCount [ Index ];
 
 		// already checked that is was either in cache, or etc
 		// execute from address
+		//cout << "\nCalling vu code at address: " << hex << (u64)(vrs[Number]->pCodeStart[Index]) << " PC=" << PC;
 		( (func2) (vrs [ Number ]->pCodeStart [ Index ]) ) ();
-		
+
+		//cout << "\nReturning from vu code.";
+
 #ifdef INLINE_DEBUG
 	debug << "\r\n->RecompilerReturned";
 	debug << " VU#" << dec << Number;
+#endif
+
+#ifdef INLINE_DEBUG_RECOMPILE2
+	debug << " ->InstrCount=" << dec << InstrCount << " " << hex << InstrCount;
 #endif
 
 		} // end if ( Status.Value )
@@ -5566,10 +5551,18 @@ void VU::Run ()
 #ifdef ENABLE_INTDELAYSLOT
 		if ( Status.IntDelayValid )
 		{
+#ifdef INLINE_DEBUG_INTDELAYSLOT
+			debug << "\r\nVU::RUN->Status.IntDelayValid=" << (u32)Status.IntDelayValid;
+#endif
+
 			Status.IntDelayValid >>= 1;
 			
 			if ( !Status.IntDelayValid )
 			{
+#ifdef INLINE_DEBUG_INTDELAYSLOT
+			debug << " IntDelayReg=" << IntDelayReg << " IntDelayValue=" << IntDelayValue;
+#endif
+
 				vi [ IntDelayReg ].u = IntDelayValue;
 			}
 		}
@@ -5594,6 +5587,9 @@ void VU::Run ()
 			
 			if ( !Status.DelaySlot_Valid )
 			{
+				// clear instr count when branching
+				InstrCount = -1;
+
 				ProcessBranchDelaySlot ();
 			}
 			
@@ -5698,6 +5694,23 @@ void VU::Run ()
 				}
 				else
 				{
+					// check if this is vu0 that is going to continue rather than stop
+					if ( !bContinueVU0 )
+					{
+						// just a normal full stop of vu0 or vu1 //
+
+						// reset instruction count unless vu0 is going to continue
+						InstrCount = -1;
+
+						// make sure q and p are updated properly ??
+						WaitQ ();
+						WaitP ();
+
+					}
+					
+					// handled until next time
+					bContinueVU0 = 0;
+
 					// check if this is vu#1 and running on another thread
 					// stop the vu when it is complete
 					StopVU ();
@@ -5776,13 +5789,23 @@ void VU::Run ()
 
 		//cout << hex << "\n" << DelaySlot1.Value << " " << DelaySlot1.Value2 << " " << DelaySlot0.Value << " " << DelaySlot0.Value2;
 		
-	}
+	}	// end if ( Status.Value )
 
 
 	/////////////////////////////////////
 	// Update Program Counter
 	LastPC = PC;
 	PC = NextPC;
+
+#ifdef USE_NEW_RECOMPILE2
+
+	// only update the cycle count and instruction count
+	//CycleCount++;
+	InstrCount++;
+
+	AdvanceCycle ();
+
+#else
 
 #ifdef ENABLE_STALLS
 
@@ -5798,7 +5821,10 @@ void VU::Run ()
 
 	// update the flags here for now
 	UpdateFlags ();
-#endif
+
+#endif	// end #ifdef ENABLE_STALLS
+
+#endif	// end #ifdef USE_NEW_RECOMPILE2
 
 	// if not multi-threading, update the externally viewable cycle#
 	if ( !Number || !ulThreadCount )
@@ -5816,13 +5842,14 @@ void VU::ProcessBranchDelaySlot ()
 	u32 Address;
 	
 	DelaySlot *d = & ( DelaySlots [ NextDelaySlotIndex ] );
+
 	
 #ifdef ENABLE_PIPELINE_CLEAR_ON_BRANCH
 	// clear the pipeline when branching?
 	ClearFullPipeline ();
 	
 	// cycle time to refill the pipeline ?
-	CycleCount += 6;
+	//CycleCount += 6;
 #endif
 	
 	//i = DelaySlot1.Instruction;
@@ -5941,6 +5968,148 @@ u32* VU::GetMemPtr ( u32 Address32 )
 	}
 	
 	return & ( VuMem32 [ Address32 & ( c_ulVuMem1_Mask >> 2 ) ] );
+}
+
+
+void VU::Perform_UnJump ( VU* v, Instruction::Format CurInstHI )
+{
+	u32 RecompileCount;
+	RecompileCount = ( v->PC & v->ulVuMem_Mask ) >> 3;
+
+	// check if instr count is zero
+	if ( ( v->InstrCount + RecompileCount ) == 0 )
+	{
+		cout << "\nPerform_UnJump: ALERT: InstrCount is ZERO!!!\n";
+	}
+
+	// clear instruction count
+	v->InstrCount = -1;
+
+	// update cycle count
+	// note: plus 5 cycles to branch ??
+	//CycleCount += 5;
+
+	// notify vu that branch has been hit
+	v->Status.DelaySlot_Valid = 1;
+
+
+	// if int was put into delay slot, might need to handle this
+
+	// if the e-bit is set, MUST handle it after landing from jump
+	if ( v->pLUT_StaticInfo[ RecompileCount + 1 ] & ( 1 << 17 ) )
+	{
+		v->Status.EBitDelaySlot_Valid |= 0x2;
+	}
+}
+
+
+void VU::UpdateQ_Micro2 ( VU* v )
+{
+	// check if div/sqrt unit is done
+	if ( v->CycleCount >= v->QBusyUntil_Cycle )
+	{
+		// get next q value
+		v->vi [ VU::REG_Q ].u = v->NextQ.lu;
+
+		// get next q flag
+		v->vi [ VU::REG_STATUSFLAG ].u &= ~0x30;
+		v->vi [ VU::REG_STATUSFLAG ].u |= v->NextQ_Flag;
+
+		// clear nextq flag after it has been updated
+		//NextQ_Flag = 0;
+		v->QBusyUntil_Cycle = -1ull;
+	}
+}
+
+void VU::WaitQ_Micro2 ( VU* v )
+{
+	// make sure there is a value in the pipeline
+	if ( v->QBusyUntil_Cycle != -1 )
+	{
+		// check if div/sqrt unit is done
+		if ( v->CycleCount < v->QBusyUntil_Cycle )
+		{
+			v->CycleCount = v->QBusyUntil_Cycle;
+		}
+
+		// get next q value
+		v->vi [ VU::REG_Q ].u = v->NextQ.lu;
+
+		// get next q flag
+		v->vi [ VU::REG_STATUSFLAG ].u &= ~0x30;
+		v->vi [ VU::REG_STATUSFLAG ].u |= v->NextQ_Flag;
+
+		// clear nextq flag after it has been updated
+		//NextQ_Flag = 0;
+		v->QBusyUntil_Cycle = -1ull;
+	}
+}
+
+
+u32 VU::Get_MacFlag2 ( VU* v )
+{
+	//u32 RecompileCount;
+	//RecompileCount = ( v->PC & v->ulVuMem_Mask ) >> 3;
+
+	v->Current_MacFlag = v->History_MacStatFlag [ v->iMacStatIndex & 0x3 ].MacFlag;
+	if ( ( v->CycleCount - 4 ) >= v->History_MacStatCycle [ ( v->iMacStatIndex + 1 ) & 0x3 ] )
+	{
+		v->Current_MacFlag = v->History_MacStatFlag [ ( v->iMacStatIndex + 1 ) & 0x3 ].MacFlag;
+	}
+	if ( ( v->CycleCount - 4 ) >= v->History_MacStatCycle [ ( v->iMacStatIndex + 2 ) & 0x3 ] )
+	{
+		v->Current_MacFlag = v->History_MacStatFlag [ ( v->iMacStatIndex + 2 ) & 0x3 ].MacFlag;
+	}
+	if ( ( v->CycleCount - 4 ) >= v->History_MacStatCycle [ ( v->iMacStatIndex + 3 ) & 0x3 ] )
+	{
+		v->Current_MacFlag = v->History_MacStatFlag [ ( v->iMacStatIndex + 3 ) & 0x3 ].MacFlag;
+	}
+
+	return v->Current_MacFlag;
+}
+
+u32 VU::Get_StatFlag2 ( VU* v )
+{
+	//u32 RecompileCount;
+	//RecompileCount = ( v->PC & v->ulVuMem_Mask ) >> 3;
+
+	v->Current_StatFlag = v->History_MacStatFlag [ v->iMacStatIndex & 0x3 ].StatFlag;
+	if ( ( v->CycleCount - 4 ) >= v->History_MacStatCycle [ ( v->iMacStatIndex + 1 ) & 0x3 ] )
+	{
+		v->Current_StatFlag = v->History_MacStatFlag [ ( v->iMacStatIndex + 1 ) & 0x3 ].StatFlag;
+	}
+	if ( ( v->CycleCount - 4 ) >= v->History_MacStatCycle [ ( v->iMacStatIndex + 2 ) & 0x3 ] )
+	{
+		v->Current_StatFlag = v->History_MacStatFlag [ ( v->iMacStatIndex + 2 ) & 0x3 ].StatFlag;
+	}
+	if ( ( v->CycleCount - 4 ) >= v->History_MacStatCycle [ ( v->iMacStatIndex + 3 ) & 0x3 ] )
+	{
+		v->Current_StatFlag = v->History_MacStatFlag [ ( v->iMacStatIndex + 3 ) & 0x3 ].StatFlag;
+	}
+
+	return v->Current_StatFlag;
+}
+
+u32 VU::Get_ClipFlag2 ( VU* v )
+{
+	//u32 RecompileCount;
+	//RecompileCount = ( v->PC & v->ulVuMem_Mask ) >> 3;
+
+	v->Current_ClipFlag = v->History_ClipFlag [ v->iClipIndex & 0x3 ];
+	if ( ( v->CycleCount - 4 ) >= v->History_ClipCycle [ ( v->iClipIndex + 1 ) & 0x3 ] )
+	{
+		v->Current_ClipFlag = v->History_ClipFlag [ ( v->iClipIndex + 1 ) & 0x3 ];
+	}
+	if ( ( v->CycleCount - 4 ) >= v->History_ClipCycle [ ( v->iClipIndex + 2 ) & 0x3 ] )
+	{
+		v->Current_ClipFlag = v->History_ClipFlag [ ( v->iClipIndex + 2 ) & 0x3 ];
+	}
+	if ( ( v->CycleCount - 4 ) >= v->History_ClipCycle [ ( v->iClipIndex + 3 ) & 0x3 ] )
+	{
+		v->Current_ClipFlag = v->History_ClipFlag [ ( v->iClipIndex + 3 ) & 0x3 ];
+	}
+
+	return v->Current_ClipFlag;
 }
 
 
@@ -6123,8 +6292,8 @@ void VU::PipelineWaitP ()
 	// note: must wait only until one cycle before the P register is supposed to be free
 	// because "PBusyUntil_Cycle" actually specifies the cycle the P register should be updated for "MFP" instruction
 	// any stalls actually only stall until one cycle before that
-	//PipelineWaitCycle ( PBusyUntil_Cycle );
-	PipelineWaitCycle ( PBusyUntil_Cycle - 1 );
+	PipelineWaitCycle ( PBusyUntil_Cycle );
+	//PipelineWaitCycle ( PBusyUntil_Cycle - 1 );
 	
 	// done waiting for P register
 	//PBusyUntil_Cycle = 0LL;
@@ -7256,5 +7425,7 @@ void VU::Finish ()
 
 	}
 }
+
+
 
 

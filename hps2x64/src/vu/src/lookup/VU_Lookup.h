@@ -159,8 +159,8 @@ namespace Vu
 			
 			// this actually has to be a 4D array, but I'll make it one array			
 			// use Opcode, Rs, Rt, Shift, and Funct to lookup value
-			static u8 LookupTableHI [ c_iLookupTableHI_Size ] __attribute__ ((aligned (32)));
-			static u8 LookupTableLO [ c_iLookupTableLO_Size ] __attribute__ ((aligned (32)));
+			alignas(32) static u8 LookupTableHI [ c_iLookupTableHI_Size ];
+			alignas(32) static u8 LookupTableLO [ c_iLookupTableLO_Size ];
 			
 		public:
 			// call this before doing anything

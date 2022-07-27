@@ -22,7 +22,13 @@
 #include <iostream>
 
 #include <windows.h>
-//#include <gl/gl.h>
+#include <gl/gl.h>
+
+#pragma comment(lib, "comctl32")
+
+//#pragma comment(lib, "glew32.lib")  
+#pragma comment(lib, "opengl32")
+
 
 using namespace x64ThreadSafe::Utilities;
 using namespace Utilities::Strings;
@@ -288,6 +294,10 @@ LRESULT CALLBACK WindowClass::WndProc(HWND hWnd, UINT message, WPARAM wParam, LP
 						debug << "->Calling Hot Key function";
 #endif
 
+						cout << "\nKey= " << hex << WindowClass::Window::ShortcutKey_Entries [ i ].Key;
+						cout << "\nModifier= " << hex << WindowClass::Window::ShortcutKey_Entries [ i ].Modifier;
+						cout << "\nGetKeyState= " << hex << GetKeyState ( WindowClass::Window::ShortcutKey_Entries [ i ].Modifier );
+
 						//////////////////////////////////////////////////////////////
 						// make a call to the function associated with the hotkey
 						WindowClass::Window::ShortcutKey_Entries [ i ].CallbackFunc ( (int) wParam );
@@ -378,6 +388,259 @@ LRESULT CALLBACK WindowClass::WndProc(HWND hWnd, UINT message, WPARAM wParam, LP
 
 	return 0;
 }
+
+
+
+
+void WindowClass::Window::CreateMenuFromJson( json jsnMenuBar, const char* sLanguage )
+{
+	WindowClass::MenuBar::MenuBarItem* oMainMenuItem;
+
+	WindowClass::MenuBar* oMenu = this->Menus;
+
+	for ( const auto& item : jsnMenuBar["MenuBar"].items() )
+	{
+		//cout << "\nkey= " << item.key() << " value= " << item.value();
+		//cout << "\nis_object= " << item.value().is_object();
+
+		// menu needs a caption
+		if ( item.value().contains( "Caption" ) )
+		{
+			// check if it has a caption for the language
+			if ( item.value()["Caption"].contains( sLanguage ) )
+			{
+				// get the caption
+				auto sMainMenuCaption = item.value()["Caption"][sLanguage];
+				oMainMenuItem = oMenu->AddMainMenuItem ( sMainMenuCaption );
+
+				cout << "\nAdded main menu item: " << sMainMenuCaption;
+
+				// check for submenu(s)
+				if ( item.value().contains( "SubMenu" ) )
+				{
+					// loop through the submenus //
+
+					for ( const auto& subitem : item.value()["SubMenu"].items() )
+					{
+
+						// check if submenu item has a caption
+						if ( subitem.value().contains( "Caption" ) )
+						{
+							// check it has caption for the language
+							if ( subitem.value()["Caption"].contains( sLanguage ) )
+							{
+								// get the caption
+								string sCaption = subitem.value()["Caption"][sLanguage];
+								string sKey = subitem.key();
+
+								// check if this is a menu or an item
+								if ( !subitem.value().contains( "SubMenu" ) )
+								{
+									// this is an item //
+
+									// check if there is a function
+									WindowClass::MenuBar::Function pFunction = NULL;
+									if ( subitem.value().contains("Function") )
+									{
+										unsigned long long ullFunction = subitem.value()["Function"];
+										pFunction = (WindowClass::MenuBar::Function) ( ullFunction );
+
+										// check if there is a shortcut key
+										if ( subitem.value().contains("ShortcutKey") )
+										{
+											unsigned long ulShortcutKey = 0;
+											unsigned long ulModifierKey = 0;
+											string sShortcutKey;
+
+											//ulShortcutKey = subitem.value()["ShortcutKey"];
+											ulShortcutKey = subitem.value()["ShortcutKey"]["Key"];
+											ulModifierKey = subitem.value()["ShortcutKey"]["Modifier"];
+
+											// add shortcut key to program
+											this->AddShortcutKey( pFunction, ulShortcutKey, ulModifierKey );
+
+											sShortcutKey = (char) ulShortcutKey;
+											if ( ulModifierKey )
+											{
+												sShortcutKey = "CTRL+" + sShortcutKey;
+											}
+											
+											// add shortcut key to caption //
+											sCaption += "\t" + sShortcutKey;
+
+										}
+									}
+
+									// add the item to the menu
+									oMainMenuItem->AddItem( sCaption, sKey, pFunction );
+
+
+								}
+								else
+								{
+									WindowClass::MenuBar::MenuBarItem* oSubMenuItem;
+
+									// this is a menu //
+									oSubMenuItem = oMainMenuItem->AddMenu( sCaption );
+
+									// loop through the submenu //
+
+									for ( const auto& subitem2 : subitem.value()["SubMenu"].items() )
+									{
+
+										// check if submenu item has a caption
+										if ( subitem2.value().contains( "Caption" ) )
+										{
+											// check it has caption for the language
+											if ( subitem2.value()["Caption"].contains( sLanguage ) )
+											{
+												// get the caption
+												string sCaption = subitem2.value()["Caption"][sLanguage];
+												string sKey = subitem2.key();
+
+												// check if this is a menu or an item
+												if ( !subitem2.value().contains( "SubMenu" ) )
+												{
+													// this is an item //
+
+													// check if there is a function
+													WindowClass::MenuBar::Function pFunction = NULL;
+													if ( subitem2.value().contains("Function") )
+													{
+														unsigned long long ullFunction = subitem2.value()["Function"];
+														pFunction = (WindowClass::MenuBar::Function) ( ullFunction );
+
+														// check if there is a shortcut key
+														if ( subitem2.value().contains("ShortcutKey") )
+														{
+															unsigned long ulShortcutKey = 0;
+															unsigned long ulModifierKey = 0;
+															string sShortcutKey;
+
+															//sShortcutKey = subitem2.value()["ShortcutKey"];
+															ulShortcutKey = subitem2.value()["ShortcutKey"]["Key"];
+															ulModifierKey = subitem2.value()["ShortcutKey"]["Modifier"];
+
+															// add shortcut key to program
+															this->AddShortcutKey( pFunction, ulShortcutKey, ulModifierKey );
+
+															sShortcutKey = (char) ulShortcutKey;
+															if ( ulModifierKey )
+															{
+																sShortcutKey = "CTRL+" + sShortcutKey;
+															}
+															
+															// add shortcut key to caption //
+															sCaption += "\t" + sShortcutKey;
+														}
+													}
+
+													// add the item to the menu
+													oSubMenuItem->AddItem( sCaption, sKey, pFunction );
+
+
+												}
+												else
+												{
+													WindowClass::MenuBar::MenuBarItem* oSubMenuItem2;
+
+													// this is a menu //
+													oSubMenuItem2 = oSubMenuItem->AddMenu( sCaption );
+
+													// loop through the submenu3 //
+
+													for ( const auto& subitem3 : subitem2.value()["SubMenu"].items() )
+													{
+
+														// check if submenu item has a caption
+														if ( subitem3.value().contains( "Caption" ) )
+														{
+															// check it has caption for the language
+															if ( subitem3.value()["Caption"].contains( sLanguage ) )
+															{
+																// get the caption
+																string sCaption = subitem3.value()["Caption"][sLanguage];
+																string sKey = subitem3.key();
+
+																// check if this is a menu or an item
+																if ( !subitem3.value().contains( "SubMenu" ) )
+																{
+																	// this is an item //
+
+																	// check if there is a function
+																	WindowClass::MenuBar::Function pFunction = NULL;
+																	if ( subitem3.value().contains("Function") )
+																	{
+																		unsigned long long ullFunction = subitem3.value()["Function"];
+																		pFunction = (WindowClass::MenuBar::Function) ( ullFunction );
+
+																		// check if there is a shortcut key
+																		if ( subitem3.value().contains("ShortcutKey") )
+																		{
+																			unsigned long ulShortcutKey = 0;
+																			unsigned long ulModifierKey = 0;
+																			string sShortcutKey;
+
+																			//sShortcutKey = subitem3.value()["ShortcutKey"];
+																			ulShortcutKey = subitem3.value()["ShortcutKey"]["Key"];
+																			ulModifierKey = subitem3.value()["ShortcutKey"]["Modifier"];
+
+																			// add shortcut key to program
+																			this->AddShortcutKey( pFunction, ulShortcutKey, ulModifierKey );
+
+																			sShortcutKey = (char) ulShortcutKey;
+																			if ( ulModifierKey )
+																			{
+																				sShortcutKey = "CTRL+" + sShortcutKey;
+																			}
+																			
+																			// add shortcut key to caption //
+																			sCaption += "\t" + sShortcutKey;
+																		}
+																	}
+
+																	// add the item to the menu
+																	oSubMenuItem2->AddItem( sCaption, sKey, pFunction );
+
+																}
+
+															}
+
+														}
+
+													}
+
+
+												}	// end if else if ( !subitem2.value().contains( "SubMenu" ) )
+
+											}	// end if ( subitem2.value()["Caption"].contains( sLanguage ) )
+
+										}	// end if ( subitem2.value().contains( "Caption" ) )
+
+									}	// end for ( const auto& subitem2 : subitem.value()["SubMenu"].items() )
+
+
+								}	// end if else if ( !subitem.value().contains( "SubMenu" ) )
+
+							}	// end if ( subitem.value()["Caption"].contains( sLanguage ) )
+
+						}	// end if ( subitem.value().contains( "Caption" ) )
+
+					}	// end for ( const auto& subitem : item.value()["SubMenu"].items() )
+
+				}	// end if ( item.value().contains( "SubMenu" ) )
+
+			}	// end if ( item.value()["Caption"].contains( sLanguage ) )
+
+		}	// end if ( item.value().contains( "Caption" ) )
+
+	}	// end for ( const auto& item : jsnMenuBar["MenuBar"].items() )
+
+}
+
+
+
+
 
 long WindowClass::Window::GUIThread_isRunning = 0;
 Api::Thread* WindowClass::Window::GUIThread;
@@ -701,7 +964,7 @@ int WindowClass::Window::WindowMessageLoop ()
 }
 
 
-string WindowClass::Window::ShowFileOpenDialog_BIOS()
+string WindowClass::Window::ShowFileOpenDialog ()
 {
 	OPENFILENAME ofn;       // common dialog box structure
 	char szFile[1024];       // buffer for file name
@@ -717,7 +980,7 @@ string WindowClass::Window::ShowFileOpenDialog_BIOS()
 	// use the contents of szFile to initialize itself.
 	ofn.lpstrFile[0] = '\0';
 	ofn.nMaxFile = sizeof(szFile);
-	ofn.lpstrFilter = "Bios\0*.bin\0";
+	ofn.lpstrFilter = "All\0*.*\0Text\0*.TXT\0";
 	ofn.nFilterIndex = 1;
 	ofn.lpstrFileTitle = NULL;
 	ofn.nMaxFileTitle = 0;
@@ -734,89 +997,11 @@ string WindowClass::Window::ShowFileOpenDialog_BIOS()
 		//return szFile;
 	}
 
-
 	//cout << "\nDEBUG: GetOpenFileName = FALSE.";
 	
 	return "";
 }
 
-string WindowClass::Window::ShowFileOpenDialog_Image()
-{
-	OPENFILENAME ofn;       // common dialog box structure
-	char szFile[1024];       // buffer for file name
-	//HWND hwnd;              // owner window
-	//HANDLE hf;              // file handle
-
-	// Initialize OPENFILENAME
-	ZeroMemory(&ofn, sizeof(ofn));
-	ofn.lStructSize = sizeof(ofn);
-	ofn.hwndOwner = hWnd;
-	ofn.lpstrFile = szFile;
-	// Set lpstrFile[0] to '\0' so that GetOpenFileName does not
-	// use the contents of szFile to initialize itself.
-	ofn.lpstrFile[0] = '\0';
-	ofn.nMaxFile = sizeof(szFile);
-	ofn.lpstrFilter = "Disk Image\0*.bin;*.cue;*.iso\0";
-	ofn.nFilterIndex = 1;
-	ofn.lpstrFileTitle = NULL;
-	ofn.nMaxFileTitle = 0;
-	ofn.lpstrInitialDir = NULL;
-	ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
-
-	// Display the Open dialog box.
-
-	if (GetOpenFileName(&ofn)==TRUE)
-	{
-		//cout << "\nDEBUG: GetOpenFileName = TRUE.";
-		
-		return ofn.lpstrFile;
-		//return szFile;
-	}
-
-
-	//cout << "\nDEBUG: GetOpenFileName = FALSE.";
-	
-	return "";
-}
-
-string WindowClass::Window::ShowFileOpenDialog_Savestate()
-{
-	OPENFILENAME ofn;       // common dialog box structure
-	char szFile[1024];       // buffer for file name
-	//HWND hwnd;              // owner window
-	//HANDLE hf;              // file handle
-
-	// Initialize OPENFILENAME
-	ZeroMemory(&ofn, sizeof(ofn));
-	ofn.lStructSize = sizeof(ofn);
-	ofn.hwndOwner = hWnd;
-	ofn.lpstrFile = szFile;
-	// Set lpstrFile[0] to '\0' so that GetOpenFileName does not
-	// use the contents of szFile to initialize itself.
-	ofn.lpstrFile[0] = '\0';
-	ofn.nMaxFile = sizeof(szFile);
-	ofn.lpstrFilter = "State\0*.state\0";
-	ofn.nFilterIndex = 1;
-	ofn.lpstrFileTitle = NULL;
-	ofn.nMaxFileTitle = 0;
-	ofn.lpstrInitialDir = NULL;
-	ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
-
-	// Display the Open dialog box.
-
-	if (GetOpenFileName(&ofn)==TRUE)
-	{
-		//cout << "\nDEBUG: GetOpenFileName = TRUE.";
-		
-		return ofn.lpstrFile;
-		//return szFile;
-	}
-
-
-	//cout << "\nDEBUG: GetOpenFileName = FALSE.";
-	
-	return "";
-}
 
 vector<string> WindowClass::Window::ShowFileOpenDialogMultiSelect ()
 {
@@ -889,7 +1074,7 @@ vector<string> WindowClass::Window::ShowFileOpenDialogMultiSelect ()
 }
 
 
-string WindowClass::Window::ShowFileSaveDialog_Savestate ()
+string WindowClass::Window::ShowFileSaveDialog ()
 {
 	OPENFILENAME ofn;       // common dialog box structure
 	char szFile[260];       // buffer for file name
@@ -905,7 +1090,7 @@ string WindowClass::Window::ShowFileSaveDialog_Savestate ()
 	// use the contents of szFile to initialize itself.
 	ofn.lpstrFile[0] = '\0';
 	ofn.nMaxFile = sizeof(szFile);
-	ofn.lpstrFilter = "State\0*.state\0";
+	ofn.lpstrFilter = "All\0*.*\0Text\0*.TXT\0";
 	ofn.nFilterIndex = 1;
 	ofn.lpstrFileTitle = NULL;
 	ofn.nMaxFileTitle = 0;
@@ -1432,7 +1617,7 @@ WindowClass::MenuBar::MenuBarItem* WindowClass::MenuBar::AddItem ( u32 IdToAddTo
 {
 	MenuBarItem* m;
 	m = FindItemById ( IdToAddTo );
-	if ( m != NULL ) return m->AddItem ( _Caption, CallbackFuncWhenClicked, IdOfNewItem );
+	if ( m != NULL ) return m->AddItem ( _Caption, _Caption, CallbackFuncWhenClicked, IdOfNewItem );
 	return NULL;
 }
 
@@ -1440,7 +1625,7 @@ WindowClass::MenuBar::MenuBarItem* WindowClass::MenuBar::AddItem ( string Captio
 {
 	MenuBarItem* m;
 	m = FindItemByCaption ( CaptionToAddTo );
-	if ( m != NULL ) return m->AddItem ( _Caption, CallbackFuncWhenClicked, IdOfNewItem );
+	if ( m != NULL ) return m->AddItem ( _Caption, _Caption, CallbackFuncWhenClicked, IdOfNewItem );
 	return NULL;
 }
 
@@ -1497,9 +1682,10 @@ WindowClass::MenuBar::MenuBarItem::~MenuBarItem ()
 	//SubItems.clear ();
 }
 
-WindowClass::MenuBar::MenuBarItem* WindowClass::MenuBar::MenuBarItem::AddItem ( string _Caption, WindowClass::MenuBar::Function _CallbackFunc, u32 _Id )
+WindowClass::MenuBar::MenuBarItem* WindowClass::MenuBar::MenuBarItem::AddItem ( string _Caption, string sKey, WindowClass::MenuBar::Function _CallbackFunc, u32 _Id )
 {
-	MenuBarItem* NewMenuItem = new MenuBarItem ( MenuBarId, Id, _Caption, _Id, _CallbackFunc );
+	//MenuBarItem* NewMenuItem = new MenuBarItem ( MenuBarId, Id, _Caption, _Id, _CallbackFunc );
+	MenuBarItem* NewMenuItem = new MenuBarItem ( MenuBarId, Id, sKey, _Id, _CallbackFunc );
 
 	// add into list of menu items incase we need to find the call back function
 	ListOfMenuBarItems.push_back ( NewMenuItem );
@@ -1579,7 +1765,7 @@ bool WindowClass::Window::AddEvent ( HWND hParentWindow, HWND hControl, int Ctrl
 	return true;
 }
 
-bool WindowClass::Window::RemoveEvent ( HWND hParentWindow, int id, unsigned int message )
+bool WindowClass::Window::RemoveEvent ( HWND hParentWindow, long long id, unsigned int message )
 {
 	bool event_removed;
 	vector<WindowClass::Window::Event*>::iterator i;	
@@ -2460,7 +2646,7 @@ bool WindowClass::Window::SetWindowSize( long width, long height )
 
 ///////////////// Command Buttons //////////////////
 
-HWND WindowClass::Button::Create_CmdButton ( WindowClass::Window* ParentWindow, int x, int y, int width, int height, const char* Caption, int Id, int flags )
+HWND WindowClass::Button::Create_CmdButton ( WindowClass::Window* ParentWindow, int x, int y, int width, int height, const char* Caption, long long Id, int flags )
 {
 	Parent = ParentWindow;
 	id = Id;
@@ -2469,7 +2655,7 @@ HWND WindowClass::Button::Create_CmdButton ( WindowClass::Window* ParentWindow, 
 	return hWnd;
 }
 
-HWND WindowClass::Button::Create_CheckBox ( WindowClass::Window* ParentWindow, int x, int y, int width, int height, const char* Caption, int Id, int flags )
+HWND WindowClass::Button::Create_CheckBox ( WindowClass::Window* ParentWindow, int x, int y, int width, int height, const char* Caption, long long Id, int flags )
 {
 	Parent = ParentWindow;
 	id = Id;
@@ -2478,7 +2664,7 @@ HWND WindowClass::Button::Create_CheckBox ( WindowClass::Window* ParentWindow, i
 	return hWnd;
 }
 
-HWND WindowClass::Button::Create_RadioButtonGroup ( WindowClass::Window* ParentWindow, int x, int y, int width, int height, const char* Caption, int Id, int flags )
+HWND WindowClass::Button::Create_RadioButtonGroup ( WindowClass::Window* ParentWindow, int x, int y, int width, int height, const char* Caption, long long Id, int flags )
 {
 	Parent = ParentWindow;
 	id = Id;
@@ -2487,7 +2673,7 @@ HWND WindowClass::Button::Create_RadioButtonGroup ( WindowClass::Window* ParentW
 	return hWnd;
 }
 
-HWND WindowClass::Button::Create_RadioButton ( WindowClass::Window* ParentWindow, int x, int y, int width, int height, const char* Caption, int Id, int flags )
+HWND WindowClass::Button::Create_RadioButton ( WindowClass::Window* ParentWindow, int x, int y, int width, int height, const char* Caption, long long Id, int flags )
 {
 	Parent = ParentWindow;
 	id = Id;
@@ -2499,7 +2685,7 @@ HWND WindowClass::Button::Create_RadioButton ( WindowClass::Window* ParentWindow
 
 /////////////////////// Edit Control ////////////////////////////////
 
-HWND WindowClass::Edit::Create ( WindowClass::Window* ParentWindow, int x, int y, int width, int height, const char* Caption, int Id, int flags )
+HWND WindowClass::Edit::Create ( WindowClass::Window* ParentWindow, int x, int y, int width, int height, const char* Caption, long long Id, int flags )
 {
 	Parent = ParentWindow;
 	id = Id;
@@ -2511,7 +2697,7 @@ HWND WindowClass::Edit::Create ( WindowClass::Window* ParentWindow, int x, int y
 
 //////////////////// Combo Box Control //////////////////////////////
 
-HWND WindowClass::ComboBox::Create_Simple ( Window* ParentWindow, int x, int y, int width, int height, const char* Caption, int Id, int flags )
+HWND WindowClass::ComboBox::Create_Simple ( Window* ParentWindow, int x, int y, int width, int height, const char* Caption, long long Id, int flags )
 {
 	Parent = ParentWindow;
 	id = Id;
@@ -2520,7 +2706,7 @@ HWND WindowClass::ComboBox::Create_Simple ( Window* ParentWindow, int x, int y, 
 	return hWnd;
 }
 
-HWND WindowClass::ComboBox::Create_DropDown ( Window* ParentWindow, int x, int y, int width, int height, const char* Caption, int Id, int flags )
+HWND WindowClass::ComboBox::Create_DropDown ( Window* ParentWindow, int x, int y, int width, int height, const char* Caption, long long Id, int flags )
 {
 	Parent = ParentWindow;
 	id = Id;
@@ -2529,7 +2715,7 @@ HWND WindowClass::ComboBox::Create_DropDown ( Window* ParentWindow, int x, int y
 	return hWnd;
 }
 
-HWND WindowClass::ComboBox::Create_DropDownList ( Window* ParentWindow, int x, int y, int width, int height, const char* Caption, int Id, int flags )
+HWND WindowClass::ComboBox::Create_DropDownList ( Window* ParentWindow, int x, int y, int width, int height, const char* Caption, long long Id, int flags )
 {
 	Parent = ParentWindow;
 	id = Id;
@@ -2541,7 +2727,7 @@ HWND WindowClass::ComboBox::Create_DropDownList ( Window* ParentWindow, int x, i
 
 //////////////////////// Static Control /////////////////////////////////////
 
-HWND WindowClass::Static::Create_Text ( Window* ParentWindow, int x, int y, int width, int height, const char* Caption, int Id, int flags )
+HWND WindowClass::Static::Create_Text ( Window* ParentWindow, int x, int y, int width, int height, const char* Caption, long long Id, int flags )
 {
 	Parent = ParentWindow;
 	id = Id;
@@ -2550,7 +2736,7 @@ HWND WindowClass::Static::Create_Text ( Window* ParentWindow, int x, int y, int 
 	return hWnd;
 }
 
-HWND WindowClass::Static::Create_Bitmap ( Window* ParentWindow, int x, int y, int width, int height, const char* Caption, int Id, int flags )
+HWND WindowClass::Static::Create_Bitmap ( Window* ParentWindow, int x, int y, int width, int height, const char* Caption, long long Id, int flags )
 {
 	Parent = ParentWindow;
 	id = Id;
@@ -2561,7 +2747,7 @@ HWND WindowClass::Static::Create_Bitmap ( Window* ParentWindow, int x, int y, in
 
 /////////////////////// List-View Control ////////////////////////////////////
 
-HWND WindowClass::ListView::Create_wHeader ( Window* ParentWindow, int x, int y, int width, int height, const char* Caption, int Id, int flags )
+HWND WindowClass::ListView::Create_wHeader ( Window* ParentWindow, int x, int y, int width, int height, const char* Caption, long long Id, int flags )
 {
 	Parent = ParentWindow;
 	id = Id;
@@ -2570,7 +2756,7 @@ HWND WindowClass::ListView::Create_wHeader ( Window* ParentWindow, int x, int y,
 	return hWnd;
 }
 
-HWND WindowClass::ListView::Create_NoHeader ( Window* ParentWindow, int x, int y, int width, int height, const char* Caption, int Id, int flags )
+HWND WindowClass::ListView::Create_NoHeader ( Window* ParentWindow, int x, int y, int width, int height, const char* Caption, long long Id, int flags )
 {
 	Parent = ParentWindow;
 	id = Id;
@@ -2579,7 +2765,7 @@ HWND WindowClass::ListView::Create_NoHeader ( Window* ParentWindow, int x, int y
 	return hWnd;
 }
 
-HWND WindowClass::ListView::Create_Dynamic_wHeader ( Window* ParentWindow, int x, int y, int width, int height, const char* Caption, int Id, int flags )
+HWND WindowClass::ListView::Create_Dynamic_wHeader ( Window* ParentWindow, int x, int y, int width, int height, const char* Caption, long long Id, int flags )
 {
 	Parent = ParentWindow;
 	id = Id;
