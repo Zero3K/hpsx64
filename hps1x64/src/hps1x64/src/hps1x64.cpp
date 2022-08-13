@@ -2638,7 +2638,7 @@ void hps1x64::SaveState ( string FilePath )
 	// We need to prompt for the file to save state to
 	if ( !FilePath.compare ( "" ) )
 	{
-		FilePath = ProgramWindow->ShowFileSaveDialog ();
+		FilePath = ProgramWindow->ShowFileSaveDialog_Savestate ();
 	}
 
 	ofstream OutputFile ( FilePath.c_str (), ios::binary );
@@ -2691,10 +2691,10 @@ void hps1x64::LoadState ( string FilePath )
 	_SYSTEM._CD.cd_image.WaitForAllReadsComplete ();
 	
 	////////////////////////////////////////////////////////
-	// We need to prompt for the file to save state to
+	// We need to prompt for the file to load the save state from
 	if ( !FilePath.compare( "" ) )
 	{
-		FilePath = ProgramWindow->ShowFileOpenDialog ();
+		FilePath = ProgramWindow->ShowFileOpenDialog_Savestate ();
 	}
 
 	ifstream InputFile ( FilePath.c_str (), ios::binary );
@@ -2744,7 +2744,7 @@ void hps1x64::LoadBIOS ( string FilePath )
 	if ( !FilePath.compare ( "" ) )
 	{
 		cout << "Prompting for BIOS file.\n";
-		FilePath = ProgramWindow->ShowFileOpenDialog ();
+		FilePath = ProgramWindow->ShowFileOpenDialog_BIOS ();
 	}
 	
 	
@@ -2797,8 +2797,8 @@ string hps1x64::LoadDisk ( string FilePath )
 	// We need to prompt for the TEST program to run
 	if ( !FilePath.compare ( "" ) )
 	{
-		cout << "Prompting for BIOS file.\n";
-		FilePath = ProgramWindow->ShowFileOpenDialog ();
+		cout << "Prompting for Disk Image.\n";
+		FilePath = ProgramWindow->ShowFileOpenDialog_Image ();
 	}
 	
 	
