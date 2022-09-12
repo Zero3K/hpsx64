@@ -869,6 +869,7 @@ volatile u32 hps2x64::_MenuWasClicked;
 
 WindowClass::Window *hps2x64::ProgramWindow;
 
+string hps2x64::BiosPath;
 string hps2x64::ExecutablePath;
 char ExePathTemp [ hps2x64::c_iExeMaxPathLength + 1 ];
 
@@ -4174,6 +4175,9 @@ void hps2x64::LoadBIOS ( string FilePath )
 		// code loaded successfully
 		cout << "\nCode loaded successfully into BIOS.\n";
 
+		// set the path for the bios
+		BiosPath = FilePath;
+
 		NVMPath = GetPath ( FilePath.c_str () ) + GetFile ( FilePath.c_str () ) + ".nvm";
 		NVMPath.copy ( _SYSTEM.Last_NVM_Path, 2048 );
 		
@@ -4232,11 +4236,19 @@ void hps2x64::LoadConfig ( string ConfigFileName )
 		return;
 	}
 
-	nlohmann::json jsonSettings;
+	json jsonSettings;
 	i >> jsonSettings;
 
-	// save the controller settings //
+	BiosPath = jsonSettings["BiosPath"];
 
+	cout << "\n\nLoading BIOS PATH: " << BiosPath << "\n";
+	if (!(BiosPath.empty()))
+	{
+		LoadBIOS(BiosPath);
+	}
+
+	// save the controller settings //
+	
 	// pad 1 //
 
 	_SYSTEM._PS1SYSTEM._SIO.ControlPad_Type [ 0 ] = jsonSettings [ "Controllers" ] [ "Pad1" ] [ "DigitalAnalog" ];
@@ -4306,6 +4318,7 @@ void hps2x64::SaveConfig ( string ConfigFileName )
 	// save configuration as json (using nlohmann json)
 	nlohmann::json jsonSettings;
 
+	jsonSettings["BiosPath"] = BiosPath;
 
 	// save the controller settings //
 

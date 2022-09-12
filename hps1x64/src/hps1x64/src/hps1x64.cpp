@@ -2830,7 +2830,17 @@ void hps1x64::LoadConfig ( string ConfigFileName )
 	json jsonSettings;
 	i >> jsonSettings;
 
+	BiosPath = jsonSettings["BiosPath"];
+
+	cout << "\n\nLoading BIOS PATH: " << BiosPath << "\n";
+	if (!(BiosPath.empty()))
+	{
+		LoadBIOS(BiosPath);
+	}
+
+
 	// save the controller settings //
+
 
 	// pad 1 //
 
@@ -2966,8 +2976,11 @@ void hps1x64::SaveConfig ( string ConfigFileName )
 	// save configuration as json (using nlohmann json)
 	json jsonSettings;
 
+	jsonSettings["BiosPath"] = BiosPath;
+
 
 	// save the controller settings //
+
 
 	// pad 1 //
 
