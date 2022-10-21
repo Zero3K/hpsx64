@@ -119,8 +119,8 @@ namespace Playstation2
 		static u64 EE_To_IOP_DMA_Ready ();
 		static u64 IOP_To_EE_DMA_Ready ();
 
-		static bool EE_To_IOP_DMA_Ready_FromEE ();
-		static bool IOP_To_EE_DMA_Ready_FromEE ();
+		static u64 EE_To_IOP_DMA_Ready_FromEE ();
+		static u64 IOP_To_EE_DMA_Ready_FromEE ();
 		
 		static void Check_TransferToIOP ();
 		static void Check_TransferFromIOP ();

@@ -24,7 +24,7 @@
 
 // unsure if compare interrupt should get triggered on the same cycle and overflow interrupt is triggered
 // note: this is also in the Header file
-#define DISABLE_COMPAREINT_AFTEROVF
+//#define DISABLE_COMPAREINT_AFTEROVF
 
 //#define USE_NEW_TIMER_CODE
 
@@ -711,7 +711,7 @@ void Timers::Update_NextEventCycle ()
 	for ( int i = 0; i < c_iNumberOfChannels; i++ )
 	{
 		//if ( TheTimers [ i ].NextEvent_Cycle > *_DebugCycleCount && ( TheTimers [ i ].NextEvent_Cycle < NextEvent_Cycle || NextEvent_Cycle <= *_DebugCycleCount ) )
-		if ( TheTimers [ i ].NextEvent_Cycle <= NextEvent_Cycle )
+		if ( TheTimers [ i ].NextEvent_Cycle < NextEvent_Cycle )
 		{
 			// the next event is the next event for device
 			NextEvent_Cycle = TheTimers [ i ].NextEvent_Cycle;
@@ -719,7 +719,7 @@ void Timers::Update_NextEventCycle ()
 	}
 
 	//if ( NextEvent_Cycle > *_DebugCycleCount && ( NextEvent_Cycle < *_NextSystemEvent || *_NextSystemEvent <= *_DebugCycleCount ) )
-	if ( NextEvent_Cycle <= *_NextSystemEvent )
+	if ( NextEvent_Cycle < *_NextSystemEvent )
 	{
 		*_NextSystemEvent = NextEvent_Cycle;
 		*_NextEventIdx = NextEvent_Idx;

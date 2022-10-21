@@ -152,6 +152,13 @@ using namespace Vu;
 #define USE_NEW_RECOMPILE2_EXEORDER
 
 
+// testing path 3 mask
+// defines also in PS2_GPU.cpp
+//#define DISABLE_PATH3_MASK
+//#define ENABLE_PATH3_MASK_NO_CONDITION
+//#define ENABLE_PATH3_MASK_CONDITION_END_PACKET
+//#define ENABLE_PATH3_MASK_CONDITION_END_TRANSFER
+
 
 //#define ENABLE_PASSIVE_WAIT
 
@@ -186,8 +193,8 @@ using namespace Vu;
 
 //#define INLINE_DEBUG_DMA_READ
 
-//#define INLINE_DEBUG_DMA_WRITE
-//#define INLINE_DEBUG_DMA_WRITE_READY
+#define INLINE_DEBUG_DMA_WRITE
+#define INLINE_DEBUG_DMA_WRITE_READY
 
 #define INLINE_DEBUG_VUCOM
 //#define INLINE_DEBUG_VUCOM_MT
@@ -204,11 +211,12 @@ using namespace Vu;
 //#define INLINE_DEBUG_UNPACK
 //#define INLINE_DEBUG_UNPACK_2
 //#define INLINE_DEBUG_UNPACK_3
-*/
+
 
 // this sends info to the vu execute debug on when vu gets started, etc
 #define INLINE_DEBUG_VUEXECUTE
 //#define INLINE_DEBUG_VUEXECUTE_MT
+*/
 
 
 #define INLINE_DEBUG_GETMEMPTR_INVALID
@@ -363,6 +371,9 @@ void VU::Reset ()
 	
 	// initialize random value to zero?
 	vi [ VU::REG_R ].u = ( 0x7f << 23 ) | 0;
+
+	// busy until cycle should be at least 1 or ps2 dma might think device is not ready at all
+	BusyUntil_Cycle = 1;
 	
 #ifdef ENABLE_NEW_QP_HANDLING
 	// with the new Q,P reg handling, -1 means that the regs are not processing
@@ -2451,7 +2462,13 @@ u32 VU::VIF_FIFO_Execute ( u32* Data, u32 SizeInWords32 )
 	debug << " NOP";
 #endif
 
-			
+				if (BusyUntil_Cycle < *_DebugCycleCount)
+				{
+					BusyUntil_Cycle = *_DebugCycleCount;
+				}
+
+				BusyUntil_Cycle += 1ull << 0;
+
 				break;
 			
 			// STCYCL
@@ -2621,100 +2638,133 @@ u32 VU::VIF_FIFO_Execute ( u32* Data, u32 SizeInWords32 )
 				//GPU::_GPU->GIFRegs.STAT.M3P = ( ( VifCode.Value & ( 1 << 15 ) ) >> 15 );
 				NewValue = ( ( VifCode.Value & ( 1 << 15 ) ) >> 15 );
 				
-				if ( PreviousValue )
+				//if ( PreviousValue )
+				if (!NewValue)
 				{
-					// check for a transition from 1 to 0
-					if ( !GPU::_GPU->GIFRegs.STAT.M3R && !NewValue )
+					//if (!NewValue)
 					{
-						// path 3 mask is being disabled //
-#ifdef INLINE_DEBUG_VUCOM
-	debug << "\r\n*** PATH3 BEING UN-MASKED VIA VU ***\r\n";
-#endif
-#ifdef VERBOSE_MSKPATH3
-	cout << "\n*** PATH3 BEING UN-MASKED VIA VU ***\n";
-#endif
-
 						// set new value (zero)
 						GPU::_GPU->GIFRegs.STAT.M3P = 0;
 
-						// as long as path 1 is not in progress ??
-						if ( GPU::_GPU->GIFRegs.STAT.APATH != 1 )
+						// check for a transition from 1 to 0
+						if (!GPU::_GPU->GIFRegs.STAT.M3R)
 						{
-							// obviously path 3 is not in queue
-							GPU::_GPU->GIFRegs.STAT.P3Q = 0;
-							
-							// obviously path 3 not currently interrupted
-							GPU::_GPU->GIFRegs.STAT.IP3 = 0;
-						}
-
-
-						// check transfer
-						Dma::_DMA->CheckTransfer ();
-
-					}	// end if ( !GPU::_GPU->GIFRegs.STAT.M3R && !GPU::_GPU->GIFRegs.STAT.M3P )
-
-				}	// end if ( PreviousValue )
-				
-				if ( !PreviousValue )
-				{
-					//if ( GPU::_GPU->GIFRegs.STAT.M3P )
-					if ( NewValue )
-					{
+							// path 3 mask is being disabled //
 #ifdef INLINE_DEBUG_VUCOM
-	debug << "\r\n*** PATH3 BEING MASKED VIA VU ***\r\n";
+							debug << "\r\n*** PATH3 BEING UN-MASKED VIA VU ***\r\n";
 #endif
 #ifdef VERBOSE_MSKPATH3
-	cout << "\n*** PATH3 BEING MASKED VIA VU ***\n";
+							cout << "\n*** PATH3 BEING UN-MASKED VIA VU ***\n";
 #endif
+
+							// set new value (zero)
+
+							// as long as path 1 is not in progress ??
+							if (GPU::_GPU->GIFRegs.STAT.APATH != 1)
+							{
+								// obviously path 3 is not in queue
+								GPU::_GPU->GIFRegs.STAT.P3Q = 0;
+
+								// obviously path 3 not currently interrupted
+								GPU::_GPU->GIFRegs.STAT.IP3 = 0;
+							}
+
+							// check transfer
+							Dma::_DMA->CheckTransfer();
+
+						}	// end if ( !GPU::_GPU->GIFRegs.STAT.M3R && !GPU::_GPU->GIFRegs.STAT.M3P )
 
 					}
 
-					// if path 3 is masked (need to clear condition when m3p cleared)
-					//if ( GPU::_GPU->GIFRegs.STAT.M3R || GPU::_GPU->GIFRegs.STAT.M3P )
+
+				}	// end if ( PreviousValue )
+				
+				//if ( !PreviousValue )
+				else
+				{
 					//if ( GPU::_GPU->GIFRegs.STAT.M3P )
-					if ( GPU::_GPU->GIFRegs.STAT.M3R || NewValue )
+					if (NewValue)
 					{
-						// if path 3 is currently in progress and not at the end of a packet
-						// (need to clear condition on end of dma#2 or end of path 3 packet)
-						//if ( Dma::pRegData [ 2 ]->CHCR.STR )
-						if ( Dma::pRegData [ 2 ]->CHCR.STR && ( !GPU::_GPU->EndOfPacket [ 3 ] ) )
-						{
 #ifdef INLINE_DEBUG_VUCOM
-	debug << " (VIFSTOP)";
+						debug << "\r\n*** PATH3 BEING MASKED VIA VU ***\r\n";
+#endif
+#ifdef VERBOSE_MSKPATH3
+						cout << "\n*** PATH3 BEING MASKED VIA VU ***\n";
 #endif
 
-						VifStopped = 1;
-						
-#ifdef INLINE_DEBUG_VUCOM
-	debug << " (MSKPATH3_PENDING)";
-#endif
 
-						// there is a pending Command -> for now just back up index
-						lVifIdx--;
-						
-						// just return for now //
-						
-						// get the number of full quadwords completely processed
-						QWC_Transferred = lVifIdx >> 2;
-						
-						// get start index of remaining data to process in current block
-						lVifIdx &= 0x3;
-						
-						// return the number of full quadwords transferred/processed
-						return QWC_Transferred;
-
-						}	// end if ( Dma::pRegData [ 2 ]->CHCR.STR )
-
-						// if path 3 not running, then set new value
-						GPU::_GPU->GIFRegs.STAT.M3P = NewValue;
+						GPU::_GPU->GIFRegs.STAT.M3P = 1;
 
 						// vif now running
 						VifStopped = 0;
 
-					}	// end if ( GPU::_GPU->GIFRegs.STAT.M3R || GPU::_GPU->GIFRegs.STAT.M3P )
+#ifndef DISABLE_PATH3_MASK
+
+						/*
+						// if path 3 is masked (need to clear condition when m3p cleared)
+						//if ( GPU::_GPU->GIFRegs.STAT.M3P )
+						//if ( GPU::_GPU->GIFRegs.STAT.M3R || NewValue )
+						if (GPU::_GPU->GIFRegs.STAT.M3R || GPU::_GPU->GIFRegs.STAT.M3P)
+						{
+
+#ifndef ENABLE_PATH3_MASK_NO_CONDITION
+
+							// if path 3 is currently in progress and not at the end of a packet
+							// (need to clear condition on end of dma#2 or end of path 3 packet)
+							//if ( Dma::pRegData [ 2 ]->CHCR.STR )
+							//if ( Dma::pRegData [ 2 ]->CHCR.STR && ( !GPU::_GPU->EndOfPacket [ 3 ] ) )
+							//if (Dma::pRegData[2]->CHCR.STR && (!GPU::_GPU->EndOfPacket[3]) && (!GPU::_GPU->GIFRegs.MODE.IMT || GPU::_GPU->GIFTag0[3].FLG != 2))
+#ifdef ENABLE_PATH3_MASK_CONDITION_END_TRANSFER
+							if (Dma::pRegData[2]->CHCR.STR)
+#endif
+#ifdef ENABLE_PATH3_MASK_CONDITION_END_PACKET
+							if (!GPU::_GPU->EndOfPacket[3])
+#endif
+							{
+#ifdef INLINE_DEBUG_VUCOM
+								debug << " (VIFSTOP)";
+#endif
+
+
+								VifStopped = 1;
+
+#ifdef INLINE_DEBUG_VUCOM
+	debug << " (MSKPATH3_PENDING)";
+#endif
+
+								// there is a pending Command -> for now just back up index
+								lVifIdx--;
+
+								// just return for now //
+
+								// get the number of full quadwords completely processed
+								QWC_Transferred = lVifIdx >> 2;
+
+								// get start index of remaining data to process in current block
+								lVifIdx &= 0x3;
+
+								// return the number of full quadwords transferred/processed
+								return QWC_Transferred;
+
+							}	// end if ( Dma::pRegData [ 2 ]->CHCR.STR )
+
+#endif	// end ENABLE_PATH3_MASK_NO_CONDITION
+
+
+						// vif now running
+							VifStopped = 0;
+
+						}	// end if ( GPU::_GPU->GIFRegs.STAT.M3R || GPU::_GPU->GIFRegs.STAT.M3P )
+						*/
+
+#endif // end DISABLE_PATH3_MASK
+
+
+					}
 
 				}	// end if ( !PreviousValue )
-				
+
+
 				
 				break;
 
@@ -2800,7 +2850,7 @@ u32 VU::VIF_FIFO_Execute ( u32* Data, u32 SizeInWords32 )
 				// waits for end of vu program and end of path1/path2 transfer
 				// Vu1 ONLY
 				// ***todo*** wait for end of path1/path2 transfer
-				if ( Running )
+				if ( (Running) || (GPU::_GPU->GIFRegs.STAT.APATH == 1) )
 				{
 #ifdef INLINE_DEBUG_VUCOM
 	debug << " (VIFSTOP)";
@@ -2860,10 +2910,23 @@ u32 VU::VIF_FIFO_Execute ( u32* Data, u32 SizeInWords32 )
 				// ***todo*** wait for end of transfer to gif
 				//if ( Running || ( Dma::cbReady [ 2 ] () ) )
 				//if ( Running || ( Dma::pRegData [ 2 ]->CHCR.STR && !( GPU::_GPU->GIFRegs.STAT.M3R || GPU::_GPU->GIFRegs.STAT.M3P ) ) )
-				if ( Running || ( GPU::_GPU->ulTransferCount [ 3 ] && Dma::pRegData [ 2 ]->CHCR.STR ) || ( GPU::_GPU->GIFRegs.STAT.APATH == 1 ) )
+				
+	
+	
+	
 				//if ( ( Running ) || ( Dma::pRegData [ 2 ]->CHCR.STR ) || ( GPU::_GPU->GIFRegs.STAT.APATH == 1 ) )
+				//if ( (Running) || ( Dma::pRegData [ 2 ]->CHCR.STR && GPU::DMA_Write_Ready() ) || (GPU::_GPU->GIFRegs.STAT.APATH == 1) )
 				//if ( Running || ( !GPU::_GPU->EndOfPacket [ 3 ] ) )
-				//if ( Running || ( Dma::pRegData [ 2 ]->CHCR.STR && GPU::DMA_Write_Ready() ) )
+				//if (Running || (Dma::pRegData[2]->CHCR.STR && !GPU::_GPU->EndOfPacket[3]) || (GPU::_GPU->GIFRegs.STAT.APATH == 1))
+				//if (Running || (GPU::_GPU->ulTransferCount[3] && Dma::pRegData[2]->CHCR.STR) || (GPU::_GPU->GIFRegs.STAT.APATH == 1))
+				if (Running || (!GPU::_GPU->EndOfPacket[3]) || (GPU::_GPU->GIFRegs.STAT.APATH == 1))
+				//if ( Running || ( GPU::_GPU->ulTransferCount [ 3 ] && Dma::pRegData [ 2 ]->CHCR.STR ) || ( GPU::_GPU->GIFRegs.STAT.APATH == 1 ) )
+				//if ((Running) || (GPU::_GPU->GIFRegs.STAT.APATH == 1) || (GPU::_GPU->GIFRegs.STAT.APATH == 3))
+				//if ( ( Running )
+				//	|| (GPU::_GPU->GIFRegs.STAT.APATH == 1)
+				//	|| ()
+				//	|| ((GPU::_GPU->GIFRegs.STAT.APATH == 3) && !( (GPU::_GPU->GIFRegs.STAT.M3R || GPU::_GPU->GIFRegs.STAT.M3P) && (GPU::_GPU->EndOfPacket[3]) ) )
+				//	)
 				{
 #ifdef INLINE_DEBUG_VUCOM
 	debug << " (VIFSTOP)";
@@ -3697,11 +3760,13 @@ u32 VU::VIF_FIFO_Execute ( u32* Data, u32 SizeInWords32 )
 					|| ( GPU::_GPU->GIFRegs.STAT.APATH == 1 )
 					
 					// if path 3 is running (meaning not masked, or not masked yet) and can't be interrupted AND not the end of a packet
-					|| ( ( GPU::_GPU->GIFRegs.STAT.APATH == 3 ) && ( ( !GPU::_GPU->GIFRegs.STAT.IMT ) || ( GPU::_GPU->GIFTag0 [ 3 ].FLG != 2 ) ) && ( !GPU::_GPU->EndOfPacket [ 3 ] ) )
+					//|| ( ( GPU::_GPU->GIFRegs.STAT.APATH == 3 ) && ( ( !GPU::_GPU->GIFRegs.STAT.IMT ) || ( GPU::_GPU->GIFTag0 [ 3 ].FLG != 2 ) ) && ( !GPU::_GPU->EndOfPacket [ 3 ] ) )
+					|| ( ( ( !GPU::_GPU->GIFRegs.STAT.IMT ) || ( GPU::_GPU->GIFTag0 [ 3 ].FLG != 2 ) ) && ( !GPU::_GPU->EndOfPacket [ 3 ] ) )
 					
 					// if path 3 and not end of a packet
 					// || ( ( GPU::_GPU->GIFRegs.STAT.APATH == 3 ) && ( !GPU::_GPU->EndOfPacket [ 3 ] ) )
-				)
+					//|| ((GPU::_GPU->GIFRegs.STAT.M3R || GPU::_GPU->GIFRegs.STAT.M3P) && (!GPU::_GPU->EndOfPacket[3]))
+					)
 				{
 					// VU program is in progress //
 					
@@ -3904,7 +3969,8 @@ u32 VU::VIF_FIFO_Execute ( u32* Data, u32 SizeInWords32 )
 					// if path 3 is running (meaning not masked, or not masked yet)
 					// || ( GPU::_GPU->GIFRegs.STAT.APATH == 3 )
 					// if path 3 is running and it is not the end of a packet
-					|| ( ( GPU::_GPU->GIFRegs.STAT.APATH == 3 ) && ( !GPU::_GPU->EndOfPacket [ 3 ] ) )
+					//|| ( ( GPU::_GPU->GIFRegs.STAT.APATH == 3 ) && ( !GPU::_GPU->EndOfPacket [ 3 ] ) )
+					|| ( !GPU::_GPU->EndOfPacket [ 3 ] )
 					
 					// if path 3 is in queue and not masked and path 2 is not already running
 					// || ( ( GPU::_GPU->GIFRegs.STAT.APATH != 2 ) && ( GPU::_GPU->GIFRegs.STAT.P3Q ) && ( !GPU::_GPU->GIFRegs.STAT.M3R ) && ( !GPU::_GPU->GIFRegs.STAT.M3P ) )
@@ -4896,7 +4962,7 @@ u32 VU::DMA_ReadBlock ( u64* Data, u32 QuadwordCount )
 }
 
 
-bool VU::DMA_Read_Ready ()
+u64 VU::DMA_Read_Ready ()
 {
 #ifdef INLINE_DEBUG_DMA_READ
 	debug << "\r\nVU#" << Number << "::DMA_Read_Ready";
@@ -4926,7 +4992,7 @@ bool VU::DMA_Read_Ready ()
 	// can't read the data if the transfer isn't ready
 	if ( GPU::_GPU->GPURegsGp.TRXDIR.XDIR != 1 )
 	{
-		return false;
+		return 0;
 	}
 	
 	if ( ( !GPU::_GPU->ulTransferCount [ 3 ] ) || ( !Dma::pRegData [ 2 ]->CHCR.STR ) )
@@ -4934,15 +5000,15 @@ bool VU::DMA_Read_Ready ()
 		// check if buffer is going in opposite direction
 		if ( GPU::_GPU->GIFRegs.STAT.DIR )
 		{
-			return true;
+			return 1;
 		}
 	}
 	
-	return false;
+	return 0;
 
 }
 
-bool VU::DMA_Write_Ready ()
+u64 VU::DMA_Write_Ready ()
 {
 #ifdef INLINE_DEBUG_DMA_WRITE_READY
 	debug << "\r\nVU#" << Number << "::DMA_Write_Ready";
@@ -5012,7 +5078,8 @@ bool VU::DMA_Write_Ready ()
 	debug << " READY-OK";
 #endif
 
-	return 1;
+	//return 1;
+	return BusyUntil_Cycle;
 }
 
 

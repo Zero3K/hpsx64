@@ -41,7 +41,8 @@ using namespace R5900;
 
 
 
-
+// skips idle cycles
+#define ENABLE_R5900_SKIP_IDLE_CYCLES
 
 
 #define ENABLE_ICACHE
@@ -8243,27 +8244,29 @@ cout << "\nAddress=" << hex << Address << " sOffset=" << i.sImmediate;
 	
 #ifdef CHECK_EVENT_AFTER_START_BRANCH
 	// part 1: first check for event //
-	
-	// get updated CycleCount value for CPU
-	e->MovRegMem64 ( RAX, (long long*) & r->CycleCount );
-	e->AddReg64ImmX ( RAX, LocalCycleCount - ( MemCycles - 1 ) );
-	//e->AddReg64ImmX ( RAX, LocalCycleCount - MemCycles );
-	
-	
-	// want check that there are no events pending //
-	
-	// get the current cycle count and compare with next event cycle
-	// note: actually need to either offset the next event cycle and correct when done or
-	// or need to offset the next even cycle into another variable and check against that one
-	e->CmpRegMem64 ( RAX, (long long*) & Playstation2::System::_SYSTEM->NextEvent_Cycle );
-	
-	// branch if current cycle is greater (or equal?) than next event cycle
-	// changing this so that it branches if not returning
-	// note: should probably be below or equal then jump, since the interpreter adds one to cycle
-	//e->Jmp8_B ( 0, 0 );
-	//e->Jmp8_AE ( 0, 3 );
-	e->Jmp_AE ( 0, 3 );
-	
+	if (RunCount)
+	{
+
+		// get updated CycleCount value for CPU
+		e->MovRegMem64(RAX, (long long*)&r->CycleCount);
+		e->AddReg64ImmX(RAX, LocalCycleCount - (MemCycles - 1));
+		//e->AddReg64ImmX ( RAX, LocalCycleCount - MemCycles );
+
+
+		// want check that there are no events pending //
+
+		// get the current cycle count and compare with next event cycle
+		// note: actually need to either offset the next event cycle and correct when done or
+		// or need to offset the next even cycle into another variable and check against that one
+		e->CmpRegMem64(RAX, (long long*)&Playstation2::System::_SYSTEM->NextEvent_Cycle);
+
+		// branch if current cycle is greater (or equal?) than next event cycle
+		// changing this so that it branches if not returning
+		// note: should probably be below or equal then jump, since the interpreter adds one to cycle
+		//e->Jmp8_B ( 0, 0 );
+		//e->Jmp8_AE ( 0, 3 );
+		e->Jmp_AE(0, 3);
+	}
 	
 	/*
 		if (
@@ -8502,6 +8505,9 @@ cout << "\nbIsBlockInICache";
 
 //#ifndef ENABLE_AUTO_BRANCH
 
+
+#ifdef ENABLE_R5900_SKIP_IDLE_CYCLES
+
 		// check for processor waiting
 		if ( ! NextInst.Value )
 		{
@@ -8516,32 +8522,41 @@ cout << "\nbIsBlockInICache";
 				
 				// get the pointer to the branch
 				pBranch = pCodeStart [ ( Address >> 2 ) & ulIndex_Mask ];
-				
-				// check if equal
-				if ( pBranchedTo == pBranch )
-				{
-					// update cycles
-					e->MovMemImm32 ( (long*) & r->NextPC, TargetAddress );
 
-					// update CycleCount
-					// ***todo*** should be the cycles plus one instruction since branch into delay slot has already been executed
-					//e->AddMem64ImmX ( (long long*) & r->CycleCount, LocalCycleCount );
-					e->MovRegMem64 ( RCX, (long long*) & r->CycleCount );
-					e->AddReg64ImmX( RCX, LocalCycleCount );
-					
-					// check against the next event cycle
-					e->CmpRegMem64 ( RCX, (long long*) & Playstation2::System::_SYSTEM->NextEvent_Cycle );
-					e->CmovBRegMem64 ( RCX, (long long*) & Playstation2::System::_SYSTEM->NextEvent_Cycle );
-					
-					// store as the new cycle count
-					e->MovMemReg64 ( (long long*) & r->CycleCount, RCX );
-					
-					// should be done
-					e->Ret ();
-					
+				// make sure we are jumping backwards
+				if (TargetAddress <= Address)
+				{
+					// check if equal
+					if (pBranchedTo == pBranch)
+					{
+						// update NextPC
+						e->MovMemImm32((long*)&r->NextPC, TargetAddress);
+
+						// update CycleCount
+						// ***todo*** should be the cycles plus one instruction since branch into delay slot has already been executed
+						//e->AddMem64ImmX ( (long long*) & r->CycleCount, LocalCycleCount );
+						e->MovRegMem64(RCX, (long long*)&r->CycleCount);
+
+						// add number of cycles at branch, plus delay slot instruction, exclude branch instruction (gets added in at return)
+						// *** todo *** calculate if can add in a branch pipeline refill
+						e->AddReg64ImmX(RCX, LocalCycleCount + 1);
+
+						// check against the next event cycle (next ps1 cycle is checked by the event cycle also)
+						e->CmpRegMem64(RCX, (long long*)&Playstation2::System::_SYSTEM->NextEvent_Cycle);
+						e->CmovBRegMem64(RCX, (long long*)&Playstation2::System::_SYSTEM->NextEvent_Cycle);
+
+						// store as the new cycle count
+						e->MovMemReg64((long long*)&r->CycleCount, RCX);
+
+						// should be done
+						e->Ret();
+
+					}
 				}
 			}
 		}
+
+#endif
 
 
 #ifdef VERBOSE_NORMAL_BRANCH
@@ -8819,23 +8834,26 @@ cout << "\nTargetAddress=" << hex << TargetAddress;
 //#endif
 
 #ifdef CHECK_EVENT_AFTER_START_BRANCH
-	//if ( !e->SetJmpTarget8 ( 3 ) )
-	if ( !e->SetJmpTarget ( 3 ) )
+	if (RunCount)
 	{
-		cout << "\nR5900: Recompiler: Short branch3 too far.";
-	}
+		//if ( !e->SetJmpTarget8 ( 3 ) )
+		if (!e->SetJmpTarget(3))
+		{
+			cout << "\nR5900: Recompiler: Short branch3 too far.";
+		}
 
-	// update NextPC
-	e->MovMemImm32 ( (long*) & r->NextPC, Address );
-	
-	// update CPU CycleCount
-	// hasn't executed the instruction at all, so do -MemCycles, -ExeCycles
-	//e->MovMemReg64 ( (long long*) & r->CycleCount, RAX );
-	e->AddMem64ImmX ( (long long*) & r->CycleCount, LocalCycleCount - MemCycles );
-	//e->AddMem64ImmX ( (long long*) & r->CycleCount, LocalCycleCount - MemCycles - ExeCycles );
-	
-	// done for now - return
-	e->Ret ();
+		// update NextPC
+		e->MovMemImm32((long*)&r->NextPC, Address);
+
+		// update CPU CycleCount
+		// hasn't executed the instruction at all, so do -MemCycles, -ExeCycles
+		//e->MovMemReg64 ( (long long*) & r->CycleCount, RAX );
+		e->AddMem64ImmX((long long*)&r->CycleCount, LocalCycleCount - MemCycles);
+		//e->AddMem64ImmX ( (long long*) & r->CycleCount, LocalCycleCount - MemCycles - ExeCycles );
+
+		// done for now - return
+		e->Ret();
+	}
 #endif
 
 	

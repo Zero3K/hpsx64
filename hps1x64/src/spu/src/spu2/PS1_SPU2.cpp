@@ -41,6 +41,11 @@ using namespace GeneralUtilities;
 #define ENABLE_THREAD_LOCK_DATA
 
 
+// will try to skip some calculations for muted channels
+//#define ENABLE_MUTE_CHANNEL_OPTIMIZATION
+
+
+
 #define ENABLE_AUTODMA_DMA
 #define ENABLE_AUTODMA_READY
 #define ENABLE_AUTODMA_RUN
@@ -109,7 +114,7 @@ using namespace GeneralUtilities;
 // enable debugging
 #define INLINE_DEBUG_ENABLE
 
-
+/*
 #define INLINE_DEBUG_WRITE
 #define INLINE_DEBUG_READ
 
@@ -153,7 +158,7 @@ using namespace GeneralUtilities;
 //#define INLINE_DEBUG_WRITE_DATA
 //#define INLINE_DEBUG_WRITE_SBA
 #define INLINE_DEBUG_WRITE_LSA_X
-
+*/
 
 #endif
 
@@ -1819,14 +1824,10 @@ void SPUCore::Run ()
 	u32 ulDecodeAddr, ulIrqAddr0, ulIrqAddr1;
 
 	
-	//if ( NextEvent_Cycle != *_DebugCycleCount ) return;
-	
 	// update number of spu cycles ran
 	// I'll do this per core for now
 	CycleCount++;
 	
-	//NextEvent_Cycle = *_DebugCycleCount + CPUCycles_PerSPUCycle;
-	//Set_NextEvent ( CPUCycles_PerSPUCycle );
 	
 //#ifdef INLINE_DEBUG_RUN
 //	debug << "\r\nSPU::Run";
@@ -1838,41 +1839,15 @@ void SPUCore::Run ()
 	ReverbSampleL = 0;
 	ReverbSampleR = 0;
 
-	/*
-	// check if SPU is on
-	if ( ! ( Regs [ ( 0x1f801daa - SPU_X ) >> 1 ] >> 15 ) )
-	{
-		// SPU is not on
-
-#ifdef INLINE_DEBUG_RUN
-	debug << "; Off" << "; Offset = " << ( 0x1f801daa - SPU_X ) << "; SPU_CTRL = " << Regs [ ( 0x1f801daa - SPU_X ) >> 1 ];
-#endif
-
-		return 0;
-	}
-	*/
-	
-	// SPU is on
-	
-	// *** TODO *** run SPU and output 1 sample LR
 	
 	/////////////////////////////////////////////////////////////////////
 	// get what channels are enabled
-	//ChannelOn = Regs16 [ CON_0 >> 1 ];
-	//ChannelOn |= ( (u32) ( Regs16 [ CON_1 >> 1 ] ) ) << 16;
-	//ChannelOn = GET_REG32 ( CON_0 );
 	ChannelOn = pCoreRegs0->CON;
 	
 	// get what channels are set to noise
-	//ChannelNoise = Regs16 [ NON_0 >> 1 ];
-	//ChannelNoise |= ( (u32) ( Regs16 [ NON_1 >> 1 ] ) ) << 16;
-	//ChannelNoise = GET_REG32 ( NON_0 );
 	ChannelNoise = pCoreRegs0->NON;
 	
 	// get what channels are using frequency modulation
-	//PitchMod = Regs16 [ PMON_0 >> 1 ];
-	//PitchMod |= ( (u32) ( Regs16 [ PMON_1 >> 1 ] ) ) << 16;
-	//PitchMod = GET_REG32 ( PMON_0 );
 	PitchMod = pCoreRegs0->PMON;
 	
 	// SPU on ps2 has new flags for sending sound data from channel to mixer
@@ -1880,10 +1855,6 @@ void SPUCore::Run ()
 	// dry mixers do not apply effects, wet mixers apply effects
 	
 	// get what channels have reverb on
-	// SKIP REVERB FOR NOW
-	//ReverbOn = Regs16 [ RON_0 >> 1 ];
-	//ReverbOn |= ( (u32) ( Regs16 [ RON_1 >> 1 ] ) ) << 16;
-	//ReverbOn = GET_REG32 ( RON_0 );
 	ReverbOnL = pCoreRegs0->VMIXEL;
 	ReverbOnR = pCoreRegs0->VMIXER;
 	
@@ -1897,50 +1868,40 @@ void SPUCore::Run ()
 
 	// if spu is enabled, run noise generator
 	//if ( Regs [ ( 0x1f801daa - SPU_X ) >> 1 ] >> 15 )
-	if ( pCoreRegs0->CTRL >> 15 )
+	if (pCoreRegs0->CTRL >> 15)
 	{
 		// can put this line on the other thread when multi-threading
-		RunNoiseGenerator ();
+		RunNoiseGenerator();
 
-		//if ( Regs [ ( MVOL_L - SPU_X ) >> 1 ] >> 15 )
-		if ( pCoreRegs1->MVOL_L >> 15 )
+		if (pCoreRegs1->MVOL_L >> 15)
 		{
 			// ***TODO*** get rid of MVOL_L_Value variable
-			
-			MVOL_L_Value = (s64) ( (s16) pCoreRegs1->CMVOL_L );
-			
-			VolumeEnvelope ( pCoreRegs1->CMVOL_L, MVOL_L_Cycles, pCoreRegs1->MVOL_L & 0x7f, ( pCoreRegs1->MVOL_L >> 13 ) & 0x3, true );
+
+			MVOL_L_Value = (s64)((s16)pCoreRegs1->CMVOL_L);
+
+			VolumeEnvelope(pCoreRegs1->CMVOL_L, MVOL_L_Cycles, pCoreRegs1->MVOL_L & 0x7f, (pCoreRegs1->MVOL_L >> 13) & 0x3, true);
 		}
 		else
 		{
 			// just set the current master volume L
 			pCoreRegs1->CMVOL_L = pCoreRegs1->MVOL_L << 1;
-		}
-	
-		//if ( Regs [ ( MVOL_R - SPU_X ) >> 1 ] >> 15 )
-		if ( pCoreRegs1->MVOL_R >> 15 )
+
+		}	// end else if ( pCoreRegs1->MVOL_L >> 15 )
+
+		if (pCoreRegs1->MVOL_R >> 15)
 		{
 			// ***TODO*** get rid of MVOL_R_Value variable
-			
-			MVOL_R_Value = (s64) ( (s16) pCoreRegs1->CMVOL_R );
-			
-			VolumeEnvelope ( pCoreRegs1->CMVOL_R, MVOL_R_Cycles, pCoreRegs1->MVOL_R & 0x7f, ( pCoreRegs1->MVOL_R >> 13 ) & 0x3, true );
+
+			MVOL_R_Value = (s64)((s16)pCoreRegs1->CMVOL_R);
+
+			VolumeEnvelope(pCoreRegs1->CMVOL_R, MVOL_R_Cycles, pCoreRegs1->MVOL_R & 0x7f, (pCoreRegs1->MVOL_R >> 13) & 0x3, true);
 		}
 		else
 		{
 			// just set the current master volume R
 			pCoreRegs1->CMVOL_R = pCoreRegs1->MVOL_R << 1;
-		}
-		
-		/*
-		if ( CoreNumber )
-		{
-			if ( ! ( CycleCount & 0xff ) )
-			{
-				cout << " SPU2::Run";
-			}
-		}
-		*/
+
+		}	// end else if ( pCoreRegs1->MVOL_R >> 15 )
 
 
 		// note: at this point can save non-channel vars for multi-threading
@@ -1949,29 +1910,29 @@ void SPUCore::Run ()
 		// also process audio if SPU is on
 		////////////////////////////
 		// loop through channels
-		for ( Channel = 0; Channel < 24; Channel++ )
+		for (Channel = 0; Channel < 24; Channel++)
 		{
-			pChRegs0 = (ChRegs0_Layout*) ( & ( pCoreRegs0->ChRegs0 [ Channel ] ) );
-			pChRegs1 = (ChRegs1_Layout*) ( & ( pCoreRegs0->ChRegs1 [ Channel ] ) );
-			
+			pChRegs0 = (ChRegs0_Layout*)(&(pCoreRegs0->ChRegs0[Channel]));
+			pChRegs1 = (ChRegs1_Layout*)(&(pCoreRegs0->ChRegs1[Channel]));
+
 			// ***TODO*** channel not supposed to start for like 2T probably ??
 			// for now, will just check for spu interrupt at 2T mark
-			if ( ( CycleCount - StartCycle_Channel [ Channel ] ) == 2 )
+			if ((CycleCount - StartCycle_Channel[Channel]) == 2)
 			{
-				if ( SPU2::_SPU2->SPU0.pCoreRegs0->CTRL & 0x40 )
+				if (SPU2::_SPU2->SPU0.pCoreRegs0->CTRL & 0x40)
 				{
-					if ( ( CurrentBlockAddress [ Channel ] & ( c_iRam_Mask >> 1 ) ) == ( ( SWAPH( SPU2::_SPU2->SPU0.pCoreRegs0->IRQA ) ) & ( c_iRam_Mask >> 1 ) ) )
+					if ((CurrentBlockAddress[Channel] & (c_iRam_Mask >> 1)) == ((SWAPH(SPU2::_SPU2->SPU0.pCoreRegs0->IRQA)) & (c_iRam_Mask >> 1)))
 					{
 #ifdef INLINE_DEBUG_INT
-	debug << "\r\nSPU:INT:ADDR ch#" << dec << Channel;
+						debug << "\r\nSPU:INT:ADDR ch#" << dec << Channel;
 #endif
 						// we have reached irq address - trigger interrupt
-						SetInterrupt ();
-						
+						SetInterrupt();
+
 						// do this for ps2
 						//SetInterrupt_Core ( CoreNumber );
-						SetInterrupt_Core ( 0 );
-						
+						SetInterrupt_Core(0);
+
 						// interrupt
 						//pCoreRegs0->STAT |= 0x40;
 						SPU2::_SPU2->SPU0.pCoreRegs0->STAT |= 0x40;
@@ -1979,59 +1940,53 @@ void SPUCore::Run ()
 
 				}	// end if ( SPU2::_SPU2->SPU0.pCoreRegs0->CTRL & 0x40 )
 
-				if ( SPU2::_SPU2->SPU1.pCoreRegs0->CTRL & 0x40 )
+				if (SPU2::_SPU2->SPU1.pCoreRegs0->CTRL & 0x40)
 				{
-					if ( ( CurrentBlockAddress [ Channel ] & ( c_iRam_Mask >> 1 ) ) == ( ( SWAPH( SPU2::_SPU2->SPU1.pCoreRegs0->IRQA ) ) & ( c_iRam_Mask >> 1 ) ) )
+					if ((CurrentBlockAddress[Channel] & (c_iRam_Mask >> 1)) == ((SWAPH(SPU2::_SPU2->SPU1.pCoreRegs0->IRQA)) & (c_iRam_Mask >> 1)))
 					{
 #ifdef INLINE_DEBUG_INT
-	debug << "\r\nSPU:INT:ADDR ch#" << dec << Channel;
+						debug << "\r\nSPU:INT:ADDR ch#" << dec << Channel;
 #endif
 
 						// we have reached irq address - trigger interrupt
-						SetInterrupt ();
-						
+						SetInterrupt();
+
 						// do this for ps2
 						//SetInterrupt_Core ( CoreNumber );
-						SetInterrupt_Core ( 1 );
-						
+						SetInterrupt_Core(1);
+
 						// interrupt
 						//pCoreRegs0->STAT |= 0x40;
 						SPU2::_SPU2->SPU1.pCoreRegs0->STAT |= 0x40;
 					}
 
 				}	// end if ( SPU2::_SPU2->SPU1.pCoreRegs0->CTRL & 0x40 )
-				
-			}
 
-			
-	
-		// check if SPU is on
-		//if ( Regs [ ( 0x1f801daa - SPU_X ) >> 1 ] >> 15 )
+			}	// end if ( ( CycleCount - StartCycle_Channel [ Channel ] ) == 2 )
 
-			//if ( Regs [ ( VOL_L >> 1 ) + ( Channel << 3 ) ] >> 15 )
-			//if ( GET_REG16 ( VOLL_CH ( Channel ) ) >> 15 )
-			if ( pChRegs0->VOL_L >> 15 )
+
+			if (pChRegs0->VOL_L >> 15)
 			{
 #ifdef INLINE_DEBUG_RUN_VOLUME_ENVELOPE
-	debug << "\r\nChannel#" << dec << Channel;
-	debug << " CORE#" << CoreNumber;
-	debug << " VE-VOLL";
-	debug << " CVOL=" << hex << pChRegs0->CVOL_L;
-	debug << " CYCLES=" << hex << VOL_L_Cycles [ Channel ];
-	debug << " VALUE=" << hex << ( pChRegs0->VOL_L & 0x7f );
-	debug << " MODE=" << ( ( pChRegs0->VOL_L >> 13 ) & 0x3 );
+				debug << "\r\nChannel#" << dec << Channel;
+				debug << " CORE#" << CoreNumber;
+				debug << " VE-VOLL";
+				debug << " CVOL=" << hex << pChRegs0->CVOL_L;
+				debug << " CYCLES=" << hex << VOL_L_Cycles[Channel];
+				debug << " VALUE=" << hex << (pChRegs0->VOL_L & 0x7f);
+				debug << " MODE=" << ((pChRegs0->VOL_L >> 13) & 0x3);
 #endif
 
 				// *** TODO *** VOL_L_Value variable could be removed
-				
+
 				// set current volume left
 				//VOL_L_Value [ Channel ] = (s64) ( (s16) Regs [ ( CVOL_L_START - SPU_X + ( Channel << 1 ) ) >> 1 ] );
-				VOL_L_Value [ Channel ] = (s64) pChRegs0->CVOL_L;
-				
+				VOL_L_Value[Channel] = (s64)pChRegs0->CVOL_L;
+
 				// perform envelope
 				//VolumeEnvelope ( VOL_L_Value [ Channel ], VOL_L_Cycles [ Channel ], Regs [ ( VOL_L >> 1 ) + ( Channel << 3 ) ] & 0x7f, ( Regs [ ( VOL_L >> 1 ) + ( Channel << 3 ) ] >> 13 ) & 0x3 );
-				VolumeEnvelope ( pChRegs0->CVOL_L, VOL_L_Cycles [ Channel ], pChRegs0->VOL_L & 0x7f, ( pChRegs0->VOL_L >> 13 ) & 0x3, true );
-				
+				VolumeEnvelope(pChRegs0->CVOL_L, VOL_L_Cycles[Channel], pChRegs0->VOL_L & 0x7f, (pChRegs0->VOL_L >> 13) & 0x3, true);
+
 				// store the new current volume left
 				//Regs [ ( CVOL_L_START - SPU_X + ( Channel << 1 ) ) >> 1 ] = VOL_L_Value [ Channel ];
 				//GET_REG16 ( CVOLL_CH ( Channel ) ) = VOL_L_Value [ Channel ];
@@ -2039,30 +1994,29 @@ void SPUCore::Run ()
 			else
 			{
 				// just set the current volume L
-				//Regs [ ( CVOL_L_START - SPU_X + ( Channel << 1 ) ) >> 1 ] = Regs [ ( VOL_L >> 1 ) + ( Channel << 3 ) ] << 1;
 				pChRegs0->CVOL_L = pChRegs0->VOL_L << 1;
-			}
 
-			//if ( Regs [ ( VOL_R >> 1 ) + ( Channel << 3 ) ] >> 15 )
-			if ( pChRegs0->VOL_R >> 15 )
+			}	// end else if ( pChRegs0->VOL_L >> 15 )
+
+			if (pChRegs0->VOL_R >> 15)
 			{
 #ifdef INLINE_DEBUG_RUN_VOLUME_ENVELOPE
-	debug << "\r\nChannel#" << dec << Channel;
-	debug << " CORE#" << CoreNumber;
-	debug << " VE-VOLR";
-	debug << " CVOL=" << hex << pChRegs0->CVOL_R;
-	debug << " CYCLES=" << hex << VOL_R_Cycles [ Channel ];
-	debug << " VALUE=" << hex << ( pChRegs0->VOL_R & 0x7f );
-	debug << " MODE=" << ( ( pChRegs0->VOL_R >> 13 ) & 0x3 );
+				debug << "\r\nChannel#" << dec << Channel;
+				debug << " CORE#" << CoreNumber;
+				debug << " VE-VOLR";
+				debug << " CVOL=" << hex << pChRegs0->CVOL_R;
+				debug << " CYCLES=" << hex << VOL_R_Cycles[Channel];
+				debug << " VALUE=" << hex << (pChRegs0->VOL_R & 0x7f);
+				debug << " MODE=" << ((pChRegs0->VOL_R >> 13) & 0x3);
 #endif
 
 				// set current volume right
 				//VOL_R_Value [ Channel ] = (s64) ( (s16) Regs [ ( CVOL_R_START - SPU_X + ( Channel << 1 ) ) >> 1 ] );
-				VOL_R_Value [ Channel ] = (s64) pChRegs0->CVOL_R;
-				
+				VOL_R_Value[Channel] = (s64)pChRegs0->CVOL_R;
+
 				//VolumeEnvelope ( VOL_R_Value [ Channel ], VOL_R_Cycles [ Channel ], Regs [ ( VOL_R >> 1 ) + ( Channel << 3 ) ] & 0x7f, ( Regs [ ( VOL_R >> 1 ) + ( Channel << 3 ) ] >> 13 ) & 0x3 );
-				VolumeEnvelope ( pChRegs0->CVOL_R, VOL_R_Cycles [ Channel ], pChRegs0->VOL_R & 0x7f, ( pChRegs0->VOL_R >> 13 ) & 0x3, true );
-				
+				VolumeEnvelope(pChRegs0->CVOL_R, VOL_R_Cycles[Channel], pChRegs0->VOL_R & 0x7f, (pChRegs0->VOL_R >> 13) & 0x3, true);
+
 				// store the new current volume right
 				//Regs [ ( CVOL_R_START - SPU_X + ( Channel << 1 ) ) >> 1 ] = VOL_R_Value [ Channel ];
 				//GET_REG16 ( CVOLR_CH ( Channel ) ) = VOL_R_Value [ Channel ];
@@ -2070,58 +2024,74 @@ void SPUCore::Run ()
 			else
 			{
 				// just set the current volume R
-				//Regs [ ( CVOL_R_START - SPU_X + ( Channel << 1 ) ) >> 1 ] = Regs [ ( VOL_R >> 1 ) + ( Channel << 3 ) ] << 1;
 				pChRegs0->CVOL_R = pChRegs0->VOL_R << 1;
-			}
-			
-			
+
+			}	// end else if ( pChRegs0->VOL_R >> 15 )
+
+
 			/////////////////////////////////////////////////////////////////////
 			// update ADSR envelope
-			
-			// check adsr status
-			switch ( ADSR_Status [ Channel ] )
+
+#ifdef ENABLE_MUTE_CHANNEL_OPTIMIZATION
+			// alot of this can be skipped if channel is muted
+			if (ADSR_Status[Channel] == ADSR_MUTE)
 			{
+				// channel is set to mute //
+				Sample = 0;
+				ChSampleL = 0;
+				ChSampleR = 0;
+
+				// update sound progression
+				UpdatePitch(Channel, pChRegs0->PITCH, PitchMod, PreviousSample);
+			}
+			else
+#endif
+			{
+				// channel is NOT set to mute //
+
+			// check adsr status
+				switch (ADSR_Status[Channel])
+				{
 				case ADSR_MUTE:
-				
-					VOL_ADSR_Value [ Channel ] = 0;
-					
+
+					VOL_ADSR_Value[Channel] = 0;
+
 					//Regs [ ( ( Channel << 4 ) + ENV_X ) >> 1 ] = 0;
 					pChRegs0->ENV_X = 0;
-				
+
 					break;
-					
+
 				case ADSR_ATTACK:
 #ifdef INLINE_DEBUG_RUN_ATTACK
-	debug << "\r\nChannel#" << Channel;
+					debug << "\r\nChannel#" << Channel;
 #endif
-			
+
 #ifdef INLINE_DEBUG_RUN_ATTACK
-	//debug << "; Attack; Rate=" << (((double)VOL_ATTACK_Constant [ Channel ])/64536) << "; Rate75=" << (((double)VOL_ATTACK_Constant75 [ Channel ])/64536);
-	debug << "; Attack";
+					//debug << "; Attack; Rate=" << (((double)VOL_ATTACK_Constant [ Channel ])/64536) << "; Rate75=" << (((double)VOL_ATTACK_Constant75 [ Channel ])/64536);
+					debug << "; Attack";
 #endif
 
 					///////////////////////////////////////////
 					// ADSR - Attack Mode
-					
+
 					// saturate and switch to decay mode if volume goes above 32767
-					//if ( VOL_ADSR_Value [ Channel ] >= 32767 )
-					if ( pChRegs0->ENV_X >= 32767 )
+					if (pChRegs0->ENV_X >= 32767)
 					{
 #ifdef INLINE_DEBUG_RUN_ATTACK
-	debug << "; DECAY_NEXT ENVX=" << hex << pChRegs0->ENV_X;
+						debug << "; DECAY_NEXT ENVX=" << hex << pChRegs0->ENV_X;
 #endif
 
 						//VOL_ADSR_Value [ Channel ] = 32767;
 						pChRegs0->ENV_X = 32767;
-						
-						ADSR_Status [ Channel ] = ADSR_DECAY;
-						
+
+						ADSR_Status[Channel] = ADSR_DECAY;
+
 						// start envelope for decay mode
 						//ModeRate = Regs [ ( ADSR_0 >> 1 ) + ( Channel << 3 ) ];
 						ModeRate = pChRegs0->ADSR_0;
-						
+
 						//Start_VolumeEnvelope ( VOL_ADSR_Value [ Channel ], Cycles [ Channel ], ( ( ModeRate >> 4 ) & 0xf ) << ( 2 ), 0x3 );
-						Start_VolumeEnvelope ( (s16&) pChRegs0->ENV_X, Cycles [ Channel ], ( ( ModeRate >> 4 ) & 0xf ) << ( 2 ), 0x3, true );
+						Start_VolumeEnvelope((s16&)pChRegs0->ENV_X, Cycles[Channel], ((ModeRate >> 4) & 0xf) << (2), 0x3, true);
 
 #ifdef INLINE_DEBUG_RUN_ATTACK
 						debug << " ->ENVX=" << hex << pChRegs0->ENV_X;
@@ -2129,76 +2099,76 @@ void SPUCore::Run ()
 					}
 					else
 					{
-						
-					////////////////////////////////////////////////////
-					// linear or psx pseudo exponential increase
-					
+
+						////////////////////////////////////////////////////
+						// linear or psx pseudo exponential increase
+
 #ifdef INLINE_DEBUG_RUN_ATTACK
-	debug << "; (before) VOL_ADSR_Value=" << hex << pChRegs0->ENV_X << "; Cycles=" << dec << Cycles [ Channel ];
+						debug << "; (before) VOL_ADSR_Value=" << hex << pChRegs0->ENV_X << "; Cycles=" << dec << Cycles[Channel];
 #endif
 
-					//ModeRate = Regs [ ( ADSR_0 >> 1 ) + ( Channel << 3 ) ];
-					ModeRate = pChRegs0->ADSR_0;
-					
-					//VolumeEnvelope ( VOL_ADSR_Value [ Channel ], Cycles [ Channel ], ( ModeRate >> 8 ) & 0x7f, ( ModeRate >> 15 ) << 1 );
-					VolumeEnvelope ( (s16&) pChRegs0->ENV_X, Cycles [ Channel ], ( ModeRate >> 8 ) & 0x7f, ( ModeRate >> 15 ) << 1, false );
+						//ModeRate = Regs [ ( ADSR_0 >> 1 ) + ( Channel << 3 ) ];
+						ModeRate = pChRegs0->ADSR_0;
 
-					if ( pChRegs0->ENV_X >= 32767 )
-					{
-						pChRegs0->ENV_X = 32767;
-					}
-					
+						//VolumeEnvelope ( VOL_ADSR_Value [ Channel ], Cycles [ Channel ], ( ModeRate >> 8 ) & 0x7f, ( ModeRate >> 15 ) << 1 );
+						VolumeEnvelope((s16&)pChRegs0->ENV_X, Cycles[Channel], (ModeRate >> 8) & 0x7f, (ModeRate >> 15) << 1, false);
+
+						if (pChRegs0->ENV_X >= 32767)
+						{
+							pChRegs0->ENV_X = 32767;
+						}
+
 #ifdef INLINE_DEBUG_RUN_ATTACK
-	debug << "; (after) VOL_ADSR_Value=" << hex << pChRegs0->ENV_X << "; Cycles=" << dec << Cycles [ Channel ] << "; Value=" << hex << ( ( ModeRate >> 8 ) & 0x7f ) << "; flags=" << ( ( ModeRate >> 15 ) << 1 );
+						debug << "; (after) VOL_ADSR_Value=" << hex << pChRegs0->ENV_X << "; Cycles=" << dec << Cycles[Channel] << "; Value=" << hex << ((ModeRate >> 8) & 0x7f) << "; flags=" << ((ModeRate >> 15) << 1);
 #endif
-					}
-					
-					
+					}	// end else if (pChRegs0->ENV_X >= 32767)
+
+
 					break;
-					
+
 				case ADSR_DECAY:
 #ifdef INLINE_DEBUG_RUN_DECAY
-	debug << "\r\nChannel#" << Channel;
+					debug << "\r\nChannel#" << Channel;
 #endif
-			
+
 #ifdef INLINE_DEBUG_RUN_DECAY
-	//debug << "; Decay; Rate=" << (((double)VOL_DECAY_Constant [ Channel ])/(1<<30));
-	debug << "; Decay";
+					//debug << "; Decay; Rate=" << (((double)VOL_DECAY_Constant [ Channel ])/(1<<30));
+					debug << "; Decay";
 #endif
 
 					////////////////////////////////////////////
 					// ADSR - Decay Mode
-				
+
 					// switch to sustain mode if we reach sustain level
-					if ( ((s32)((s16)pChRegs0->ENV_X)) <= ((s32)VOL_SUSTAIN_Level [ Channel ]) )
+					if (((s32)((s16)pChRegs0->ENV_X)) <= ((s32)VOL_SUSTAIN_Level[Channel]))
 					{
 #ifdef INLINE_DEBUG_RUN_DECAY
-	debug << "; SUSTAIN_NEXT";
+						debug << "; SUSTAIN_NEXT";
 #endif
 
 						// ***TODO*** supposed to go under sustain level for 1 T before hitting sustain level?? //
-						pChRegs0->ENV_X = VOL_SUSTAIN_Level [ Channel ];
-						
+						pChRegs0->ENV_X = VOL_SUSTAIN_Level[Channel];
+
 						// maximize on the upper bound
-						if ( ((u16)pChRegs0->ENV_X) > 0x7fff )
+						if (((u16)pChRegs0->ENV_X) > 0x7fff)
 						{
 							pChRegs0->ENV_X = 0x7fff;
 						}
-						
-						ADSR_Status [ Channel ] = ADSR_SUSTAIN;
-						
+
+						ADSR_Status[Channel] = ADSR_SUSTAIN;
+
 						// start envelope for sustain mode
 						//ModeRate = Regs [ ( ADSR_1 >> 1 ) + ( Channel << 3 ) ];
 						ModeRate = pChRegs0->ADSR_1;
-						
+
 						//Start_VolumeEnvelope ( VOL_ADSR_Value [ Channel ], Cycles [ Channel ], ( ModeRate >> 6 ) & 0x7f, ModeRate >> 14 );
-						Start_VolumeEnvelope ( (s16&) pChRegs0->ENV_X, Cycles [ Channel ], ( ModeRate >> 6 ) & 0x7f, ModeRate >> 14, true );
-						
+						Start_VolumeEnvelope((s16&)pChRegs0->ENV_X, Cycles[Channel], (ModeRate >> 6) & 0x7f, ModeRate >> 14, true);
+
 						// ADSR1 -> bit 14 (0: sustain mode increasing, 1: sustain mode decreasing)
-						if ( ( ModeRate >> 14 ) & 1 )
+						if ((ModeRate >> 14) & 1)
 						{
 							// decreasing in sustain mode //
-							
+
 							// or below zero
 							/*
 							if ( ( (s16) pChRegs0->ENV_X ) < 0 )
@@ -2210,38 +2180,37 @@ void SPUCore::Run ()
 						else
 						{
 							// increasing in sustain mode //
-							
+
 							// saturate if volume goes above 32767
-							//if ( VOL_ADSR_Value [ Channel ] > 32767 )
-							if ( pChRegs0->ENV_X > 32767 )
+							if (pChRegs0->ENV_X > 32767)
 							{
-								//VOL_ADSR_Value [ Channel ] = 32767;
 								pChRegs0->ENV_X = 32767;
 							}
-						}
+
+						}	// end else if ((ModeRate >> 14) & 1)
 					}
 					else
 					{
-					////////////////////////////////////////////////
-					// Exponential decrease
+						////////////////////////////////////////////////
+						// Exponential decrease
 
 
 #ifdef INLINE_DEBUG_RUN_DECAY
-	debug << "; (before) VOL_ADSR_Value=" << hex << pChRegs0->ENV_X << "; Cycles=" << dec << Cycles [ Channel ];
+						debug << "; (before) VOL_ADSR_Value=" << hex << pChRegs0->ENV_X << "; Cycles=" << dec << Cycles[Channel];
 #endif
 
-					//ModeRate = Regs [ ( ADSR_0 >> 1 ) + ( Channel << 3 ) ];
-					ModeRate = pChRegs0->ADSR_0;
-					
-					//VolumeEnvelope ( VOL_ADSR_Value [ Channel ], Cycles [ Channel ], ( ( ModeRate >> 4 ) & 0xf ) << ( 2 ), 0x3 );
-					VolumeEnvelope ( (s16&) pChRegs0->ENV_X, Cycles [ Channel ], ( ( ModeRate >> 4 ) & 0xf ) << ( 2 ), 0x3, false );
+						//ModeRate = Regs [ ( ADSR_0 >> 1 ) + ( Channel << 3 ) ];
+						ModeRate = pChRegs0->ADSR_0;
 
-					
+						//VolumeEnvelope ( VOL_ADSR_Value [ Channel ], Cycles [ Channel ], ( ( ModeRate >> 4 ) & 0xf ) << ( 2 ), 0x3 );
+						VolumeEnvelope((s16&)pChRegs0->ENV_X, Cycles[Channel], ((ModeRate >> 4) & 0xf) << (2), 0x3, false);
+
+
 #ifdef INLINE_DEBUG_RUN_DECAY
-	debug << "; (after) VOL_ADSR_Value=" << hex << pChRegs0->ENV_X << "; Cycles=" << dec << Cycles [ Channel ] << "; Value=" << hex << ( ( ModeRate >> 4 ) & 0xf ) << "; flags=" << ( ( ModeRate >> 15 ) << 1 );
+						debug << "; (after) VOL_ADSR_Value=" << hex << pChRegs0->ENV_X << "; Cycles=" << dec << Cycles[Channel] << "; Value=" << hex << ((ModeRate >> 4) & 0xf) << "; flags=" << ((ModeRate >> 15) << 1);
 #endif
-					}
-					
+					}	// end else if (((s32)((s16)pChRegs0->ENV_X)) <= ((s32)VOL_SUSTAIN_Level[Channel]))
+
 
 					/*
 					// saturate if volume goes below zero
@@ -2253,288 +2222,279 @@ void SPUCore::Run ()
 						pChRegs0->ENV_X = 0;
 					}
 					*/
-					
-					
+
+
 					break;
-					
+
 				case ADSR_SUSTAIN:
 #ifdef INLINE_DEBUG_RUN_SUSTAIN
-	debug << "\r\nChannel#" << Channel;
+					debug << "\r\nChannel#" << Channel;
 #endif
-			
+
 #ifdef INLINE_DEBUG_RUN_SUSTAIN
-	//debug << "; Sustain; Rate=" << (((double)VOL_SUSTAIN_Constant [ Channel ])/64536) << "; Rate75=" << (((double)VOL_SUSTAIN_Constant75 [ Channel ])/64536);
-	debug << "; Sustain";
+					//debug << "; Sustain; Rate=" << (((double)VOL_SUSTAIN_Constant [ Channel ])/64536) << "; Rate75=" << (((double)VOL_SUSTAIN_Constant75 [ Channel ])/64536);
+					debug << "; Sustain";
 #endif
 
 					/////////////////////////////////////////////
 					// ADSR - Sustain Mode
-					
+
 #ifdef INLINE_DEBUG_RUN_SUSTAIN
-	debug << "; (before) VOL_ADSR_Value=" << hex << pChRegs0->ENV_X << "; Cycles=" << dec << Cycles [ Channel ];
+					debug << "; (before) VOL_ADSR_Value=" << hex << pChRegs0->ENV_X << "; Cycles=" << dec << Cycles[Channel];
 #endif
-					
+
 					//ModeRate = Regs [ ( ADSR_1 >> 1 ) + ( Channel << 3 ) ];
 					ModeRate = pChRegs0->ADSR_1;
 
-					if ( ( ( ModeRate >> 14 ) & 1 ) && ( ( (s16) pChRegs0->ENV_X ) <= 0 ) )
+					if (((ModeRate >> 14) & 1) && (((s16)pChRegs0->ENV_X) <= 0))
 					{
 						// decreasing in sustain mode and at or below zero //
 
 						pChRegs0->ENV_X = 0;
-						
+
 					}
 					else
 					{
-					
-					//VolumeEnvelope ( VOL_ADSR_Value [ Channel ], Cycles [ Channel ], ( ModeRate >> 6 ) & 0x7f, ModeRate >> 14 );
-					VolumeEnvelope ( (s16&) pChRegs0->ENV_X, Cycles [ Channel ], ( ModeRate >> 6 ) & 0x7f, ModeRate >> 14, false );
+
+						//VolumeEnvelope ( VOL_ADSR_Value [ Channel ], Cycles [ Channel ], ( ModeRate >> 6 ) & 0x7f, ModeRate >> 14 );
+						VolumeEnvelope((s16&)pChRegs0->ENV_X, Cycles[Channel], (ModeRate >> 6) & 0x7f, ModeRate >> 14, false);
 
 #ifdef INLINE_DEBUG_RUN_SUSTAIN
-	debug << "; (after) VOL_ADSR_Value=" << hex << pChRegs0->ENV_X << "; Cycles=" << dec << Cycles [ Channel ] << "; Value=" << hex << ( ( ModeRate >> 6 ) & 0x7f ) << "; flags=" << ( ( ModeRate >> 15 ) << 1 );
+						debug << "; (after) VOL_ADSR_Value=" << hex << pChRegs0->ENV_X << "; Cycles=" << dec << Cycles[Channel] << "; Value=" << hex << ((ModeRate >> 6) & 0x7f) << "; flags=" << ((ModeRate >> 15) << 1);
 #endif
 
-					// ***TODO*** potential bug here NEED TO CHECK IF RATE IS INCREASING OR DECREASING
-					// ADSR1 -> bit 14 (0: sustain mode increasing, 1: sustain mode decreasing)
-					if ( ( ModeRate >> 14 ) & 1 )
-					{
-						// decreasing in sustain mode //
-						
-						// can go below zero for 1T
-						// or below zero
-						/*
-						//if ( VOL_ADSR_Value [ Channel ] < 0 )
-						if ( ( (s16) pChRegs0->ENV_X ) < 0 )
+						// ***TODO*** potential bug here NEED TO CHECK IF RATE IS INCREASING OR DECREASING
+						// ADSR1 -> bit 14 (0: sustain mode increasing, 1: sustain mode decreasing)
+						if ((ModeRate >> 14) & 1)
 						{
-							//VOL_ADSR_Value [ Channel ] = 0;
-							pChRegs0->ENV_X = 0;
+							// decreasing in sustain mode //
+
+							// can go below zero for 1T
+							// or below zero
+							/*
+							//if ( VOL_ADSR_Value [ Channel ] < 0 )
+							if ( ( (s16) pChRegs0->ENV_X ) < 0 )
+							{
+								//VOL_ADSR_Value [ Channel ] = 0;
+								pChRegs0->ENV_X = 0;
+							}
+							*/
 						}
-						*/
-					}
-					else
-					{
-						// increasing in sustain mode //
-						
-						// saturate if volume goes above 32767
-						//if ( VOL_ADSR_Value [ Channel ] > 32767 )
-						if ( pChRegs0->ENV_X > 32767 )
+						else
 						{
-							//VOL_ADSR_Value [ Channel ] = 32767;
-							pChRegs0->ENV_X = 32767;
-						}
-					}
-					
-					}
-					
+							// increasing in sustain mode //
+
+							// saturate if volume goes above 32767
+							//if ( VOL_ADSR_Value [ Channel ] > 32767 )
+							if (pChRegs0->ENV_X > 32767)
+							{
+								//VOL_ADSR_Value [ Channel ] = 32767;
+								pChRegs0->ENV_X = 32767;
+							}
+
+						}	// end else if ((ModeRate >> 14) & 1)
+
+					}	// end else if (((ModeRate >> 14) & 1) && (((s16)pChRegs0->ENV_X) <= 0))
+
 					// we do not switch to release mode until key off signal is given
-					
+
 					break;
-					
+
 				case ADSR_RELEASE:
 #ifdef INLINE_DEBUG_RUN_RELEASE
-	debug << "\r\nChannel#" << Channel;
+					debug << "\r\nChannel#" << Channel;
 #endif
-			
+
 #ifdef INLINE_DEBUG_RUN_RELEASE
-	//debug << "; Release; Rate=" << (((double)VOL_RELEASE_Constant [ Channel ])/(1<<30));
-	debug << "; Release";
+					//debug << "; Release; Rate=" << (((double)VOL_RELEASE_Constant [ Channel ])/(1<<30));
+					debug << "; Release";
 #endif
 
 					///////////////////////////////////////////////
 					// ADSR - Release Mode
-				
+
 #ifdef INLINE_DEBUG_RUN_RELEASE
-	debug << "; (before) VOL_ADSR_Value=" << hex << pChRegs0->ENV_X << "; Cycles=" << dec << Cycles [ Channel ];
+					debug << "; (before) VOL_ADSR_Value=" << hex << pChRegs0->ENV_X << "; Cycles=" << dec << Cycles[Channel];
 #endif
 
 					// when at or below zero we turn note off completely and set adsr volume to zero
-					if ( ( (s16) pChRegs0->ENV_X ) <= 0 )
+					if (((s16)pChRegs0->ENV_X) <= 0)
 					{
 						// ADSR volume is below zero in RELEASE mode //
-					
+
 						// saturate to zero
 						//VOL_ADSR_Value [ Channel ] = 0;
 						pChRegs0->ENV_X = 0;
-						
-						ADSR_Status [ Channel ] = ADSR_MUTE;
-						
+
+						ADSR_Status[Channel] = ADSR_MUTE;
+
 						// the channel on bit is not really for whether the channel is on or off
 						//ChannelOn = ChannelOn & ~( 1 << Channel );
 					}
 					else
 					{
 						// RELEASE mode //
-						
+
 						// *** note *** it is possible for ADSR volume to go negative for 1T in linear decrement mode //
-						
+
 						//ModeRate = Regs [ ( ADSR_1 >> 1 ) + ( Channel << 3 ) ];
 						ModeRate = pChRegs0->ADSR_1;
-						
+
 						//VolumeEnvelope ( VOL_ADSR_Value [ Channel ], Cycles [ Channel ], ( ModeRate & 0x1f ) << ( 2 ), ( ( ( ModeRate >> 5 ) & 1 ) << 1 ) | 0x1 );
-						VolumeEnvelope ( (s16&) pChRegs0->ENV_X, Cycles [ Channel ], ( ModeRate & 0x1f ) << ( 2 ), ( ( ( ModeRate >> 5 ) & 1 ) << 1 ) | 0x1, false );
+						VolumeEnvelope((s16&)pChRegs0->ENV_X, Cycles[Channel], (ModeRate & 0x1f) << (2), (((ModeRate >> 5) & 1) << 1) | 0x1, false);
 					}
-					
-					/*
-					// *** testing ***
-					//if ( VOL_ADSR_Value [ Channel ] < 0 )
-					if ( ( (s16) pChRegs0->ENV_X ) < 0 )
-					{
-						// saturate to zero
-						//VOL_ADSR_Value [ Channel ] = 0;
-						pChRegs0->ENV_X = 0;
-					}
-					*/
+
 
 
 #ifdef INLINE_DEBUG_RUN_RELEASE
-	debug << "; (after) VOL_ADSR_Value=" << hex << pChRegs0->ENV_X << "; Cycles=" << dec << Cycles [ Channel ] << "; Value=" << hex << ( ( ModeRate >> 8 ) & 0x7f ) << "; flags=" << ( ( ModeRate >> 15 ) << 1 );
+					debug << "; (after) VOL_ADSR_Value=" << hex << pChRegs0->ENV_X << "; Cycles=" << dec << Cycles[Channel] << "; Value=" << hex << ((ModeRate >> 8) & 0x7f) << "; flags=" << ((ModeRate >> 15) << 1);
 #endif
 
-					
-						
+
+
 					break;
-			}
-			
-			/////////////////////////////////////////////////////////////////////////////
-			// update ADSR Envelope Volume
-			// commented out for ps2
-			//Regs [ ( ( Channel << 4 ) + ENV_X ) >> 1 ] = VOL_ADSR_Value [ Channel ];
-			//pChRegs0->ENV_X = VOL_ADSR_Value [ Channel ];
-			
-			//////////////////////////////////////////////////////////////
-			// load sample
-			
-			// check if channel is set to noise
-			if ( ChannelNoise & ( 1 << Channel ) )
-			{
-				// channel is set to noise //
-				
-				Sample = NoiseLevel;
-			}
-			else
-			{
-				// channel is not set to noise //
-				
-				u32 SampleNumber = CurrentSample_Read [ Channel ] >> 32;
-				
-				//Sample = DecodedBlocks [ ( Channel * 28 ) + ( CurrentSample_Offset [ Channel ] >> 32 ) ];
-				Sample = DecodedBlocks [ ( Channel << 5 ) + ( SampleNumber & 0x1f ) ];
-				
-				///////////////////////////////////////////
-				// apply sample interpolation
-				
-				Sample = Calc_sample_gx ( CurrentSample_Read [ Channel ] >> 16, Sample, DecodedBlocks [ ( Channel << 5 ) + ( ( SampleNumber - 1 ) & 0x1f ) ],
-				DecodedBlocks [ ( Channel << 5 ) + ( ( SampleNumber - 2 ) & 0x1f ) ], DecodedBlocks [ ( Channel << 5 ) + ( ( SampleNumber - 3 ) & 0x1f ) ] );
-				
-				
-				////////////////////////////////////
-				// apply envelope volume
-				// this does not apply when set to noise
-				//Sample = ( Sample * ( (s64) ( (s16) Regs [ ( ( Channel << 4 ) + ENV_X ) >> 1 ] ) ) ) >> c_iVolumeShift;
-				Sample = ( Sample * ( (s64) ( (s16) pChRegs0->ENV_X ) ) ) >> c_iVolumeShift;
-				
-				//UpdatePitch ( Channel, Regs [ ( ( Channel << 4 ) + PITCH ) >> 1 ], PitchMod, PreviousSample );
-				UpdatePitch ( Channel, pChRegs0->PITCH, PitchMod, PreviousSample );
-				
-			}
-			
+
+				}	// end switch (ADSR_Status[Channel])
+
+				/////////////////////////////////////////////////////////////////////////////
+				// update ADSR Envelope Volume
+				// commented out for ps2
+				//Regs [ ( ( Channel << 4 ) + ENV_X ) >> 1 ] = VOL_ADSR_Value [ Channel ];
+				//pChRegs0->ENV_X = VOL_ADSR_Value [ Channel ];
+
+				//////////////////////////////////////////////////////////////
+				// load sample
+
+				// check if channel is set to noise
+				if (ChannelNoise & (1 << Channel))
+				{
+					// channel is set to noise //
+
+					Sample = NoiseLevel;
+				}
+				else
+				{
+					// channel is not set to noise //
+
+					u32 SampleNumber = CurrentSample_Read[Channel] >> 32;
+
+					Sample = DecodedBlocks[(Channel << 5) + (SampleNumber & 0x1f)];
+
+					///////////////////////////////////////////
+					// apply sample interpolation
+
+					Sample = Calc_sample_gx(CurrentSample_Read[Channel] >> 16, Sample, DecodedBlocks[(Channel << 5) + ((SampleNumber - 1) & 0x1f)],
+						DecodedBlocks[(Channel << 5) + ((SampleNumber - 2) & 0x1f)], DecodedBlocks[(Channel << 5) + ((SampleNumber - 3) & 0x1f)]);
+
+
+					////////////////////////////////////
+					// apply envelope volume
+					// this does not apply when set to noise
+					Sample = (Sample * ((s64)((s16)pChRegs0->ENV_X))) >> c_iVolumeShift;
+
+					UpdatePitch(Channel, pChRegs0->PITCH, PitchMod, PreviousSample);
+
+				}	// end else if (ChannelNoise & (1 << Channel))
+
+
+				//////////////////////////////////////////////////////////////////
+				// apply volume processing
+
+
+				// apply current channel volume
+				//ChSampleL = ( Sample * ((s64) ((s16)Regs [ ( CVOL_L_START - SPU_X + ( Channel << 1 ) ) >> 1 ]) ) ) >> c_iVolumeShift;
+				//ChSampleR = ( Sample * ((s64) ((s16)Regs [ ( CVOL_R_START - SPU_X + ( Channel << 1 ) ) >> 1 ]) ) ) >> c_iVolumeShift;
+				ChSampleL = (Sample * ((s64)pChRegs0->CVOL_L)) >> c_iVolumeShift;
+				ChSampleR = (Sample * ((s64)pChRegs0->CVOL_R)) >> c_iVolumeShift;
+
+
+				// check if channel is muted for debugging
+				if (!(Debug_ChannelEnable & (1 << Channel)))
+				{
+					ChSampleL = 0;
+					ChSampleR = 0;
+				}
+
+
+#ifdef ENABLE_REVERB_IN
+				// check if reverb is on for channel
+				// for ps2, does the channels separately for left and right, which is different from ps1
+
+				// check if master effect voice volume is enabled for left (WET)
+				if (pCoreRegs0->MMIX & 0x200)
+				{
+					if (ReverbOnL & (1 << Channel))
+					{
+						//debug << "\r\nREVERB-IN-LEFT-CH#" << dec << Channel << "-CORE#" << dec << CoreNumber << "-SAMPLE:" << hex << ChSampleL;
+						ReverbSampleL += ChSampleL;
+					}
+				}
+
+				// check if master effect voice volume is enabled for right (WET)
+				if (pCoreRegs0->MMIX & 0x100)
+				{
+					if (ReverbOnR & (1 << Channel))
+					{
+						//debug << "\r\nREVERB-IN-RIGHT-CH#" << dec << Channel << "-CORE#" << dec << CoreNumber << "-SAMPLE:" << hex << ChSampleR;
+						ReverbSampleR += ChSampleR;
+					}
+				}
+#else
+				// for debugging //
+				ReverbSampleL = 0;
+				ReverbSampleR = 0;
+#endif
+
+				///////////////////////////////////////////////////////////////////
+				// mix sample l/r
+
+				// ***TODO*** for PS2 should only do this if VMIXL/VMIXR bit is set for channel
+				// ***NEEDS FIXING***
+
+				// check master dry voice output left (DRY)
+				if (pCoreRegs0->MMIX & 0x800)
+				{
+					if (SoundOnL & (1 << Channel))
+					{
+						SampleL += ChSampleL;
+					}
+				}
+
+				// check master dry voice output right (DRY)
+				if (pCoreRegs0->MMIX & 0x400)
+				{
+					if (SoundOnR & (1 << Channel))
+					{
+						SampleR += ChSampleR;
+					}
+				}
+
+			}	// end else if (ADSR_Status[Channel] == ADSR_MUTE)
+
+
 			// store previous sample in case next channel uses frequency modulation
 			PreviousSample = Sample;
-			
+
 			// save current sample for debugging
-			Debug_CurrentRawSample [ Channel ] = Sample;
+			Debug_CurrentRawSample[Channel] = Sample;
 
 			// copy samples for voice1 and voice3 into buffer //
 
 
 #ifdef ENABLE_VOICE13_MEM
-			switch ( Channel )
+			switch (Channel)
 			{
-				case 1:
-					pVoice1_Out [ DecodeBufferOffset >> 1 ] = adpcm_decoder::clamp ( Sample );
-					break;
-					
-				case 3:
-					pVoice3_Out [ DecodeBufferOffset >> 1 ] = adpcm_decoder::clamp ( Sample );
-					break;
+			case 1:
+				pVoice1_Out[DecodeBufferOffset >> 1] = adpcm_decoder::clamp(Sample);
+				break;
+
+			case 3:
+				pVoice3_Out[DecodeBufferOffset >> 1] = adpcm_decoder::clamp(Sample);
+				break;
 			}
 #endif
-			
-			
-			
-			//////////////////////////////////////////////////////////////////
-			// apply volume processing
-			
-			
-			// apply current channel volume
-			//ChSampleL = ( Sample * ((s64) ((s16)Regs [ ( CVOL_L_START - SPU_X + ( Channel << 1 ) ) >> 1 ]) ) ) >> c_iVolumeShift;
-			//ChSampleR = ( Sample * ((s64) ((s16)Regs [ ( CVOL_R_START - SPU_X + ( Channel << 1 ) ) >> 1 ]) ) ) >> c_iVolumeShift;
-			ChSampleL = ( Sample * ((s64) pChRegs0->CVOL_L ) ) >> c_iVolumeShift;
-			ChSampleR = ( Sample * ((s64) pChRegs0->CVOL_R ) ) >> c_iVolumeShift;
 
-			
-			// check if channel is muted for debugging
-			if ( !( Debug_ChannelEnable & ( 1 << Channel ) ) )
-			{
-				ChSampleL = 0;
-				ChSampleR = 0;
-			}
 
-			
-#ifdef ENABLE_REVERB_IN
-			// check if reverb is on for channel
-			// for ps2, does the channels separately for left and right, which is different from ps1
-			
-			// check if master effect voice volume is enabled for left (WET)
-			if ( pCoreRegs0->MMIX & 0x200 )
-			{
-				if ( ReverbOnL & ( 1 << Channel ) )
-				{
-//debug << "\r\nREVERB-IN-LEFT-CH#" << dec << Channel << "-CORE#" << dec << CoreNumber << "-SAMPLE:" << hex << ChSampleL;
-					ReverbSampleL += ChSampleL;
-				}
-			}
-
-			// check if master effect voice volume is enabled for right (WET)
-			if ( pCoreRegs0->MMIX & 0x100 )
-			{
-				if ( ReverbOnR & ( 1 << Channel ) )
-				{
-//debug << "\r\nREVERB-IN-RIGHT-CH#" << dec << Channel << "-CORE#" << dec << CoreNumber << "-SAMPLE:" << hex << ChSampleR;
-					ReverbSampleR += ChSampleR;
-				}
-			}
-#else
-			// for debugging //
-			ReverbSampleL = 0;
-			ReverbSampleR = 0;
-#endif
-			
-			///////////////////////////////////////////////////////////////////
-			// mix sample l/r
-			
-			// ***TODO*** for PS2 should only do this if VMIXL/VMIXR bit is set for channel
-			// ***NEEDS FIXING***
-			
-			// check master dry voice output left (DRY)
-			if ( pCoreRegs0->MMIX & 0x800 )
-			{
-				if ( SoundOnL & ( 1 << Channel ) )
-				{
-					SampleL += ChSampleL;
-				}
-			}
-			
-			// check master dry voice output right (DRY)
-			if ( pCoreRegs0->MMIX & 0x400 )
-			{
-				if ( SoundOnR & ( 1 << Channel ) )
-				{
-					SampleR += ChSampleR;
-				}
-			}
-			
-			
 			//////////////////////////////////////////////////////////////////
 			// Advance to next sample for channel
 			//CurrentSample_Offset [ Channel ] += dSampleDT [ Channel ];
@@ -2731,9 +2691,16 @@ void SPUCore::Run ()
 				
 				// decode the new block
 				CurrentSample_Write [ Channel ] += 28;
-				//SampleDecoder [ Channel ].decode_packet32 ( (adpcm_packet*) & ( RAM [ CurrentBlockAddress [ Channel ] >> 1 ] ), DecodedSamples );
-				SampleDecoder [ Channel ].decode_packet32 ( (adpcm_packet*) & ( RAM [ CurrentBlockAddress [ Channel ] ] ), DecodedSamples );
-				for ( int i = 0; i < 28; i++ ) DecodedBlocks [ ( Channel << 5 ) + ( ( CurrentSample_Write [ Channel ] + i ) & 0x1f ) ] = DecodedSamples [ i ];
+
+#ifdef ENABLE_MUTE_CHANNEL_OPTIMIZATION
+				// shouldn't need to do this if channel is set to mute
+				if (ADSR_Status[Channel] != ADSR_MUTE)
+#endif
+				{
+					//SampleDecoder [ Channel ].decode_packet32 ( (adpcm_packet*) & ( RAM [ CurrentBlockAddress [ Channel ] >> 1 ] ), DecodedSamples );
+					SampleDecoder[Channel].decode_packet32((adpcm_packet*)&(RAM[CurrentBlockAddress[Channel]]), DecodedSamples);
+					for (int i = 0; i < 28; i++) DecodedBlocks[(Channel << 5) + ((CurrentSample_Write[Channel] + i) & 0x1f)] = DecodedSamples[i];
+				}
 			}
 			
 #ifndef UPDATE_NEX_IN_BLOCKS
@@ -2771,8 +2738,7 @@ void SPUCore::Run ()
 			
 		}	// for ( Channel = 0; Channel < 24; Channel++ )
 		
-		
-	}
+	}	// end if ( pCoreRegs0->CTRL >> 15 )
 
 
 #ifdef ENABLE_MIXDRY_MEM
@@ -2788,7 +2754,8 @@ void SPUCore::Run ()
 	if ( isADMATransferMode() )
 	{
 		// should only play if there is data in the half-buffer ??
-		if ( ( NextSoundBufferAddress - ulADMA_PlayOffset ) >= 512 )
+		//if ( ( NextSoundBufferAddress - ulADMA_PlayOffset ) >= 512 )
+		if ( ((s64)( NextSoundBufferAddress - ulADMA_PlayOffset )) > 0 )
 		{
 
 		// check if should mix in the sound data input area data (ADMA) (DRY)
@@ -2885,7 +2852,8 @@ void SPUCore::Run ()
 
 		
 		// if buffer-half is done playing, then clear it for a transfer of samples
-		if ( ! ( ulADMA_PlayOffset & 0x1ff ) )
+		//if ( ! ( ulADMA_PlayOffset & 0x1ff ) )
+		if ( ((s64)( NextSoundBufferAddress - ulADMA_PlayOffset )) <= 512 )
 		{
 			// clear the opposite buffer-half for a transfer since it is done playing
 			//bBufferFull [ ( ulADMA_PlayOffset >> 9 ) ^ 1 ] = 0;
@@ -5889,7 +5857,7 @@ u32 SPUCore::DMA_Write_Block ( u32* Data, u32 BS )
 		// check if all of the data for half of the sound data input buffer (ADMA) has been transferred
 		//if ( SoundDataInput_Offset >= 512 )
 		//if ( ! ( NextSoundBufferAddress & (1023) ) )
-		if ( ! ( NextSoundBufferAddress & (511) ) )
+		//if ( ! ( NextSoundBufferAddress & (511) ) )
 		{
 #ifdef INLINE_DEBUG_DMA_WRITE
 		debug << "***HALF-BUFFER-TRANSFERRED***\r\n";

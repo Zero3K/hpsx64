@@ -89,16 +89,16 @@ u64* CDVD::_NextSystemEvent;
 //#define INLINE_DEBUG_SPLIT
 //#define INLINE_DEBUG_SPLIT_READ
 
-/*
+
 //#define INLINE_DEBUG
 #define INLINE_DEBUG_READ
 #define INLINE_DEBUG_WRITE
 #define INLINE_DEBUG_RUN
 
 #define INLINE_DEBUG_DISKREAD
-#define INLINE_DEBUG_READBUFFER
+//#define INLINE_DEBUG_READBUFFER
 #define INLINE_DEBUG_READY
-*/
+
 
 #endif
 
@@ -645,6 +645,9 @@ if ( NumSectorsBeingRead > 1 )
 	cout << "->1st read sectors:" << dec << NumSectorsBeingRead;
 }
 
+//cout << "\n->Reading sector#" << dec << ReadSector << " remaining=" << SectorReadCount;
+
+
 				AvailableSectorCount += NumSectorsBeingRead;
 				
 
@@ -653,6 +656,10 @@ if ( NumSectorsBeingRead > 1 )
 				
 				// dec number of sectors remaining to read
 				SectorReadCount -= NumSectorsBeingRead;
+
+
+
+
 //#else
 				// another sector available now
 				//AvailableSectorCount++;
@@ -763,6 +770,7 @@ if ( NumSectorsBeingRead > 1 )
 				// no more events for now
 				//Set_NextEvent_Value ( -1 );
 
+//cout << "\n***All Sectors Read***";
 
 #ifndef INT_AFTER_DATA_TRANSFER
 				// data ready

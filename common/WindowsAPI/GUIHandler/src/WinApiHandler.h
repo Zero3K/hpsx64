@@ -21,6 +21,8 @@
 #define WINAPIHANDLER_H_
 
 
+//#include <GL/glew.h>
+
 
 #include "types.h"
 #include "MultiThread.h"
@@ -335,11 +337,9 @@ using namespace std;
 
 
 		// *** Dialog Boxes *** //
-		string ShowFileOpenDialog_BIOS ();
-		string ShowFileOpenDialog_Image ();
-		string ShowFileOpenDialog_Savestate ();
+		string ShowFileOpenDialog ();
 		vector<string> ShowFileOpenDialogMultiSelect ();
-		string ShowFileSaveDialog_Savestate ();
+		string ShowFileSaveDialog ();
 
 
 

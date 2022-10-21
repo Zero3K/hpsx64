@@ -54,6 +54,14 @@ using namespace Math::Reciprocal;
 #define ALLOW_OPENCL_PS1
 #define ENABLE_HWPIXEL_INPUT
 //#define TEST_GPU_RENDER
+
+
+#define ENABLE_COMPUTE_SHADER_RENDER
+//#define ENABLE_GPU_MULTI_THREAD
+
+
+#pragma comment(lib, "glew32s")
+#pragma comment(lib, "opengl32")
 */
 
 #endif
@@ -63,7 +71,7 @@ using namespace Math::Reciprocal;
 
 GLuint GPU::computeProgram;
 //GLuint buffers[NUM_BUFS];       //SSBO objects, one for IMG_0, one for IMG_1, and one for commands/response
-//static GLchar* computeSource;
+GLchar* GPU::computeSource;
 GLuint GPU::shaderProgram;
 //string computeSource;
 GLuint GPU::ssbo1;
@@ -83,11 +91,13 @@ GLuint GPU::fboId = 0;
 
 //#define GLSL(version,shader) "#version" #version "\n" #shader
 
-const char* GPU::computeSource =
-#include "compute.comp"
-;
 
 #endif
+
+//const auto GPU::computeSource =
+//#include "compute.comp"
+//;
+
 
 // templates take too long too compile and won't be needed in later versions
 
@@ -207,26 +217,6 @@ const char* GPU::computeSource =
 #endif
 
 
-#ifdef ALLOW_OPENCL_PS1
-
-/*
-cl_mem GPU::bufa, GPU::bufb, GPU::bufc, GPU::bufd, GPU::bufe, GPU::buff, GPU::bufg;
-cl_program GPU::p;
-int GPU::num_compute_units, GPU::num_local_workers, GPU::total_compute_units;
-int GPU::num_local_workers_square;
-
-Compute::Context *GPU::ctx;
-
-// status of the opencl gpu
-volatile u32 GPU::ulGPURunStatus;
-
-// opencl event for callback
-cl_event GPU::evtDrawDone;
-
-u64 GPU::ullBufferMask = c_ulInputBuffer_Mask;
-*/
-
-#endif
 
 volatile u64 GPU::ulTBufferIndex;
 
@@ -540,11 +530,11 @@ void GPU::Start ()
 
 	cout << "\nLoading program...";
 
-	//computeSource = LoadProgram("C:\\Users\\PCUser\\Desktop\\TheProject\\hpsx64\\hps1x64\\src\\gpu\\src\\compute.comp");
-    //if (computeSource == NULL)
-    //{
-    //    return;
-    //}
+	computeSource = LoadProgram("C:\\Users\\PCUser\\Desktop\\TheProject\\hpsx64\\hps1x64\\src\\gpu\\src\\compute.comp");
+    if (computeSource == NULL)
+    {
+        return;
+    }
 
 	cout << "\nLoaded:" << (char*)computeSource;
 
@@ -712,10 +702,18 @@ void GPU::Start ()
 
 	// testing opencl
 	bEnable_OpenCL = false;
+
+#ifdef ENABLE_COMPUTE_SHADER_RENDER
+	bEnable_OpenCL = true;
+#endif
 	
 	// 0 means on same thread, 1 or greater means on separate threads (power of 2 ONLY!!)
 	ulNumberOfThreads = 0;
-	
+
+#ifdef ENABLE_GPU_MULTI_THREAD
+	ulNumberOfThreads = 1;
+#endif
+
 
 	cout << "done\n";
 
@@ -1358,7 +1356,7 @@ void GPU::draw_screen_th( DATA_Write_Format* inputdata, u32 ulThreadNum )
 
 	}	// end if else if ( !GPU_CTRL_Read_DEN )
 
-	}	// end if ( _GPU->bEnable_OpenCL )
+	}	// end if ( ! _GPU->bEnable_OpenCL )
 	
 	
 	// *** output of pixel buffer to screen *** //
@@ -7783,73 +7781,6 @@ void GPU::End_Frame ( void )
 }
 
 
-#ifdef ALLOW_OPENCL_PS1
-
-/*
-//void (CL_CALLBACK*pfn_event_notify)(cl_event event, cl_int event_command_exec_status,void *user_data)
-void GPU::draw_complete_event(cl_event event, cl_int event_command_exec_status,void *user_data)
-{
-	u32 VisibleArea_Width, VisibleArea_Height;
-	u32 *pData;
-
-	// update the progress in processing the data
-	Lock_Exchange64 ( (long long&) ulInputBuffer_ReadIndex, ulTBufferIndex );
-
-	// for now, check for exit on zero. normally will have to check for code 2 exit on draw screen
-	if ( ulGPURunStatus == 2 )
-	{
-		// convert pixels
-		//for ( int x = 0; x < 1024 * 512; x++ )
-		//{
-		//	display_gfxbuffer [ x ] = ( ((long)( VRAM [ x ] & 0x1f )) << 3 ) | ( ((long)( VRAM [ x ] & 0x3e0 )) << 6 ) | ( ((long)( VRAM [ x ] & 0x7c00 )) << 9 );
-		//}
-
-		 pData = & inputdata [ ( ( ulTBufferIndex - 1 ) & c_ulInputBuffer_Mask ) << c_ulInputBuffer_Shift ];
-		 VisibleArea_Width = pData [ 8 ];
-		 VisibleArea_Height = pData [ 9 ];
-
-		cout << "\nDrawing Screen: Width=" << dec << VisibleArea_Width << " Height=" << VisibleArea_Height;
-		
-		DisplayOutput_Window->OpenGL_MakeCurrentWindow ();
-
-		glPixelZoom ( (float)MainProgramWindow_Width / (float)VisibleArea_Width, (float)MainProgramWindow_Height / (float)VisibleArea_Height );
-		
-		glDrawPixels ( VisibleArea_Width, VisibleArea_Height, GL_RGBA, GL_UNSIGNED_BYTE, (const GLvoid*) _GPU->PixelBuffer );
-
-		// send pixels to the screen
-		//glDrawPixels ( 1024, 512, GL_RGBA, GL_UNSIGNED_BYTE, (const GLvoid*) ps1gfxbuffer );
-		//glDrawPixels ( 1024, 512, GL_RGBA, GL_UNSIGNED_BYTE, (const GLvoid*) _GPU->PixelBuffer );
-		
-		// update screen
-		DisplayOutput_Window->FlipScreen ();
-
-		// this is no longer the current window we are drawing to
-		DisplayOutput_Window->OpenGL_ReleaseWindow ();
-
-
-		// *** release thread waiting for screen draw here ***
-		SetEvent( ghEvent_PS1GPU_Frame );
-	}
-
-	// done - gpu now idle
-	ulGPURunStatus = 0;
-
-	// now that gpu is idle, check if it is finished
-	if ( ulTBufferIndex >= Lock_ExchangeAdd64( (long long&) ulInputBuffer_TargetIndex, 0 ) )
-	{
-		// all gpu tasks are currently complete
-		SetEvent( ghEvent_PS1GPU_Finish );
-	}
-
-	// ***go ahead and release gpu thread here***
-	// gpu thread will check if gpu is idle, then if index and maxindex don't match dispatch a run
-	SetEvent( ghEvent_PS1GPU_Update );
-
-	//cout << "\nEvent ran successfully\n";
-}
-*/
-
-#endif
 
 int GPU::Start_GPUThread( void* Param )
 {

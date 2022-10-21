@@ -23,6 +23,8 @@
 #include "types.h"
 #include "Debug.h"
 
+#include "DebugValueList.h"
+
 // include of modified pcsx2 mpeg code
 #include "Mpeg.h"
 
@@ -229,6 +231,12 @@ namespace Playstation2
 				u64 MBI : 1;
 			};
 			
+			struct
+			{
+				u32 Lo;
+				u32 Hi;
+			};
+
 			u64 Value;
 		};
 		
@@ -249,6 +257,12 @@ namespace Playstation2
 				u64 BUSY : 1;
 			};
 			
+			struct
+			{
+				u32 Lo;
+				u32 Hi;
+			};
+
 			u64 Value;
 		};
 		
@@ -269,6 +283,12 @@ namespace Playstation2
 				
 				// bit 63 - Busy - set when the command is busy
 				u64 BUSY : 1;
+			};
+
+			struct
+			{
+				u32 Lo;
+				u32 Hi;
 			};
 			
 			u64 Value;
@@ -326,7 +346,13 @@ namespace Playstation2
 				// triggers an interrupt when this bit transitions from one to zero ?? (processing done?)
 				u64 BUSY : 1;
 			};
-			
+
+			struct
+			{
+				u32 Lo;
+				u32 Hi;
+			};
+
 			u64 Value;
 		};
 		
@@ -354,6 +380,12 @@ namespace Playstation2
 				u64 FP : 2;
 			};
 			
+			struct
+			{
+				u32 Lo;
+				u32 Hi;
+			};
+
 			u64 Value;
 		};
 
@@ -456,6 +488,8 @@ namespace Playstation2
 		
 		void Proceed ( u32 iBits );
 		u64 PeekBE ( u64 iBits, u32 uBitPosition );
+		u64 ReadBE64(u32 uBitPosition);
+		u64 ReadLE64(u32 uBitPosition);
 		u64 Peek ( u64 iBits, u32 uBitPosition );
 		u64 Get ( u32 iBits );
 		bool Load_IQTable_FromBitstream ( u8* table );
@@ -469,8 +503,8 @@ namespace Playstation2
 		void Update_IFC ();
 		void Update_OFC ();
 
-		static bool DMA_Write_Ready ();
-		static bool DMA_Read_Ready ();
+		static u64 DMA_Write_Ready ();
+		static u64 DMA_Read_Ready ();
 		
 		static u32 DMA_WriteBlock ( u64* Data, u32 QuadwordCount );
 		static u32 DMA_ReadBlock ( u64* Data, u32 QuadwordCount );
@@ -516,7 +550,17 @@ namespace Playstation2
 		static u64 *_DebugCycleCount;
 		static u32* _NextEventIdx;
 		
-		
+
+		// object debug stuff
+		// Enable/Disable debug window for object
+		// Windows API specific code is in here
+		static bool DebugWindow_Enabled;
+		static WindowClass::Window* DebugWindow;
+		static DebugValueList<u32>* ValueList;
+		static void DebugWindow_Enable();
+		static void DebugWindow_Disable();
+		static void DebugWindow_Update();
+
 		
 
 		static u64* _NextSystemEvent;

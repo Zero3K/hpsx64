@@ -53,7 +53,7 @@ using namespace Playstation1;
 #define INLINE_DEBUG_ENABLE
 //#define INLINE_DEBUG
 
-#define INLINE_DEBUG_SPLIT
+//#define INLINE_DEBUG_SPLIT
 
 /*
 #define INLINE_DEBUG_WRITE

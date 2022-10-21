@@ -1229,7 +1229,7 @@ u64 SIF::EE_To_IOP_DMA_Ready ()
 }
 
 
-bool SIF::EE_To_IOP_DMA_Ready_FromEE ()
+u64 SIF::EE_To_IOP_DMA_Ready_FromEE ()
 {
 	if ( EE_DMA_Out_Ready ()
 		&& IOP_DMA_In_Ready ()
@@ -1246,10 +1246,10 @@ bool SIF::EE_To_IOP_DMA_Ready_FromEE ()
 #endif
 	)
 	{
-		return true;
+		return 1;
 	}
 	
-	return false;
+	return 0;
 }
 
 
@@ -1271,7 +1271,7 @@ u64 SIF::IOP_To_EE_DMA_Ready ()
 	return false;
 }
 
-bool SIF::IOP_To_EE_DMA_Ready_FromEE ()
+u64 SIF::IOP_To_EE_DMA_Ready_FromEE ()
 {
 	if ( EE_DMA_In_Ready ()
 		&& IOP_DMA_Out_Ready ()
@@ -1288,10 +1288,10 @@ bool SIF::IOP_To_EE_DMA_Ready_FromEE ()
 #endif
 	)
 	{
-		return true;
+		return 1;
 	}
 	
-	return false;
+	return 0;
 }
 
 u64 SIF::EE_DMA_In_Ready ()

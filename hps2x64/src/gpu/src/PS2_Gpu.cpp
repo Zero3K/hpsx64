@@ -79,6 +79,13 @@ using namespace Math::Reciprocal;
 
 
 
+// testing path 3 mask
+// defines also in VU.cpp
+//#define DISABLE_PATH3_MASK
+//#define ENABLE_PATH3_MASK_NO_CONDITION
+#define ENABLE_PATH3_MASK_CONDITION_END_PACKET
+//#define ENABLE_PATH3_MASK_CONDITION_END_PACKET_OR_IMT
+//#define ENABLE_PATH3_MASK_CONDITION_END_TRANSFER
 
 
 
@@ -247,13 +254,13 @@ using namespace Math::Reciprocal;
 //#define INLINE_DEBUG_PROCESSBLOCKS
 
 /*
-//#define INLINE_DEBUG_RASTER_VBLANK_START
-//#define INLINE_DEBUG_RASTER_VBLANK_END
+#define INLINE_DEBUG_RASTER_VBLANK_START
+#define INLINE_DEBUG_RASTER_VBLANK_END
 
 //#define INLINE_DEBUG_RASTER_SCANLINE
 //#define INLINE_DEBUG_HBLANK_INT
-#define INLINE_DEBUG_PATH1_WRITE
-#define INLINE_DEBUG_PATH2_WRITE
+//#define INLINE_DEBUG_PATH1_WRITE
+//#define INLINE_DEBUG_PATH2_WRITE
 
 
 
@@ -264,8 +271,9 @@ using namespace Math::Reciprocal;
 
 #define INLINE_DEBUG_DMA_WRITE
 
-//#define INLINE_DEBUG_DMA_WRITE_READY
+#define INLINE_DEBUG_DMA_WRITE_READY
 
+//#define INLINE_DEBUG_DMA_WRITE_DATA
 
 
 #define INLINE_DEBUG_PRIMITIVE
@@ -286,7 +294,7 @@ using namespace Math::Reciprocal;
 //#define INLINE_DEBUG_XFER
 
 //#define INLINE_DEBUG_TRXDIR
-
+*/
 
 
 //#define INLINE_DEBUG_SPRITE
@@ -310,18 +318,18 @@ using namespace Math::Reciprocal;
 //#define DEBUG_PAGE_CACHE
 
 
-#define INLINE_DEBUG_PRIMITIVE_TEST
+//#define INLINE_DEBUG_PRIMITIVE_TEST
 
 //#define INLINE_DEBUG_DRAWKICK
 
 
-
+/*
 #define INLINE_DEBUG_TRANSFER_IN
 #define INLINE_DEBUG_TRANSFER_IN_2
 #define INLINE_DEBUG_TRANSFER_OUT
 //#define INLINE_DEBUG_TRANSFER_OUT_2
 #define INLINE_DEBUG_TRANSFER_LOCAL
-//#define INLINE_DEBUG_TRANSFER_LOCAL_2
+#define INLINE_DEBUG_TRANSFER_LOCAL_2
 
 
 
@@ -329,12 +337,12 @@ using namespace Math::Reciprocal;
 
 
 
-#define INLINE_DEBUG_EXECUTE
+//#define INLINE_DEBUG_EXECUTE
 
 //#define INLINE_DEBUG_DRAWSTART
 //#define INLINE_DEBUG_EVENT
 //#define INLINE_DEBUG_VARS
-#define INLINE_DEBUG_EXECUTE_NAME
+//#define INLINE_DEBUG_EXECUTE_NAME
 
 
 //#define INLINE_DEBUG_DISPLAYAREA
@@ -428,6 +436,12 @@ u32 GPU::MainProgramWindow_Height;
 
 bool GPU::DebugWindow_Enabled;
 //WindowClass::Window *GPU::DebugWindow;
+
+// static debug items
+bool GPU::DebugWindow_Enabled2;
+WindowClass::Window* GPU::DebugWindow2;
+DebugValueList<u32>* GPU::ValueList2;
+
 
 // dimension 1 is twx/twy, dimension #2 is window tww/twh, dimension #3 is value
 //u8 GPU::Modulo_LUT [ 32 ] [ 32 ] [ 256 ];
@@ -1349,13 +1363,6 @@ void GPU::Run ()
 	{
 		// End of VBLANK //
 
-#ifndef DISABLE_NFIELD
-
-		// set NFIELD (gets set at VSYNC??)
-		GPURegs1.CSR.NFIELD = GPURegs1.CSR.FIELD;
-		//GPURegs1.CSR.NFIELD = lScanline & 1;
-
-#endif
 
 
 #ifndef DISABLE_VSYNCE_INT
@@ -1365,24 +1372,6 @@ void GPU::Run ()
 #endif
 
 
-#ifndef DISABLE_VSINT
-		// make sure that bit is clear (enabled) in CSR
-		if ( !GPURegs1.CSR.VSINT )
-		{
-			// check if vblank is masked
-			// if bit in IMR register is 1, it means to ignore interrupt. If it is zero, then means to trigger interrupt
-			if ( !GPURegs1.IMR.VSMSK )
-			{
-				// trigger interrupt due to vsync
-				SetInterrupt ();
-				
-			}
-			
-			// set bit in CSR (vsync event?? or maybe vsync interrupt occurred)
-			GPURegs1.CSR.VSINT = 1;
-
-		}	// end if ( !GPURegs1.CSR.VSINT )
-#endif
 
 
 		
@@ -1482,6 +1471,35 @@ void GPU::Run ()
 
 
 		// handle vblank //
+
+#ifndef DISABLE_NFIELD
+
+		// set NFIELD (gets set at VSYNC??)
+		GPURegs1.CSR.NFIELD = GPURegs1.CSR.FIELD;
+		//GPURegs1.CSR.NFIELD = GPURegs1.CSR.FIELD ^ 1;
+		//GPURegs1.CSR.NFIELD = lScanline & 1;
+
+#endif
+
+#ifndef DISABLE_VSINT
+		// make sure that bit is clear (enabled) in CSR
+	if (!GPURegs1.CSR.VSINT)
+	{
+		// check if vblank is masked
+		// if bit in IMR register is 1, it means to ignore interrupt. If it is zero, then means to trigger interrupt
+		if (!GPURegs1.IMR.VSMSK)
+		{
+			// trigger interrupt due to vsync
+			SetInterrupt();
+
+		}
+
+		// set bit in CSR (vsync event?? or maybe vsync interrupt occurred)
+		GPURegs1.CSR.VSINT = 1;
+
+	}	// end if ( !GPURegs1.CSR.VSINT )
+#endif
+
 
 #ifndef DISABLE_VSYNC_INT
 		// trigger start of vblank interrupt for intc
@@ -2385,6 +2403,25 @@ void GPU::Write ( u32 Address, u64 Data, u64 Mask )
 			// clear any interrupts for set bits in CSR (bits 0-4)
 			_GPU->GPURegs1.CSR.Value = _GPU->GPURegs1.CSR.Value & ~( Data & 0x1f );
 			
+			break;
+
+		case GPU_SMODE1:
+			switch (_GPU->GPURegs0.SMODE1.CMOD)
+			{
+				case 0:
+					_GPU->iGraphicsMode = GRAPHICS_MODE_NTSC_P;
+					break;
+				case 2:
+					_GPU->iGraphicsMode = GRAPHICS_MODE_NTSC_I;
+					break;
+				case 3:
+					_GPU->iGraphicsMode = GRAPHICS_MODE_PAL_I;
+					break;
+			}
+
+			// update variables
+			_GPU->UpdateRaster_VARS();
+
 			break;
 			
 		default:
@@ -6052,15 +6089,21 @@ void GPU::UpdateRaster_VARS ( void )
 
 	u32 HBlank_PixelCount;
 	bool SettingsChange;
+
+	// selection for ntsc=0/pal=1
+	int iPal;
 	
 	// assume settings will not change
 	SettingsChange = false;
 
+	// determine if in pal or ntsc mode
+	iPal = (iGraphicsMode == GRAPHICS_MODE_PAL_I) ? 1 : 0;
+
 	// if the display settings are going to change, then need to mark cycle at which they changed
-	if ( HBlank_X != HBlank_X_LUT [ 0 ] ||
-		lVBlank != VBlank_Y_LUT [ 0 ] ||
-		Raster_XMax != Raster_XMax_LUT [ 0 ] [ 0 ] ||
-		lMaxScanline != Raster_YMax_LUT [ 0 ] )
+	//if ( HBlank_X != HBlank_X_LUT [ 0 ] ||
+	//	lVBlank != VBlank_Y_LUT [ 0 ] ||
+	//	Raster_XMax != Raster_XMax_LUT [ 0 ] [ 0 ] ||
+	//	lMaxScanline != Raster_YMax_LUT [ 0 ] )
 	{
 #ifdef INLINE_DEBUG_VARS
 	debug << "\r\nChange; StartCycle=" << dec << *_DebugCycleCount;
@@ -6082,36 +6125,39 @@ void GPU::UpdateRaster_VARS ( void )
 	}
 
 
-	HBlank_X = HBlank_X_LUT [ 0 ];
+	// 640 horizontal resolution ?
+	HBlank_X = HBlank_X_LUT [ 6 ];
 
 #ifdef INLINE_DEBUG_VARS
 	debug << "; HBlank_X = " << dec << HBlank_X;
 #endif
 
-	lVBlank = VBlank_Y_LUT [ 0 ];
+	lVBlank = VBlank_Y_LUT [ iPal ];
 
 #ifdef INLINE_DEBUG_VARS
 	debug << "; lVBlank = " << lVBlank;
 #endif
 
-	Raster_XMax = Raster_XMax_LUT [ 0 ] [ 0 ];
+	// 640 horizontal resolution ?
+	Raster_XMax = Raster_XMax_LUT [ iPal ] [ 6 ];
 
 #ifdef INLINE_DEBUG_VARS
 	debug << "; Raster_XMax = " << Raster_XMax;
 #endif
 
-	lMaxScanline = Raster_YMax_LUT [ 0 ];
+	lMaxScanline = Raster_YMax_LUT [ iPal ];
 
 #ifdef INLINE_DEBUG_VARS
 	debug << "; lMaxScanline = " << lMaxScanline;
 #endif
 
-	CyclesPerPixel_INC = CyclesPerPixel_INC_Lookup [ 0 ] [ 0 ];
-	dCyclesPerPixel = CyclesPerPixel_Lookup [ 0 ] [ 0 ];
-	dPixelsPerCycle = PixelsPerCycle_Lookup [ 0 ] [ 0 ];
+	// 640 horizontal resolution ?
+	CyclesPerPixel_INC = CyclesPerPixel_INC_Lookup [ iPal ] [ 6 ];
+	dCyclesPerPixel = CyclesPerPixel_Lookup [ iPal ] [ 6 ];
+	dPixelsPerCycle = PixelsPerCycle_Lookup [ iPal ] [ 6 ];
 	
 	// check if ntsc or pal
-	if ( 1 )
+	if ( iPal )
 	{
 		// is PAL //
 		dCyclesPerScanline = PAL_CyclesPerScanline;
@@ -6182,7 +6228,7 @@ void GPU::UpdateRaster_VARS ( void )
 	
 
 	// check if the settings changed
-	if ( SettingsChange )
+	//if ( SettingsChange )
 	{
 		// settings changed //
 		
@@ -6398,6 +6444,7 @@ void GPU::Draw_Screen ()
 #endif
 
 	int x, y;
+	int iYUpdate;
 	
 	u32* buf_ptr;
 	u32 *buf_ptr32;
@@ -6413,6 +6460,25 @@ void GPU::Draw_Screen ()
 
 	u64 *inputdata_ptr;
 	
+	// can only have 480 lines on screen for ntsc, 576 for pal
+	int iMaxLines;
+
+	// where to draw source image on the actual screen
+	int iFrameBufStartX, iFrameBufStartY;
+
+	// the width of the source frame buffer and the horizontal resolution of the actual screen are not related
+	int iFrameBufWidth;
+
+	// number of black lines on the top and bottom
+	int iBlackTopLines, iBlackBottomLines;
+
+	// the interlacing offset for source image is automatically put in by the hardware NOT the software
+	int iOffset;
+
+	int display_magh;
+	int display_dw;
+
+
 #ifdef _ENABLE_AVX2
 
 	__m256i vZero;
@@ -6449,6 +6515,8 @@ void GPU::Draw_Screen ()
 
 #endif
 
+	// set max lines for screen in screen mode
+	iMaxLines = VBlank_Y_LUT[(((_GPU->iGraphicsMode & 3) + 1) >> 2) & 1];
 
 	// make sure that framebuffer has some width and height to it before drawing it
 	if ( ( GPURegs0.PMODE & 1 ) && GPURegs0.DISPFB1.FBW && GPURegs0.DISPLAY1.DH )
@@ -6463,8 +6531,14 @@ void GPU::Draw_Screen ()
 		
 		//buf_ptr = & ( RAM32 [ GPURegs0.DISPFB1.FBP >> 4 ] );
 		buf_ptr = & ( RAM32 [ draw_buffer_offset ] );
-		
-		draw_width = GPURegs0.DISPFB1.FBW << 6;
+
+		display_magh = GPURegs0.DISPLAY1.MAGH;
+		display_dw = GPURegs0.DISPLAY1.DW;
+		display_magh++;
+		display_dw++;
+		draw_width = display_dw / display_magh;
+
+		iFrameBufWidth = GPURegs0.DISPFB1.FBW << 6;
 		draw_height = GPURegs0.DISPLAY1.DH + 1;
 		start_x = GPURegs0.DISPFB1.DBX;
 		start_y = GPURegs0.DISPFB1.DBY;
@@ -6473,7 +6547,16 @@ void GPU::Draw_Screen ()
 		buf_ptr16 = (u16*) buf_ptr;
 		
 		PixelFormat = GPURegs0.DISPFB1.PSM;
-		
+
+		// get x location to start drawing in frame buffer
+		iFrameBufStartX = GPURegs0.DISPLAY1.DX;
+
+		// get y location to start drawing in frame buffer
+		iFrameBufStartY = GPURegs0.DISPLAY1.DY;
+
+		// maybe half this value ??
+		iFrameBufStartY >>= 1;
+
 	}
 	else if ( GPURegs0.PMODE & 2 )
 	{
@@ -6487,8 +6570,14 @@ void GPU::Draw_Screen ()
 		
 		//buf_ptr = & ( RAM32 [ GPURegs0.DISPFB2.FBP >> 4 ] );
 		buf_ptr = & ( RAM32 [ draw_buffer_offset ] );
-		
-		draw_width = GPURegs0.DISPFB2.FBW << 6;
+
+		display_magh = GPURegs0.DISPLAY2.MAGH;
+		display_dw = GPURegs0.DISPLAY2.DW;
+		display_magh++;
+		display_dw++;
+		draw_width = display_dw / display_magh;
+
+		iFrameBufWidth = GPURegs0.DISPFB2.FBW << 6;
 		draw_height = GPURegs0.DISPLAY2.DH + 1;
 		start_x = GPURegs0.DISPFB2.DBX;
 		start_y = GPURegs0.DISPFB2.DBY;
@@ -6498,6 +6587,14 @@ void GPU::Draw_Screen ()
 		
 		PixelFormat = GPURegs0.DISPFB2.PSM;
 		
+		// get x location to start drawing in frame buffer
+		iFrameBufStartX = GPURegs0.DISPLAY2.DX;
+
+		// get y location to start drawing in frame buffer
+		iFrameBufStartY = GPURegs0.DISPLAY2.DY;
+
+		// maybe half this value ??
+		iFrameBufStartY >>= 1;
 	}
 	else
 	{
@@ -6513,22 +6610,94 @@ void GPU::Draw_Screen ()
 	draw_width = ( ( draw_width > c_iScreen_MaxWidth ) ? c_iFrameBuffer_DisplayWidth : draw_width );
 
 
+	// can't draw more lines than are on the screen
+	draw_height = (draw_height > iMaxLines) ? iMaxLines : draw_height;
+
+	// but if not interlaced, use half that
+	if (!GPURegs0.SMODE2.INTER)
+	{
+		draw_height = (draw_height > (iMaxLines >> 1)) ? (iMaxLines >> 1) : draw_height;
+
+		// and then double that
+		draw_height <<= 1;
+	}
+
+	// if the draw height in the frame buffer is less than max on screen, then fill the rest with black lines on bottom
+	iBlackTopLines = 0;
+	iBlackBottomLines = 0;
+	if (draw_height < iMaxLines)
+	{
+		iBlackBottomLines = iMaxLines - draw_height;
+	}
+
+	// update the number of black lines at the top if drawing further down on the screen
+	iBlackTopLines += iFrameBufStartY;
+
+	// either subtract from lines on bottom or the draw height (total draw height does not change)
+	if (iBlackBottomLines >= iFrameBufStartY)
+	{
+		// push the image down on the screen by removing any black bars on the bottom
+		iBlackBottomLines -= iFrameBufStartY;
+	}
+	else
+	{
+		// this is going to cut the image off the screen vertically ?
+		//int iTemp;
+		//iTemp = iFrameBufStartY - iBlackBottomLines;
+		draw_height -= (iFrameBufStartY - iBlackBottomLines);
+		draw_height -= iBlackBottomLines;
+		iBlackBottomLines = 0;
+	}
+
+	// if the draw_height is less than or equal to zero, then just draw all black bars because no image
+	if ((draw_height <= 0) || (draw_height > iMaxLines))
+	{
+		iBlackBottomLines = iMaxLines;
+		iBlackTopLines = 0;
+		draw_height = 0;
+	}
+
+
+	// by default read every line of source image
+	iYUpdate = 1;
+
+	iOffset = 0;
+
 #ifdef ENABLE_PIXELBUF_INTERLACING
 	// if set to read every line, then half draw height for now
 	// *todo* need to take into account whether interlaced or not
 	// comment this out to show correct screen at top for now
 	//if ( GPURegs0.SMODE2.FFMD ) draw_height >>= 1;
 	// check if this is set to read every line
-	if ( GPURegs0.SMODE2.FFMD && GPURegs0.SMODE2.INTER )
+	//if ( GPURegs0.SMODE2.FFMD && GPURegs0.SMODE2.INTER )
+	if ( GPURegs0.SMODE2.INTER )
 	{
-		// only draw half the draw height for now
-		draw_height >>= 1;
-		
 		// set to read every line, so need to skip lines when writing to pixel buffer for interlacing
-		if ( ( lScanline & 1 ) )
+		if ((lScanline & 1))
 		{
-			Index += draw_width;
+			//Index += draw_width;
+			iOffset = 1;
 		}
+
+		// check if should draw every line in source image or every other line
+		if (GPURegs0.SMODE2.FFMD)
+		{
+			// drawing every line, so source image is half the height
+			draw_height >>= 1;
+			iOffset = 0;
+		}
+		else
+		{
+			// read every other line of source image
+			iYUpdate = 2;
+		}
+
+	}
+	// if not interlaced, then half the height ??
+	else
+	{
+		// and then half that again for the source image
+		draw_height >>= 1;
 	}
 #endif
 
@@ -6615,6 +6784,51 @@ void GPU::Draw_Screen ()
 	//start_y = 0;
 
 
+	// check if there is extra space on the bottom that needs filling in
+	if (iBlackBottomLines)
+	{
+		// pad on the bottom with zeros if needed for now
+
+		// start at the end of the image
+		y = 0;
+
+		// draw until the edge of the viewable area
+		//while (y < start_y)
+		while (y < iBlackBottomLines)
+		{
+#ifdef _ENABLE_SSE41
+			for (x = 0; x < (draw_width - 3); x += 4)
+			{
+				//PixelBuffer [ Index++ ] = 0;
+				//_mm_storeu_si128 ( (__m128i*) & PixelBuffer [ Index ], vZero );
+				_mm_store_si128((__m128i*) & PixelBuffer[Index], vZero);
+				Index += 4;
+			}
+			for (; x < draw_width; x++)
+			{
+				PixelBuffer[Index++] = 0;
+			}
+#else
+			for (x = 0; x < draw_width; x++)
+			{
+				PixelBuffer[Index++] = 0;
+			}
+#endif
+
+			y++;
+		} // end while ( y < start_y )
+
+	} // end if (iBlackBottomLines)
+
+
+
+	// always interlacing for now
+	// alternate the scanlines
+	if ((lScanline & 1))
+	{
+		Index += draw_width;
+	}
+
 
 	
 	//if ( !GPURegs0.DISPFB2.PSM || GPURegs0.DISPFB2.PSM == 1 )
@@ -6626,62 +6840,21 @@ void GPU::Draw_Screen ()
 
 		// 24/32-bit pixels in frame buffer //
 		
-		//buf_ptr32 = & ( RAM32 [ GPURegs0.DISPFB2.FBP >> 4 ] );
 		
-		
-		
-		
-		
-		// pad on the bottom with zeros if needed for now
-		y = 0;
-		while ( y < start_y )
-		{
-#ifdef _ENABLE_AVX2
-			for ( x = 0; x < ( draw_width - 7 ); x += 8 )
-			{
-				//PixelBuffer [ Index++ ] = 0;
-				//_mm_storeu_si128 ( (__m128i*) & PixelBuffer [ Index ], vZero );
-				_mm256_store_si256 ( (__m256i*) & PixelBuffer [ Index ], vZero );
-				Index += 8;
-			}
-
-#else
-#ifdef _ENABLE_SSE41
-			for ( x = 0; x < ( draw_width - 3 ); x += 4 )
-			{
-				//PixelBuffer [ Index++ ] = 0;
-				//_mm_storeu_si128 ( (__m128i*) & PixelBuffer [ Index ], vZero );
-				_mm_store_si128 ( (__m128i*) & PixelBuffer [ Index ], vZero );
-				Index += 4;
-			}
-			for ( ; x < draw_width; x++ )
-			{
-				PixelBuffer [ Index++ ] = 0;
-			}
-#else
-			for ( x = 0; x < draw_width; x++ )
-			{
-				PixelBuffer [ Index++ ] = 0;
-			}
-#endif
-
-#endif
-			
-			y++;
-
-		}
 
 
 #ifdef _ENABLE_AVX2
-		vWidth = _mm256_set1_epi32 ( draw_width );
+		vWidth = _mm256_set1_epi32 (iFrameBufWidth);
 #else
 #ifdef _ENABLE_SSE41
-		vWidth = _mm_set1_epi32 ( draw_width );
+		vWidth = _mm_set1_epi32 (iFrameBufWidth);
 #endif
 #endif
 
 		// copy the pixels into pixel buffer
-		for ( y = draw_height - 1; y >= start_y; y-- )
+		//for ( y = draw_height - 1; y >= start_y; y-- )
+		//for ( y = draw_height - 1; y >= start_y; y-=iYUpdate )
+		for (y = (draw_height + start_y) - 1 - iOffset; y >= start_y; y -= iYUpdate)
 		{
 #ifdef _ENABLE_AVX2
 			vY = _mm256_set1_epi32 ( y );
@@ -6735,12 +6908,12 @@ void GPU::Draw_Screen ()
 			}
 			for ( ; x < draw_width; x++ )
 			{
-				PixelBuffer [ Index++ ] = buf_ptr32 [ CvtAddrPix32( x, y, draw_width ) ];
+				PixelBuffer [ Index++ ] = buf_ptr32 [ CvtAddrPix32( x, y, iFrameBufWidth) ];
 			}
 #else
 			for ( x = start_x; x < draw_width; x++ )
 			{
-				Pixel32 = buf_ptr32 [ CvtAddrPix32( x, y, draw_width ) ];
+				Pixel32 = buf_ptr32 [ CvtAddrPix32( x, y, iFrameBufWidth) ];
 				
 				PixelBuffer [ Index++ ] = Pixel32;
 			}
@@ -6757,7 +6930,8 @@ void GPU::Draw_Screen ()
 			
 #ifdef ENABLE_PIXELBUF_INTERLACING	
 			// if reading every other line, only copy every other line to pixel buffer
-			if ( GPURegs0.SMODE2.FFMD && GPURegs0.SMODE2.INTER )
+			//if (GPURegs0.SMODE2.FFMD && GPURegs0.SMODE2.INTER)
+			//if ( GPURegs0.SMODE2.INTER )
 			{
 				Index += draw_width;
 			}
@@ -6778,35 +6952,11 @@ void GPU::Draw_Screen ()
 		//cout << "\nPS2GPU: 16-bit pixel fb format=" << hex << PixelFormat;
 
 		
-		//buf_ptr16 = (u16*) ( & ( RAM32 [ GPURegs0.DISPFB2.FBP >> 4 ] ) );
-		
-		// pad on the bottom with zeros if needed for now
-		y = 0;
-		while ( y < start_y )
-		{
-#ifdef _ENABLE_SSE41
-			for ( x = 0; x < ( draw_width - 3 ); x += 4 )
-			{
-				//PixelBuffer [ Index++ ] = 0;
-				_mm_storeu_si128 ( (__m128i*) & PixelBuffer [ Index ], vZero );
-				Index += 4;
-			}
-			for ( ; x < draw_width; x++ )
-			{
-				PixelBuffer [ Index++ ] = 0;
-			}
-#else
-			for ( x = 0; x < draw_width; x++ )
-			{
-				PixelBuffer [ Index++ ] = 0;
-			}
-#endif
-			
-			y++;
-		}
 		
 		//for ( y = start_y + ( draw_height - 1 ); y >= start_y; y-- )
-		for ( y = draw_height - 1; y >= start_y; y-- )
+		//for (y = draw_height - 1; y >= start_y; y--)
+		//for ( y = draw_height - 1; y >= start_y; y-=iYUpdate )
+		for (y = (draw_height + start_y) - 1 - iOffset; y >= start_y; y -= iYUpdate)
 		{
 			//for ( x = start_x; x < ( start_x + draw_width ); x++ )
 			for ( x = start_x; x < draw_width; x++ )
@@ -6815,15 +6965,15 @@ void GPU::Draw_Screen ()
 				switch ( PixelFormat )
 				{
 					case 2:
-						Pixel16 = buf_ptr16 [ CvtAddrPix16( x, y, draw_width ) ];
+						Pixel16 = buf_ptr16 [ CvtAddrPix16( x, y, iFrameBufWidth) ];
 						break;
 						
 					case 0xa:
-						Pixel16 = buf_ptr16 [ CvtAddrPix16S( x, y, draw_width ) ];
+						Pixel16 = buf_ptr16 [ CvtAddrPix16S( x, y, iFrameBufWidth) ];
 						break;
 				}
 #else
-				Pixel16 = buf_ptr16 [ x + ( y * draw_width ) ];
+				Pixel16 = buf_ptr16 [ x + ( y * iFrameBufWidth) ];
 #endif
 
 				Pixel32 = ( ( Pixel16 & 0x1f ) << 3 ) | ( ( ( Pixel16 >> 5 ) & 0x1f ) << ( 8 + 3 ) ) | ( ( ( Pixel16 >> 10 ) & 0x1f ) << ( 16 + 3 ) );
@@ -6840,7 +6990,8 @@ void GPU::Draw_Screen ()
 			
 #ifdef ENABLE_PIXELBUF_INTERLACING	
 			// if reading every other line, only copy every other line to pixel buffer
-			if ( GPURegs0.SMODE2.FFMD && GPURegs0.SMODE2.INTER )
+			//if ( GPURegs0.SMODE2.FFMD && GPURegs0.SMODE2.INTER )
+			//if ( GPURegs0.SMODE2.INTER )
 			{
 				Index += draw_width;
 			}
@@ -6851,17 +7002,47 @@ void GPU::Draw_Screen ()
 
 	}	// end 
 	
-	
-#ifdef ENABLE_PIXELBUF_INTERLACING	
-	// for now, if interlaced, need to put the draw_height back
-	if ( GPURegs0.SMODE2.FFMD && GPURegs0.SMODE2.INTER )
+
+	// check if there is extra space on the top that needs filling in
+	if (iBlackTopLines)
 	{
-		// only draw half the draw height for now
-		draw_height <<= 1;
-		
-	}
+		// pad on the bottom with zeros if needed for now
+
+		// start at the end of the image
+		y = 0;
+
+		// draw until the edge of the viewable area
+		//while (y < start_y)
+		while (y < iBlackTopLines)
+		{
+#ifdef _ENABLE_SSE41
+			for (x = 0; x < (draw_width - 3); x += 4)
+			{
+				//PixelBuffer [ Index++ ] = 0;
+				//_mm_storeu_si128 ( (__m128i*) & PixelBuffer [ Index ], vZero );
+				_mm_store_si128((__m128i*) & PixelBuffer[Index], vZero);
+				Index += 4;
+			}
+			for (; x < draw_width; x++)
+			{
+				PixelBuffer[Index++] = 0;
+			}
+#else
+			for (x = 0; x < draw_width; x++)
+			{
+				PixelBuffer[Index++] = 0;
+			}
 #endif
+
+			y++;
+		} // end while ( y < start_y )
+
+	} // end if (iBlackTopLines)
+
 	
+	// the height of image is for now going to be 480 for ntsc, 5xx for pal
+	draw_height = iMaxLines;
+
 		
 	// *** output of pixel buffer to screen *** //
 
@@ -7202,7 +7383,7 @@ void GPU::DMA_Write ( u32* Data, int ByteWriteCount )
 
 
 
-bool GPU::DMA_Write_Ready ()
+u64 GPU::DMA_Write_Ready ()
 {
 #ifdef INLINE_DEBUG_DMA_WRITE_READY
 	debug << "\r\nGPU::DMA_Write_Ready";
@@ -7225,48 +7406,125 @@ bool GPU::DMA_Write_Ready ()
 		// check if buffer is going in opposite direction
 		if ( _GPU->GIFRegs.STAT.DIR )
 		{
-			return false;
+			return 0;
 		}
 		
 		// if PSE is set, then all transfers are supposed to stop
 		if ( _GPU->GIFRegs.STAT.PSE )
 		{
-			return false;
+			return 0;
 		}
 	}
-	
-	// if path 3 is not currently in the middle of a transfer, then it is masked
-	// check for the end of a packet
-	if ( _GPU->EndOfPacket [ 3 ] )
-	{
-		// at the end of a packet, can mask path 3
-		if ( _GPU->GIFRegs.STAT.M3R || _GPU->GIFRegs.STAT.M3P )
-		{
-#ifdef INLINE_DEBUG_DMA_WRITE_READY
-	debug << " GPU: ALERT: Transfer via path3 while it is masked!!!";
-	debug << " Path3Count=" << _GPU->ulTransferCount [ 3 ];
-	debug << " IMT=" << _GPU->GIFRegs.MODE.IMT;
-#endif
 
-		// path 3 is masked //
-		
-			// for now need to act like data has been loaded into FIFO
-			// even when path3 is masked, it must be loading it into FIFO and then just not processing it
+	// check if path 3 is masked
+	// testing
+	/*
+	if (_GPU->GIFRegs.STAT.M3R || _GPU->GIFRegs.STAT.M3P)
+	{
+		// check if path 3 is currently transferring
+		if (!_GPU->EndOfPacket[3])
+		{
+			// check if path 3 is in IMT mode and IMAGE data
+			if (_GPU->GIFRegs.MODE.IMT && _GPU->GIFTag0[3].FLG == 2)
+			{
+				// mask path 3 transfer ?? //
+
+				_GPU->GIFRegs.STAT.FQC = 16;
+
+				// path3 in queue ???
+				_GPU->GIFRegs.STAT.P3Q = 1;
+
+				// path 3 transfer interrupted
+				_GPU->GIFRegs.STAT.IP3 = 1;
+
+				// no longer transferring via path 3
+				if (_GPU->GIFRegs.STAT.APATH == 3)
+				{
+					_GPU->GIFRegs.STAT.APATH = 0;
+				}
+
+				return false;
+
+			}
+		}
+
+		// if it is end of packet for path 3, then also mask path 3
+		else
+		{
+			// mask path 3 transfer ?? //
+
 			_GPU->GIFRegs.STAT.FQC = 16;
-			
+
 			// path3 in queue ???
 			_GPU->GIFRegs.STAT.P3Q = 1;
-			
+
+			// path 3 transfer NOT interrupted??
+			_GPU->GIFRegs.STAT.IP3 = 0;
+
 			// no longer transferring via path 3
-			if ( _GPU->GIFRegs.STAT.APATH == 3 )
+			if (_GPU->GIFRegs.STAT.APATH == 3)
 			{
 				_GPU->GIFRegs.STAT.APATH = 0;
 			}
-			
+
 			return false;
 		}
+	}
+	*/
+
+
+#ifndef DISABLE_PATH3_MASK
+
+#ifndef ENABLE_PATH3_MASK_NO_CONDITION
+	// if path 3 is not currently in the middle of a transfer, then it is masked
+	// check for the end of a packet
+#ifdef ENABLE_PATH3_MASK_CONDITION_END_TRANSFER
+	if (!Dma::pRegData[2]->CHCR.STR)
+#endif
+#ifdef ENABLE_PATH3_MASK_CONDITION_END_PACKET
+	if (_GPU->EndOfPacket[3])
+#endif
+#ifdef ENABLE_PATH3_MASK_CONDITION_END_PACKET_OR_IMT
+	if ( _GPU->EndOfPacket[3]
+		|| (GPU::_GPU->GIFRegs.MODE.IMT && GPU::_GPU->GIFTag0[3].FLG == 2) )
+#endif
+
+#endif	// end ENABLE_PATH3_MASK_NO_CONDITION
+	{
+		// at the end of a packet, can mask path 3
+		if (_GPU->GIFRegs.STAT.M3R || _GPU->GIFRegs.STAT.M3P)
+		{
+#ifdef INLINE_DEBUG_DMA_WRITE_READY
+			debug << " GPU: ALERT: Transfer via path3 while it is masked!!!";
+			debug << " Path3Count=" << _GPU->ulTransferCount[3];
+			debug << " IMT=" << _GPU->GIFRegs.MODE.IMT;
+#endif
+
+			// path 3 is masked //
+
+				// for now need to act like data has been loaded into FIFO
+				// even when path3 is masked, it must be loading it into FIFO and then just not processing it
+			_GPU->GIFRegs.STAT.FQC = 16;
+
+			// path3 in queue ???
+			_GPU->GIFRegs.STAT.P3Q = 1;
+
+			// no longer transferring via path 3
+			if (_GPU->GIFRegs.STAT.APATH == 3)
+			{
+				_GPU->GIFRegs.STAT.APATH = 0;
+			}
+
+			return 0;
+
+		}	// end if (_GPU->GIFRegs.STAT.M3R || _GPU->GIFRegs.STAT.M3P)
+	}
+
+#endif	// end DISABLE_PATH3_MASK
 		
 		
+	if (_GPU->EndOfPacket[3])
+	{
 		// also at the end of a packet, can switch to path1 or path 2 if they are in queue
 		if (
 			( _GPU->GIFRegs.STAT.P1Q )
@@ -7288,7 +7546,7 @@ bool GPU::DMA_Write_Ready ()
 				_GPU->GIFRegs.STAT.APATH = 0;
 			}
 			
-			return false;
+			return 0;
 		}
 
 	}
@@ -7302,7 +7560,7 @@ bool GPU::DMA_Write_Ready ()
 		// path3 in queue ???
 		_GPU->GIFRegs.STAT.P3Q = 1;
 		
-		return false;
+		return 0;
 	}
 	
 	
@@ -7330,7 +7588,7 @@ bool GPU::DMA_Write_Ready ()
 	
 	
 	// path 3 NOT masked //
-	return true;
+	return 1;
 }
 
 
@@ -7340,9 +7598,13 @@ u32 GPU::DMA_WriteBlock ( u64* Data, u32 QuadwordCount )
 	debug << "\r\n\r\nGPU::DMA_WriteBlock " << hex << setw ( 8 ) << *_DebugPC << " QWC=" << QuadwordCount << " " << dec << *_DebugCycleCount;
 	debug << " P3C=" << GPU::_GPU->ulTransferCount [ 3 ];
 	debug << " IMT=" << _GPU->GIFRegs.MODE.IMT;
+
+#ifdef INLINE_DEBUG_DMA_WRITE_DATA
 	debug << hex << " DATA=";
 	for ( int i = 0; i < ( QuadwordCount * 2 ); i++ ) debug << " " << Data [ i ];
 	debug << "\r\n";
+#endif
+
 #endif
 
 	int i;
@@ -37704,5 +37966,114 @@ void GPU::Finish ()
 	}
 }
 
+
+////////////// Debugging ///////////////////////////
+
+
+
+
+void GPU::DebugWindow_Enable2()
+{
+
+#ifndef _CONSOLE_DEBUG_ONLY_
+
+	static constexpr char* DebugWindow_Caption = "PS2 GPU Debug Window";
+	static constexpr int DebugWindow_X = 10;
+	static constexpr int DebugWindow_Y = 10;
+	static constexpr int DebugWindow_Width = 200;
+	static constexpr int DebugWindow_Height = 220;
+
+	static constexpr int List_X = 0;
+	static constexpr int List_Y = 0;
+	static constexpr int List_Width = 150;
+	static constexpr int List_Height = 200;
+
+	int i;
+	stringstream ss;
+
+	if (!DebugWindow_Enabled2)
+	{
+		// create the main debug window
+		DebugWindow2 = new WindowClass::Window();
+		DebugWindow2->Create(DebugWindow_Caption, DebugWindow_X, DebugWindow_Y, DebugWindow_Width, DebugWindow_Height);
+		DebugWindow2->DisableCloseButton();
+
+		// create "value lists"
+		ValueList2 = new DebugValueList<u32>();
+		ValueList2->Create(DebugWindow2, List_X, List_Y, List_Width, List_Height, true, false);
+
+
+		ValueList2->AddVariable("CSR", (u32*)&(_GPU->GPURegs1.CSR.Value));
+		ValueList2->AddVariable("IMR", (u32*)&(_GPU->GPURegs1.IMR.Value));
+		ValueList2->AddVariable("PMODE", (u32*) & (_GPU->GPURegs0.PMODE));
+		ValueList2->AddVariable("SMODE1", (u32*) & (_GPU->GPURegs0.SMODE1.Value));
+		ValueList2->AddVariable("SMODE2", (u32*) & (_GPU->GPURegs0.SMODE2.Value));
+		ValueList2->AddVariable("SRFSH", (u32*) & (_GPU->GPURegs0.SRFSH));
+		ValueList2->AddVariable("SYNC1", (u32*)&(_GPU->GPURegs0.SYNCH1));
+		ValueList2->AddVariable("SYNC2", (u32*)&(_GPU->GPURegs0.SYNCH2));
+		ValueList2->AddVariable("SYNCV.lo", (u32*)&(_GPU->GPURegs0.SYNCV.Lo));
+		ValueList2->AddVariable("SYNCV.hi", (u32*)&(_GPU->GPURegs0.SYNCV.Hi));
+		ValueList2->AddVariable("DISPFB1.lo", (u32*)&(_GPU->GPURegs0.DISPFB1.Lo));
+		ValueList2->AddVariable("DISPFB1.hi", (u32*)&(_GPU->GPURegs0.DISPFB1.Hi));
+		ValueList2->AddVariable("DISPLAY1.lo", (u32*)&(_GPU->GPURegs0.DISPLAY1.Lo));
+		ValueList2->AddVariable("DISPLAY1.hi", (u32*)&(_GPU->GPURegs0.DISPLAY1.Hi));
+		ValueList2->AddVariable("DISPFB2.lo", (u32*)&(_GPU->GPURegs0.DISPFB2.Lo));
+		ValueList2->AddVariable("DISPFB2.hi", (u32*)&(_GPU->GPURegs0.DISPFB2.Hi));
+		ValueList2->AddVariable("DISPLAY2.lo", (u32*)&(_GPU->GPURegs0.DISPLAY2.Lo));
+		ValueList2->AddVariable("DISPLAY2.hi", (u32*)&(_GPU->GPURegs0.DISPLAY2.Hi));
+		//ValueList2->AddVariable("FifoIn_ReadIndex", &(_IPU->FifoIn_ReadIndex));
+		//ValueList2->AddVariable("FifoIn_WriteIndex", &(_IPU->FifoIn_WriteIndex));
+		//ValueList2->AddVariable("T2_COMP", &(_TIMERS->TheTimers[2].COMP.Value));
+		//ValueList2->AddVariable("T3_COUNT", &(_TIMERS->TheTimers[3].COUNT.Value));
+		//ValueList2->AddVariable("T3_COUNT2", (u32*)&(_TIMERS->TheTimers[3].StartValue));
+		//ValueList2->AddVariable("T3_MODE", &(_TIMERS->TheTimers[3].MODE.Value));
+		//ValueList2->AddVariable("T3_COMP", &(_TIMERS->TheTimers[3].COMP.Value));
+
+		// mark debug as enabled now
+		DebugWindow_Enabled2 = true;
+
+		// update the value lists
+		DebugWindow_Update2();
+	}
+
+#endif
+
+}
+
+void GPU::DebugWindow_Disable2()
+{
+
+#ifndef _CONSOLE_DEBUG_ONLY_
+
+	int i;
+
+	if (DebugWindow_Enabled2)
+	{
+		delete DebugWindow2;
+		delete ValueList2;
+
+		// disable debug window
+		DebugWindow_Enabled2 = false;
+	}
+
+#endif
+
+}
+
+void GPU::DebugWindow_Update2()
+{
+
+#ifndef _CONSOLE_DEBUG_ONLY_
+
+	int i;
+
+	if (DebugWindow_Enabled2)
+	{
+		ValueList2->Update();
+	}
+
+#endif
+
+}
 
 

@@ -3616,19 +3616,27 @@ void Dma::Write ( u32 Address, u32 Data, u32 Mask )
 						_DMA->ChannelEnable_Bitmap |= ( 1 << iChannel );
 					}
 				}
-				else if ( !( _DMA->DMARegs0.Regs [ Address ] & 0x1000000 ) && ( PreviousValue & 0x1000000 ) )
+				//else if ( !( _DMA->DMARegs0.Regs [ Address ] & 0x1000000 ) && ( PreviousValue & 0x1000000 ) )
+				else if ( (PreviousValue & 0x1000000) )
 				{
+					// dma channel was already running and tried to modify CHCR //
+
 #ifdef VERBOSE_DMA_STOPPED
 					// dma channel has just been turned off while it was running //
 					cout << "hps1x64: PS1 DMA: *ALERT*: dma channel turned off while it was running. Channel#" << dec << iChannel;
 #endif
 
+#ifdef DISALLOW_CHCR_WRITES_WHILE_DMA_RUNNING
+					// restore previous value of CHCR
+					_DMA->DMARegs0.Regs[Address] = PreviousValue;
+#endif
+
 #ifdef PS2_COMPILE
 					// if dma#4 on spu2, then set transfer to busy ??
-					if ( iChannel == 4 )
-					{
-						SPU2::_SPU2->SPU0.pCoreRegs0->STAT &= ~( 1 << 10 );
-					}
+					//if ( iChannel == 4 )
+					//{
+					//	SPU2::_SPU2->SPU0.pCoreRegs0->STAT &= ~( 1 << 10 );
+					//}
 #endif
 
 					//if ( iChannel == _DMA->ActiveChannel )
@@ -3797,17 +3805,25 @@ void Dma::Write ( u32 Address, u32 Data, u32 Mask )
 						_DMA->ChannelEnable_Bitmap |= ( 1 << iChannel );
 					}
 				}
-				else if ( !( _DMA->DMARegs1.Regs [ Address ] & 0x1000000 ) && ( PreviousValue & 0x1000000 ) )
+				//else if ( !( _DMA->DMARegs1.Regs [ Address ] & 0x1000000 ) && ( PreviousValue & 0x1000000 ) )
+				else if ((PreviousValue & 0x1000000))
 				{
 #ifdef VERBOSE_DMA_STOPPED
 					// dma channel has just been turned off while it was running //
 					cout << "hps1x64: PS1 DMA: *ALERT*: dma channel turned off while it was running. Channel#" << dec << iChannel;
 #endif
 
-					if ( iChannel == 7 )
-					{
-						SPU2::_SPU2->SPU1.pCoreRegs0->STAT &= ~( 1 << 10 );
-					}
+#ifdef DISALLOW_CHCR_WRITES_WHILE_DMA_RUNNING
+
+					// restore previous value of CHCR
+					_DMA->DMARegs0.Regs[Address] = PreviousValue;
+
+#endif
+
+					//if ( iChannel == 7 )
+					//{
+					//	SPU2::_SPU2->SPU1.pCoreRegs0->STAT &= ~( 1 << 10 );
+					///}
 
 				}
 				

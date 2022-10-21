@@ -23,12 +23,15 @@
 #include "types.h"
 #include "Debug.h"
 
+#include "DebugValueList.h"
+
+//#include <GL/glew.h>
+
 #include "WinApiHandler.h"
 #include "GNUAsmUtility_x64.h"
 
 
 //#include "opencl_compute.h"
-
 
 
 //#define DRAW_MULTIPLE_PIXELS
@@ -56,10 +59,12 @@ using namespace x64Asm::Utilities;
 
 //#define ENABLE_DRAW_OVERHEAD
 
+#ifndef PS2_COMPILE
 
 // allow opencl code
 //#define ALLOW_OPENCL_PS1
 
+#endif
 
 
 // enables templates for PS2 GPU
@@ -1143,12 +1148,12 @@ namespace Playstation1
 		static const u32 FrameBuffer_Height = 512;
 		static const u32 FrameBuffer_XMask = FrameBuffer_Width - 1;
 		static const u32 FrameBuffer_YMask = FrameBuffer_Height - 1;
-		
+
+
 #ifdef ALLOW_OPENCL_PS1
 
 		static GLuint computeProgram;
 		//GLuint buffers[NUM_BUFS];       //SSBO objects, one for IMG_0, one for IMG_1, and one for commands/response
-		//static GLchar* computeSource;
 		static GLuint shaderProgram;
 		//string computeSource;
 		static GLuint ssbo1;
@@ -1166,7 +1171,7 @@ namespace Playstation1
 		static GLuint tex_output;
 		static GLuint fboId;
 
-		static const char* computeSource;
+		static GLchar* computeSource;
 #endif
 		
 		
@@ -1217,27 +1222,6 @@ namespace Playstation1
 		// open cl vars
 		u32 bEnable_OpenCL;
 
-#ifdef ALLOW_OPENCL_PS1
-
-		static cl_mem bufa, bufb, bufc, bufd, bufe, buff, bufg;
-		static cl_program p;
-		static int num_compute_units, num_local_workers, total_compute_units;
-		static int num_local_workers_square;
-		
-		static Compute::Context *ctx;
-
-		// status of the opencl gpu
-		static volatile u32 ulGPURunStatus;
-
-		// opencl event for callback
-		static cl_event evtDrawDone;
-
-		static u64 ullBufferMask;
-
-		// opencl callback
-		static void draw_complete_event(cl_event event, cl_int event_command_exec_status,void *user_data);
-
-#endif
 
 		// for drawing on a separate thread (should be combined with the regular code)
 		static void draw_screen_th( DATA_Write_Format* inputdata, u32 ulThreadNum = 0 );

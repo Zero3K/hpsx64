@@ -114,6 +114,10 @@ using namespace PS2Float;
 #define ENABLE_VU0_SKIP_WAIT
 
 
+//#define UPDATE_INTERRUPTS_EI
+//#define UPDATE_INTERRUPTS_DI
+
+
 
 #ifdef _DEBUG_VERSION_
 
@@ -122,6 +126,8 @@ using namespace PS2Float;
 
 //#define INLINE_DEBUG_SPLIT
 
+//#define INLINE_DEBUG_SUB_S
+//#define INLINE_DEBUG_SUBA_S
 
 //#define INLINE_DEBUG_ADD_S
 //#define INLINE_DEBUG_ADDA_S
@@ -186,7 +192,7 @@ using namespace PS2Float;
 #define INLINE_DEBUG_INVALID
 #define INLINE_DEBUG_UNIMPLEMENTED
 //#define INLINE_DEBUG_ERET
-//#define INLINE_DEBUG_INTEGER_VECTOR
+#define INLINE_DEBUG_INTEGER_VECTOR
 //#define INLINE_DEBUG_VU0
 //#define INLINE_DEBUG_VUEXECUTE
 //#define INLINE_DEBUG_FPU
@@ -4693,7 +4699,7 @@ void Execute::MTLO1 ( Instruction::Format i )
 
 void Execute::MFSA ( Instruction::Format i )
 {
-#if defined INLINE_DEBUG_MFSA || defined INLINE_DEBUG_R5900 // || defined INLINE_DEBUG_UNIMPLEMENTED
+#if defined INLINE_DEBUG_MFSA || defined INLINE_DEBUG_R5900 || defined INLINE_DEBUG_INTEGER_VECTOR
 	debug << "\r\n" << hex << setw( 8 ) << r->PC << " " << dec << r->CycleCount << " " << Print::PrintInstruction ( i.Value ).c_str () << "; " << hex << i.Value;
 	debug << "; Input: SA = " << r->SA;
 #endif
@@ -4702,14 +4708,14 @@ void Execute::MFSA ( Instruction::Format i )
 	// only operates in instruction pipeline 0
 	r->GPR [ i.Rd ].uq0 = r->SA;
 
-#if defined INLINE_DEBUG_MFSA || defined INLINE_DEBUG_R5900 // || defined INLINE_DEBUG_UNIMPLEMENTED
+#if defined INLINE_DEBUG_MFSA || defined INLINE_DEBUG_R5900 || defined INLINE_DEBUG_INTEGER_VECTOR
 	debug << "; Output: rd = " << r->GPR [ i.Rd ].uq0;
 #endif
 }
 
 void Execute::MTSA ( Instruction::Format i )
 {
-#if defined INLINE_DEBUG_MTSA || defined INLINE_DEBUG_R5900 // || defined INLINE_DEBUG_UNIMPLEMENTED
+#if defined INLINE_DEBUG_MTSA || defined INLINE_DEBUG_R5900 || defined INLINE_DEBUG_INTEGER_VECTOR
 	debug << "\r\n" << hex << setw( 8 ) << r->PC << " " << dec << r->CycleCount << " " << Print::PrintInstruction ( i.Value ).c_str () << "; " << hex << i.Value;
 	debug << "; Input: rs = " << r->GPR [ i.Rs ].uq0;
 #endif
@@ -4720,14 +4726,14 @@ void Execute::MTSA ( Instruction::Format i )
 	//r->SA = r->GPR [ i.Rs ].uq0;
 	r->SA = r->GPR [ i.Rs ].uq0 & 0xf;
 	
-#if defined INLINE_DEBUG_MTSA || defined INLINE_DEBUG_R5900 // || defined INLINE_DEBUG_UNIMPLEMENTED
+#if defined INLINE_DEBUG_MTSA || defined INLINE_DEBUG_R5900 || defined INLINE_DEBUG_INTEGER_VECTOR
 	debug << "; Output: SA = " << r->SA;
 #endif
 }
 
 void Execute::MTSAB ( Instruction::Format i )
 {
-#if defined INLINE_DEBUG_MTSAB || defined INLINE_DEBUG_R5900 // || defined INLINE_DEBUG_UNIMPLEMENTED
+#if defined INLINE_DEBUG_MTSAB || defined INLINE_DEBUG_R5900 || defined INLINE_DEBUG_INTEGER_VECTOR
 	debug << "\r\n" << hex << setw( 8 ) << r->PC << " " << dec << r->CycleCount << " " << Print::PrintInstruction ( i.Value ).c_str () << "; " << hex << i.Value;
 	debug << "; Input: rs = " << r->GPR [ i.Rs ].uq0;
 #endif
@@ -4738,14 +4744,14 @@ void Execute::MTSAB ( Instruction::Format i )
 	//r->SA = ( ( ( r->GPR [ i.Rs ].uw0 ) ^ ( i.uImmediate ) ) & 0xf ) << 3;
 	r->SA = ( ( ( r->GPR [ i.Rs ].uw0 ) ^ ( i.uImmediate ) ) & 0xf );
 	
-#if defined INLINE_DEBUG_MTSAB || defined INLINE_DEBUG_R5900 // || defined INLINE_DEBUG_UNIMPLEMENTED
+#if defined INLINE_DEBUG_MTSAB || defined INLINE_DEBUG_R5900 || defined INLINE_DEBUG_INTEGER_VECTOR
 	debug << "; Output: SA = " << r->SA;
 #endif
 }
 
 void Execute::MTSAH ( Instruction::Format i )
 {
-#if defined INLINE_DEBUG_MTSAH || defined INLINE_DEBUG_R5900 // || defined INLINE_DEBUG_UNIMPLEMENTED
+#if defined INLINE_DEBUG_MTSAH || defined INLINE_DEBUG_R5900 || defined INLINE_DEBUG_INTEGER_VECTOR
 	debug << "\r\n" << hex << setw( 8 ) << r->PC << " " << dec << r->CycleCount << " " << Print::PrintInstruction ( i.Value ).c_str () << "; " << hex << i.Value;
 	debug << "; Input: rs = " << r->GPR [ i.Rs ].uq0;
 #endif
@@ -4756,7 +4762,7 @@ void Execute::MTSAH ( Instruction::Format i )
 	//r->SA = ( ( ( r->GPR [ i.Rs ].uw0 ) ^ ( i.uImmediate ) ) & 0x7 ) << 4;
 	r->SA = ( ( ( r->GPR [ i.Rs ].uw0 ) ^ ( i.uImmediate ) ) & 0x7 ) << 1;
 	
-#if defined INLINE_DEBUG_MTSAH || defined INLINE_DEBUG_R5900 // || defined INLINE_DEBUG_UNIMPLEMENTED
+#if defined INLINE_DEBUG_MTSAH || defined INLINE_DEBUG_R5900 || defined INLINE_DEBUG_INTEGER_VECTOR
 	debug << "; Output: SA = " << r->SA;
 #endif
 }
@@ -8034,8 +8040,10 @@ void Execute::EI ( Instruction::Format i )
 	{
 		r->CPR0.Status.EIE = 1;
 
+#ifdef UPDATE_INTERRUPTS_EI
 		// interrupt status changed
-		//r->UpdateInterrupt ();
+		r->UpdateInterrupt ();
+#endif
 	}
 
 #if defined INLINE_DEBUG_EI || defined INLINE_DEBUG_R5900 // || defined INLINE_DEBUG_UNIMPLEMENTED
@@ -8054,8 +8062,10 @@ void Execute::DI ( Instruction::Format i )
 	{
 		r->CPR0.Status.EIE = 0;
 
+#ifdef UPDATE_INTERRUPTS_DI
 		// interrupt status changed
 		r->UpdateInterrupt ();
+#endif
 	}
 
 }
@@ -8943,6 +8953,11 @@ void Execute::SUB_S ( Instruction::Format i )
 	debug << "\r\n" << hex << setw( 8 ) << r->PC << " " << dec << r->CycleCount << " " << Print::PrintInstruction ( i.Value ).c_str () << "; " << hex << i.Value;
 	debug << " Fs=" << hex << r->CPR1 [ i.Fs ].u << " " << r->CPR1 [ i.Fs ].f;
 	debug << " Ft=" << hex << r->CPR1 [ i.Ft ].u << " " << r->CPR1 [ i.Ft ].f;
+	float fs, ft;
+	FloatLong fl;
+	fs = r->CPR1[i.Fs].f;
+	ft = r->CPR1[i.Ft].f;
+	fl.f = fs - ft;
 #endif
 
 	//u32 OverflowFlag, UnderflowFlag, OverflowSticky, UnderflowSticky, DummyFlag, FlagSet;
@@ -8968,6 +8983,18 @@ void Execute::SUB_S ( Instruction::Format i )
 #if defined INLINE_DEBUG_SUB_S || defined INLINE_DEBUG_R5900 || defined INLINE_DEBUG_FPU	// || defined INLINE_DEBUG_UNIMPLEMENTED
 	debug << " Output: Fd=" << hex << r->CPR1 [ i.Fd ].u << " " << r->CPR1 [ i.Fd ].f;
 	debug << " FlagSet=" << hex << FlagSet;
+	if (fl.l != r->CPR1[i.Fd].s)
+	{
+		debug << " DIFF=" << hex << fl.l << " " << fl.f;
+	}
+	if (std::abs(fl.l- r->CPR1[i.Fd].s) > 1)
+	{
+		debug << " MAJOR";
+	}
+	if (FlagSet)
+	{
+		debug << " OVFUND";
+	}
 #endif
 }
 

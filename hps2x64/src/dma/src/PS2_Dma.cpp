@@ -90,6 +90,8 @@
 // appears that tag transfer to vu strictly only transfers the high 64-bits ??
 #define DMA01_TAG_TRANSFER_HIGH
 
+//#define ONLY_TRANSFER_MFIFO_SOURCE_ON_EQUAL
+
 //#define INT_ON_DMA5_STOP
 
 //#define UPDATE_QWC_ONLYONSLICE
@@ -144,7 +146,7 @@
 #define INLINE_DEBUG_TRANSFER_CHAIN_7
 #define INLINE_DEBUG_TRANSFER_CHAIN_8
 
-//#define INLINE_DEBUG_RUN_DMA5
+#define INLINE_DEBUG_RUN_DMA5
 
 //#define INLINE_DEBUG_GETNEXTACTIVECHANNEL
 //#define INLINE_DEBUG_GETNEXTACTIVECHANNEL2
@@ -305,7 +307,7 @@ const u64 Dma::c_iDeviceBufferSize [ c_iNumberOfChannels ] =
 // dma 1 - vu1
 16,
 // dma2 - gpu
-1000000,	//16,
+16,
 // dma 3 - MDEC/IPU out	
 8,
 // dma 4 - MDEC/IPU in
@@ -640,6 +642,7 @@ void Dma::Run ()
 u32 Dma::Get_ChannelPriority ( int iChannel )
 {
 	u32 ulPriority;
+	u64 ullReadyCycle;
 	
 	// check if all dma is disabled //
 	if ( ! pDMARegs->CTRL.DMAE )
@@ -684,10 +687,25 @@ u32 Dma::Get_ChannelPriority ( int iChannel )
 		// check there is a ready function
 		if ( cbReady [ iChannel ] )
 		{
-			if ( ! cbReady [ iChannel ] () )
+			// get whether dma channel is ready or not or in the future
+			ullReadyCycle = cbReady[iChannel]();
+
+			// check if dma channel is ready or not
+			if ( !ullReadyCycle )
 			{
 				return 0;
 			}
+			// check if dma channel will be ready in the future
+			else if (ullReadyCycle > *_DebugCycleCount)
+			{
+				// make sure that event is set for in the future ??
+				SetNextEventCh_Cycle(ullReadyCycle, iChannel);
+
+				// channel is not transferring right now since device is busy
+				return 0;
+			}
+
+			// otherwise dma channel is ready immdiately when equal to 1 //
 		}
 		else
 		{
@@ -700,10 +718,24 @@ u32 Dma::Get_ChannelPriority ( int iChannel )
 		
 		if ( cbReady_ToMemory [ iChannel ] )
 		{
-			if ( ! cbReady_ToMemory [ iChannel ] () )
+			// get whether dma channel is ready or not or in the future
+			ullReadyCycle = cbReady_ToMemory[iChannel]();
+
+			if ( !ullReadyCycle )
 			{
 				return 0;
 			}
+			// check if dma channel will be ready in the future
+			else if (ullReadyCycle > *_DebugCycleCount)
+			{
+				// make sure that event is set for in the future ??
+				SetNextEventCh_Cycle(ullReadyCycle, iChannel);
+
+				// channel is not transferring right now since device is busy
+				return 0;
+			}
+
+			// otherwise dma channel is ready immdiately when equal to 1 //
 		}
 		else
 		{
@@ -1056,8 +1088,39 @@ void Dma::Write ( u32 Address, u64 Data, u64 Mask )
 			{
 				// CHCR //
 
+
 				// lookup what dma channel corresponds to the address
 				DmaChannelNum = c_ucDMAChannel_LUT [ ( Address >> 10 ) & 0x1f ];
+
+
+				// check if dma channel is running already
+				/*
+				if (PreviousValue & 0x100)
+				{
+#if defined INLINE_DEBUG_WRITE
+					debug << "\r\nWrite to DMA#" << dec << DmaChannelNum << " CHCR while CHCR alread enabled = " << hex << PreviousValue;
+#endif
+	cout << "\nWRITE to dma channel#" << hex << DmaChannelNum << " while running previous value:" << hex << PreviousValue << " new value:" << pDMARegs->Regs[Offset];
+					// check if dma has been halted/stopped
+					if (!(pDMARegs->ENABLER & 0x10000))
+					{
+						// ps2 dma NOT halted/stopped //
+						
+						cout << "\nps2 dma not halted";
+
+#if defined INLINE_DEBUG_WRITE
+						debug << "\r\nWrite to DMA#" << dec << DmaChannelNum << " CHCR while DMA is NOT halted ENABLER/W.";
+#endif
+
+						// should only be able to modify CHCR while running if dma is halted/stopped ??
+
+						// set back to previous value
+						pDMARegs->Regs[Offset] = PreviousValue;
+						return;
+					}
+				}
+				*/
+
 
 				// some values in register are fixed for DIR field for some channels
 				pDMARegs->Regs [ Offset ] &= c_ulChcrAND [ DmaChannelNum ];
@@ -1409,14 +1472,15 @@ void Dma::EndTransfer ( int iChannel, bool SuppressEventUpdate )
 			GPU::_GPU->GIFRegs.STAT.FQC = 0;
 			
 			// if path 3, then set to idle for now
-			if ( GPU::_GPU->GIFRegs.STAT.APATH == 3 )
+			//if ( GPU::_GPU->GIFRegs.STAT.APATH == 3 )
+			if ((GPU::_GPU->GIFRegs.STAT.APATH == 3) && (GPU::_GPU->EndOfPacket[3]))
 			{
 				GPU::_GPU->GIFRegs.STAT.APATH = 0;
-				
-				// path 3 obviously not being interrupted if not running
-				GPU::_GPU->GIFRegs.STAT.IP3 = 0;
 			}
-			
+
+			// path 3 obviously not being interrupted if not running
+			GPU::_GPU->GIFRegs.STAT.IP3 = 0;
+
 			// path3 no longer in queue ?
 			GPU::_GPU->GIFRegs.STAT.P3Q = 0;
 			
@@ -1426,7 +1490,7 @@ void Dma::EndTransfer ( int iChannel, bool SuppressEventUpdate )
 				VU::_VU[ 1 ]->VifStopped = 0;
 				
 				// check transfer now that potential condition for dma#1 has cleared
-				Dma::_DMA->CheckTransfer ();
+				//Dma::_DMA->CheckTransfer ();
 			}
 			
 			// if dma#2 completes, then restart dma#1 if it is active
@@ -1521,7 +1585,13 @@ void Dma::EndTransfer ( int iChannel, bool SuppressEventUpdate )
 		
 			break;
 	}
-	
+
+
+
+	// set the next channel to transfer next
+	Dma::_DMA->CheckTransfer();
+
+
 	if ( !SuppressEventUpdate )
 	{
 		Update_NextEventCycle ();
@@ -1533,6 +1603,9 @@ void Dma::EndTransfer ( int iChannel, bool SuppressEventUpdate )
 	
 	// instead of resuming a dma channel, will for now run the Dma::Run function later
 	SetNextEventCh ( 8, iChannel );
+
+
+
 
 	
 #ifdef ENABLE_SIF_DMA_TIMING
@@ -1748,6 +1821,8 @@ u32 Dma::DMA5_WriteBlock ( u64* Data64, u32 QWC_Count )
 				_DMA->DmaCh [ 5 ].QWCTransferred = 0;
 			
 #ifdef INLINE_DEBUG_RUN_DMA5
+	debug << " IOP-TAG=" << hex << Data64[0];
+	debug << " EE-TAG=" << hex << Data64[1];
 	debug << " EETag.QWC=" << dec << _DMA->SourceDMATag [ 5 ].QWC;
 	debug << " Tag.ID=" << _DMA->SourceDMATag [ 5 ].ID << " Tag.IRQ=" << _DMA->SourceDMATag [ 5 ].IRQ << " Tag.PCE=" << _DMA->SourceDMATag [ 5 ].PCE;
 	debug << "; Tag.MADR=" << hex << pRegData [ 5 ]->MADR.Value;
@@ -2030,6 +2105,8 @@ void Dma::NormalTransfer_ToMemory ( int iChannel )
 	u64 QWC_TransferCount;
 	
 	u32 iDrainChannel, iQWRemaining1, iQWRemaining2, TransferAddress;
+
+	u64 ullReadyCycle;
 	
 	static const u64 c_LoopTimeout = 33554432;
 	u64 LoopCount;
@@ -2069,12 +2146,21 @@ void Dma::NormalTransfer_ToMemory ( int iChannel )
 		// if not, then skip
 		if ( cbReady_ToMemory [ iChannel ] )
 		{
+			ullReadyCycle = cbReady_ToMemory[iChannel]();
+
 			// check that channel is ready
-			if ( !( cbReady_ToMemory [ iChannel ] () ) )
+			if ( !ullReadyCycle )
 			{
 #if defined INLINE_DEBUG_TRANSFER || defined INLINE_DEBUG_TRANSFER_NORMAL_TOMEM
 	debug << "; ChannelNOTReady";
 #endif
+
+				return;
+			}
+			else if (ullReadyCycle > *_DebugCycleCount)
+			{
+				// channel will be ready in the future //
+				SetNextEventCh_Cycle(ullReadyCycle, iChannel);
 
 				return;
 			}
@@ -2149,7 +2235,7 @@ void Dma::NormalTransfer_ToMemory ( int iChannel )
 		// only transfer if there is data to transfer
 		if ( QWC_TransferCount )
 		{
-			if ( ( !DMARegs.CTRL.MFIFO ) || ( iChannel != 8 ) )
+			if ( ( DMARegs.CTRL.MFIFO < 2 ) || ( iChannel != 8 ) )
 			{
 				QWC_TransferCount = cbTransfer_ToMemory [ iChannel ] ( SrcDataPtr, QWC_TransferCount );
 				
@@ -2164,17 +2250,31 @@ void Dma::NormalTransfer_ToMemory ( int iChannel )
 			else
 			{
 				// source channel //
-				
+
 				// get drain channel
 				iDrainChannel = DMARegs.CTRL.MFIFO - 1;
-				
+
 #ifdef VERBOSE_MFIFO_INVALID
-				if ( !iDrainChannel )
+				if (!iDrainChannel)
 				{
 					// alert if mfifo is set to an invalid value
 					cout << "\nhps2x64: ALERT: DMA: MFIFO=1!!!\n";
 				}
 #endif
+
+#ifdef ONLY_TRANSFER_MFIFO_SOURCE_ON_EQUAL
+				// make sure that dma#8 MADR is equal to drain channel TADR before transfer ??
+				if (pRegData[iDrainChannel]->CHCR.STR)
+				{
+					if ((pRegData[8]->MADR.Value & DMARegs.RBSR.Value) != (pRegData[iDrainChannel]->TADR.Value & DMARegs.RBSR.Value))
+					{
+						// only transfer when they are equal
+						return;
+					}
+				}
+#endif
+
+
 				// the amount of data that can be written to mfifo is difference between the MADRs minus the size of mfifo
 				// note: probably supposed to compare with tadr from drain channel instead ??
 				iQWRemaining2 = ( ( DMARegs.RBSR.Value + ( 1 << 4 ) ) - ( pRegData [ 8 ]->MADR.Value - pRegData [ iDrainChannel ]->TADR.Value ) ) >> 4;
@@ -2333,6 +2433,8 @@ void Dma::NormalTransfer_FromMemory ( int iChannel )
 	u64 *SrcDataPtr, *DstDataPtr;
 	
 	u32 NextTagAddress, NextDataAddress;
+
+	u64 ullReadyCycle;
 	
 	u64 QWC_TransferCount;
 	
@@ -2372,12 +2474,21 @@ void Dma::NormalTransfer_FromMemory ( int iChannel )
 		// if not, then skip
 		if ( cbReady [ iChannel ] )
 		{
+			ullReadyCycle = cbReady[iChannel]();
+
 			// check that channel is ready
 			if ( !( cbReady [ iChannel ] () ) )
 			{
 #if defined INLINE_DEBUG_TRANSFER || defined INLINE_DEBUG_TRANSFER_NORMAL_FROMMEM
 	debug << "; ChannelNOTReady";
 #endif
+
+				return;
+			}
+			else if (ullReadyCycle > *_DebugCycleCount)
+			{
+				// channel will be ready in the future //
+				SetNextEventCh_Cycle(ullReadyCycle, iChannel);
 
 				return;
 			}
@@ -2727,7 +2838,7 @@ u64 Dma::Chain_TransferBlock ( int iChannel )
 				
 				// check if mfifo is set
 				// no need to check if dma#8 since it can only be run in normal mode for mfifo
-				if ( ( !DMARegs.CTRL.MFIFO ) || ( iChannel != iDrainChannel ) )
+				if ( ( DMARegs.CTRL.MFIFO < 2 ) || ( iChannel != iDrainChannel ) )
 				{
 #if defined INLINE_DEBUG_TRANSFER
 	debug << "; NO_MFIFO_TRANSFER";
@@ -2987,6 +3098,8 @@ void Dma::ChainTransfer_FromMemory ( int iChannel )
 
 	u64 Cyclet;
 	u64 ullReleaseTime;
+
+	u64 ullReadyCycle;
 	
 	//u32 NextTagAddress, NextDataAddress;
 	
@@ -3028,7 +3141,7 @@ void Dma::ChainTransfer_FromMemory ( int iChannel )
 
 			// MFIFO //
 			// if mfifo, then make sure TADR is less than MADR for source
-			if ( ( DMARegs.CTRL.MFIFO ) && ( iChannel == c_iMfifoDrain_LUT [ DMARegs.CTRL.MFIFO ] ) )
+			if ( ( DMARegs.CTRL.MFIFO > 1 ) && ( iChannel == c_iMfifoDrain_LUT [ DMARegs.CTRL.MFIFO ] ) )
 			{
 #if defined INLINE_DEBUG_TRANSFER || defined INLINE_DEBUG_TRANSFER_CHAIN_FROMMEM
 	debug << "; MFIFO";
@@ -3047,19 +3160,24 @@ void Dma::ChainTransfer_FromMemory ( int iChannel )
 				}
 				*/
 
-				if ( pRegData [ iChannel ]->TADR.Value == pRegData [ 8 ]->MADR.Value )
+				if (pRegData[iChannel]->TADR.Value == pRegData[8]->MADR.Value)
 				{
 #if defined INLINE_DEBUG_TRANSFER || defined INLINE_DEBUG_TRANSFER_CHAIN_FROMMEM
-	debug << " MFIFOEMPTY";
+		debug << " MFIFOEMPTY";
 #endif
 
 					// mfifo is empty //
-					
-					// set mfifo empty interrupt
-					DMARegs.STAT.MEIS = 1;
-					
-					// update interrupts
-					UpdateInterrupt ();
+
+#ifdef ONLY_TRANSFER_MFIFO_SOURCE_ON_EQUAL
+					if (!pRegData[8]->CHCR.STR)
+#endif
+					{
+						// set mfifo empty interrupt
+						DMARegs.STAT.MEIS = 1;
+
+						// update interrupts
+						UpdateInterrupt();
+					}
 					
 					// update next transfer
 					iLastChannel = iChannel;
@@ -3181,17 +3299,26 @@ cout << "\nhps2x64: ALERT: PCE is non-zero in dma tag!!!";
 					// check if channel has a ready function
 					if ( cbReady [ iChannel ] )
 					{
+						// get whether dma channel is ready or not or in the future
+						ullReadyCycle = cbReady[iChannel]();
+
 						// check if channel is ready for transfer
-						if ( !( cbReady [ iChannel ] () ) )
+						if ( !ullReadyCycle )
 						{
 #if defined INLINE_DEBUG_TRANSFER || defined INLINE_DEBUG_TRANSFER_CHAIN_FROMMEM
 	debug << "; DeviceNotReady";
 #endif
-
 							
 							return;
 						}
-						
+						else if (ullReadyCycle > *_DebugCycleCount)
+						{
+							// channel will be ready in the future //
+							SetNextEventCh_Cycle(ullReadyCycle, iChannel);
+
+							return;
+						}
+
 					} // end if ( cbReady [ iChannel ] )
 					
 			
@@ -3470,8 +3597,11 @@ cout << "\nhps2x64: ALERT: PCE is non-zero in dma tag!!!";
 
 			if ( cbReady [ iChannel ] )
 			{
+				// get whether dma channel is ready or not or in the future
+				ullReadyCycle = cbReady[iChannel]();
+
 				// check if channel is ready for transfer
-				if ( !( cbReady [ iChannel ] () ) )
+				if ( !ullReadyCycle )
 				{
 #if defined INLINE_DEBUG_TRANSFER || defined INLINE_DEBUG_TRANSFER_CHAIN_FROMMEM
 	debug << "; DeviceNotReady";
@@ -3479,7 +3609,14 @@ cout << "\nhps2x64: ALERT: PCE is non-zero in dma tag!!!";
 
 					return;
 				}
-				
+				else if (ullReadyCycle > *_DebugCycleCount)
+				{
+					// channel will be ready in the future //
+					SetNextEventCh_Cycle(ullReadyCycle, iChannel);
+
+					return;
+				}
+
 			} // end if ( cbReady [ iChannel ] )
 
 #if defined INLINE_DEBUG_TRANSFER
@@ -3837,6 +3974,8 @@ void Dma::InterleaveTransfer_FromMemory ( int iChannel )
 	u64 QWC_TransferCount = 0;
 	u64 *SrcDataPtr;
 
+	u64 ullReadyCycle;
+
 	// check if transfer of block/tag has started yet
 	if ( !pRegData [ iChannel ]->QWC.QWC || ( !DMARegs.SQWC.TQWC ) )
 	{
@@ -3855,14 +3994,24 @@ void Dma::InterleaveTransfer_FromMemory ( int iChannel )
 	// check if channel is a function to check if it is ready
 	if ( cbReady [ iChannel ] )
 	{
+		// get whether dma channel is ready or not or in the future
+		ullReadyCycle = cbReady[iChannel]();
+
 		// check if channel is ready for transfer
-		if ( !( cbReady [ iChannel ] () ) )
+		if ( !ullReadyCycle )
 		{
 #if defined INLINE_DEBUG_TRANSFER || defined INLINE_DEBUG_TRANSFER_INTERLEAVE
 	debug << "; DeviceNotReady";
 #endif
 
 			// channel/device not ready for transfer
+			return;
+		}
+		else if (ullReadyCycle > *_DebugCycleCount)
+		{
+			// channel will be ready in the future //
+			SetNextEventCh_Cycle(ullReadyCycle, iChannel);
+
 			return;
 		}
 	}
@@ -4526,14 +4675,14 @@ void Dma::Transfer ( int iChannel )
 
 
 
-bool Dma::SPRout_DMA_Ready ()
+u64 Dma::SPRout_DMA_Ready ()
 {
-	return true;
+	return 1;
 }
 
-bool Dma::SPRin_DMA_Ready ()
+u64 Dma::SPRin_DMA_Ready ()
 {
-	return true;
+	return 1;
 }
 
 // dma channel #8

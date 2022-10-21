@@ -48,7 +48,6 @@ using namespace Utilities::Strings;
 #define ENABLE_DIRECT_INPUT
 
 
-
 json jsnMenuBar = {
 { "MenuBar", { 
 	{ "File", {
@@ -339,7 +338,7 @@ json jsnMenuBar = {
 						{ "Caption", {
 							{ "English", "PS2 GPU" }
 						} },
-						//{ "Function", (unsigned long long) NULL }
+						{ "Function", (unsigned long long) hps2x64::OnClick_Debug_Show_PS2_GPU }
 					} },
 					{ "VU0", {
 						{ "Caption", {
@@ -357,6 +356,7 @@ json jsnMenuBar = {
 						{ "Caption", {
 							{ "English", "IPU" }
 						} },
+						{ "Function", (unsigned long long) hps2x64::OnClick_Debug_Show_PS2_IPU }
 					} },
 					{ "SIF", {
 						{ "Caption", {
@@ -869,7 +869,9 @@ volatile u32 hps2x64::_MenuWasClicked;
 
 WindowClass::Window *hps2x64::ProgramWindow;
 
-string hps2x64::BiosPath;
+// the path for the last bios that was selected
+string hps2x64::sLastBiosPath;
+
 string hps2x64::ExecutablePath;
 char ExePathTemp [ hps2x64::c_iExeMaxPathLength + 1 ];
 
@@ -972,6 +974,7 @@ int hps2x64::HandleMenuClick ()
 void hps2x64::Update_CheckMarksOnMenu ()
 {
 	// uncheck all first
+	ProgramWindow->Menus->UnCheckItem("Bios");
 	ProgramWindow->Menus->UnCheckItem ( "Insert/Remove Game Disk" );
 	ProgramWindow->Menus->UnCheckItem ( "Pad 1 Digital" );
 	ProgramWindow->Menus->UnCheckItem ( "Pad 1 Analog" );
@@ -1025,6 +1028,15 @@ void hps2x64::Update_CheckMarksOnMenu ()
 	ProgramWindow->Menus->UnCheckItem ( "SPU Multi-Thread" );
 	ProgramWindow->Menus->UnCheckItem ( "Enable Vsync" );
 	
+
+	// check if a bios is loaded into memory or not
+	if (sLastBiosPath.compare(""))
+	{
+		// looks like there is a bios currently loaded into memory //
+
+		// add a tick mark next to File | Load | Bios
+		ProgramWindow->Menus->CheckItem("Bios");
+	}
 	
 	// check box for audio output enable //
 	if ( _SYSTEM._PS1SYSTEM._SPU2.AudioOutput_Enabled )
@@ -1306,16 +1318,6 @@ void hps2x64::InitializeProgram ()
 	ysize = ProgramWindow_Height;
 	ProgramWindow = new WindowClass::Window ();
 	
-	/*
-	ProgramWindow->GetRequiredWindowSize ( &xsize, &ysize, TRUE );
-	ProgramWindow->Create ( ProgramWindow_Caption, ProgramWindow_X, ProgramWindow_Y, xsize, ysize );
-		
-	cout << "\nProgram Window: xsize=" << xsize << "; ysize=" << ysize;
-	ProgramWindow->GetWindowSize ( &xsize, &ysize );
-	cout << "\nWindow Size. xsize=" << xsize << "; ysize=" << ysize;
-	ProgramWindow->GetViewableArea ( &xsize, &ysize );
-	cout << "\nViewable Size. xsize=" << xsize << "; ysize=" << ysize;
-	*/
 	
 	cout << "\nCreating window";
 	
@@ -1332,183 +1334,13 @@ void hps2x64::InitializeProgram ()
 
 	ProgramWindow->CreateMenuFromJson( jsnMenuBar, "English" );
 
-	/*
-	m->AddMainMenuItem ( "File" );
-	m->AddMainMenuItem ( "Debug" );
-	m->AddMenu ( "File", "Load" );
-	m->AddItem ( "Load", "Bios", OnClick_File_Load_BIOS );
-	m->AddItem ( "Load", "State", OnClick_File_Load_State );
-	//m->AddItem ( "Load", "Insert/Remove PS2 CD Game Disk", OnClick_File_Load_GameDisk_PS2CD );
-	//m->AddItem ( "Load", "Insert/Remove PS2 DVD Game Disk", OnClick_File_Load_GameDisk_PS2DVD );
-	m->AddItem ( "Load", "Insert/Remove PS2 Game Disk", OnClick_File_Load_GameDisk_PS2 );
-	m->AddItem ( "Load", "Insert/Remove PS1 Game Disk", OnClick_File_Load_GameDisk_PS1 );
-	m->AddItem ( "Load", "Insert/Remove Audio Disk", OnClick_File_Load_AudioDisk );
-	m->AddMenu ( "File", "Save" );
-	m->AddItem ( "Save", "State", OnClick_File_Save_State );
-	m->AddItem ( "File", "Reset", OnClick_File_Reset );
-	//m->AddItem ( "Save", "Bios Debug Info", SaveBIOSClick );
-	//m->AddItem ( "Save", "RAM Debug Info", SaveRAMClick );
-	m->AddItem ( "File", "Run\tr", OnClick_File_Run );
-	m->AddItem ( "File", "Exit", OnClick_File_Exit );
-	
-	m->AddItem ( "Debug", "Break", OnClick_Debug_Break );
-	m->AddItem ( "Debug", "Step Into\ta", OnClick_Debug_StepInto );
-	m->AddItem ( "Debug", "Step Instr PS1\t1", OnClick_Debug_StepPS1_Instr );
-	m->AddItem ( "Debug", "Step Instr PS2\t2", OnClick_Debug_StepPS2_Instr );
-	m->AddItem ( "Debug", "Output Current Sector", OnClick_Debug_OutputCurrentSector );
-	//m->AddMenu ( "Debug", "Set Breakpoint" );
-	//m->AddItem ( "Set Breakpoint", "Address", SetAddressBreakPointClick );
-	//m->AddItem ( "Set Breakpoint", "Cycle", SetCycleBreakPointClick );
-	//m->AddItem ( "Debug", "Set Memory Start", SetMemoryClick );
-	m->AddMenu ( "Debug", "Show PS2" );
-	m->AddItem ( "Show PS2", "PS2 All", OnClick_Debug_Show_PS2_All );
-	m->AddItem ( "Show PS2", "PS2 FrameBuffer", OnClick_Debug_Show_PS2_FrameBuffer );
-	m->AddItem ( "Show PS2", "R5900", OnClick_Debug_Show_R5900 );
-	m->AddItem ( "Show PS2", "PS2 Memory", OnClick_Debug_Show_PS2_Memory );
-	m->AddItem ( "Show PS2", "PS2 DMA", OnClick_Debug_Show_PS2_DMA );
-	m->AddItem ( "Show PS2", "PS2 Timers", OnClick_Debug_Show_PS2_TIMER );
-	m->AddItem ( "Show PS2", "VU0", OnClick_Debug_Show_PS2_VU0 );
-	m->AddItem ( "Show PS2", "VU1", OnClick_Debug_Show_PS2_VU1 );
-	//m->AddItem ( "Show PS2", "PS2 SPU", OnClick_Debug_Show_SPU );
-	m->AddItem ( "Show PS2", "PS2 INTC", OnClick_Debug_Show_PS2_INTC );
-	m->AddItem ( "Show PS2", "PS2 GPU" );
-	m->AddItem ( "Show PS2", "PS2 MDEC" );
-	m->AddItem ( "Show PS2", "PS2 SIF" );
-	//m->AddItem ( "Show PS2", "PS2 PIO" );
-	//m->AddItem ( "Show PS2", "CD", OnClick_Debug_Show_PS2_CD );
-	m->AddItem ( "Show PS2", "PS2 Bus" );
-	m->AddItem ( "Show PS2", "PS2 I-Cache" );
-	
-#ifndef EE_ONLY_COMPILE
-	m->AddMenu ( "Debug", "Show PS1" );
-	m->AddItem ( "Show PS1", "All", OnClick_Debug_Show_All );
-	m->AddItem ( "Show PS1", "Frame Buffer", OnClick_Debug_Show_FrameBuffer );
-	m->AddItem ( "Show PS1", "R3000A", OnClick_Debug_Show_R3000A );
-	m->AddItem ( "Show PS1", "Memory", OnClick_Debug_Show_Memory );
-	m->AddItem ( "Show PS1", "DMA", OnClick_Debug_Show_DMA );
-	m->AddItem ( "Show PS1", "Timers", OnClick_Debug_Show_TIMER );
-	m->AddItem ( "Show PS1", "SPU", OnClick_Debug_Show_SPU );
-	m->AddItem ( "Show PS1", "INTC", OnClick_Debug_Show_INTC );
-	m->AddItem ( "Show PS1", "PS1 GPU" );
-	m->AddItem ( "Show PS1", "MDEC" );
-	m->AddItem ( "Show PS1", "SIO" );
-	//m->AddItem ( "Show PS1", "PIO" );
-	m->AddItem ( "Show PS1", "CD/DVD", OnClick_Debug_Show_CD );
-	m->AddItem ( "Show PS1", "Bus" );
-	m->AddItem ( "Show PS1", "I-Cache" );
-	m->AddItem ( "Show PS1", "SPU0", OnClick_Debug_Show_SPU0 );
-	m->AddItem ( "Show PS1", "SPU1", OnClick_Debug_Show_SPU1 );
-#endif
-	
-	// add menu items for controllers //
-	m->AddMainMenuItem ( "Peripherals" );
-	//m->AddItem ( "Peripherals", "Configure Joypad...", OnClick_Controllers_Configure );
-	m->AddMenu ( "Peripherals", "Pad 1" );
-	m->AddItem ( "Pad 1", "Configure Joypad1...", OnClick_Controllers0_Configure );
-	m->AddMenu ( "Pad 1", "Pad 1 Type" );
-	m->AddItem ( "Pad 1 Type", "Pad 1 Digital", OnClick_Pad1Type_Digital );
-	m->AddItem ( "Pad 1 Type", "Pad 1 Analog", OnClick_Pad1Type_Analog );
-	m->AddItem ( "Pad 1 Type", "Pad 1 DualShock2", OnClick_Pad1Type_DualShock2 );
-	m->AddMenu ( "Pad 1", "Pad 1: Input" );
-	m->AddItem ( "Pad 1: Input", "Pad 1: None", OnClick_Pad1Input_None );
-	m->AddItem ( "Pad 1: Input", "Pad 1: Device0", OnClick_Pad1Input_Device0 );
-	m->AddItem ( "Pad 1: Input", "Pad 1: Device1", OnClick_Pad1Input_Device1 );
-	m->AddMenu ( "Peripherals", "Pad 2" );
-	m->AddItem ( "Pad 2", "Configure Joypad2...", OnClick_Controllers1_Configure );
-	m->AddMenu ( "Pad 2", "Pad 2 Type" );
-	m->AddItem ( "Pad 2 Type", "Pad 2 Digital", OnClick_Pad2Type_Digital );
-	m->AddItem ( "Pad 2 Type", "Pad 2 Analog", OnClick_Pad2Type_Analog );
-	m->AddItem ( "Pad 2 Type", "Pad 2 DualShock2", OnClick_Pad2Type_DualShock2 );
-	m->AddMenu ( "Pad 2", "Pad 2: Input" );
-	m->AddItem ( "Pad 2: Input", "Pad 2: None", OnClick_Pad2Input_None );
-	m->AddItem ( "Pad 2: Input", "Pad 2: Device0", OnClick_Pad2Input_Device0 );
-	m->AddItem ( "Pad 2: Input", "Pad 2: Device1", OnClick_Pad2Input_Device1 );
-	
-	// add menu items for memory cards //
-	m->AddMenu ( "Peripherals", "Memory Cards" );
-	m->AddMenu ( "Memory Cards", "Card 1" );
-	m->AddItem ( "Card 1", "Connect Card1", OnClick_Card1_Connect );
-	m->AddItem ( "Card 1", "Disconnect Card1", OnClick_Card1_Disconnect );
-	m->AddMenu ( "Memory Cards", "Card 2" );
-	m->AddItem ( "Card 2", "Connect Card2", OnClick_Card2_Connect );
-	m->AddItem ( "Card 2", "Disconnect Card2", OnClick_Card1_Disconnect );
-
-	m->AddItem ( "Peripherals", "Re-detect Pad(s)", OnClick_Redetect_Pads );
-
-	// the region of the console is important
-	m->AddMainMenuItem ( "Region" );
-	m->AddItem ( "Region", "Japan", OnClick_Region_Japan );
-	m->AddItem ( "Region", "North America", OnClick_Region_NorthAmerica );
-	m->AddItem ( "Region", "Europe", OnClick_Region_Europe );
-	//m->AddItem ( "Region", "H", OnClick_Region_H );
-	//m->AddItem ( "Region", "R", OnClick_Region_R );
-	//m->AddItem ( "Region", "C", OnClick_Region_C );
-	//m->AddItem ( "Region", "Korea", OnClick_Region_Korea );
-	
-	m->AddMainMenuItem ( "Audio" );
-	m->AddItem ( "Audio", "Enable", OnClick_Audio_Enable );
-	m->AddMenu ( "Audio", "Volume" );
-	m->AddItem ( "Volume", "100%", OnClick_Audio_Volume_100 );
-	m->AddItem ( "Volume", "75%", OnClick_Audio_Volume_75 );
-	m->AddItem ( "Volume", "50%", OnClick_Audio_Volume_50 );
-	m->AddItem ( "Volume", "25%", OnClick_Audio_Volume_25 );
-	m->AddMenu ( "Audio", "Buffer Size" );
-	m->AddItem ( "Buffer Size", "8 KB", OnClick_Audio_Buffer_8k );
-	m->AddItem ( "Buffer Size", "16 KB", OnClick_Audio_Buffer_16k );
-	m->AddItem ( "Buffer Size", "32 KB", OnClick_Audio_Buffer_32k );
-	m->AddItem ( "Buffer Size", "64 KB", OnClick_Audio_Buffer_64k );
-	m->AddItem ( "Buffer Size", "128 KB", OnClick_Audio_Buffer_1m );
-	m->AddItem ( "Audio", "Filter", OnClick_Audio_Filter );
-	m->AddItem ( "Audio", "SPU Multi-Thread", OnClick_Audio_MultiThread );
-	
-	m->AddMainMenuItem ( "Video" );
-	m->AddItem ( "Video", "Window Size x1", OnClick_Video_WindowSizeX1 );
-	m->AddItem ( "Video", "Window Size x1.5", OnClick_Video_WindowSizeX15 );
-	m->AddItem ( "Video", "Window Size x2", OnClick_Video_WindowSizeX2 );
-	m->AddItem ( "Video", "Full Screen\tf/ESC", OnClick_Video_FullScreen );
-	m->AddItem ( "Video", "Enable Vsync", OnClick_Video_EnableVsync );
-	
-	m->AddMainMenuItem ( "CPU" );
-	m->AddMenu ( "CPU", "CPU: R3000A" );
-	m->AddItem ( "CPU: R3000A", "Interpreter: R3000A", OnClick_R3000ACPU_Interpreter );
-	m->AddItem ( "CPU: R3000A", "Recompiler: R3000A", OnClick_R3000ACPU_Recompiler );
-#ifdef ENABLE_RECOMPILE2
-	m->AddItem ( "CPU: R3000A", "Recompiler2: R3000A", OnClick_R3000ACPU_Recompiler2 );
-#endif
-	m->AddMenu ( "CPU", "CPU: R5900" );
-	m->AddItem ( "CPU: R5900", "Interpreter: R5900", OnClick_R5900CPU_Interpreter );
-	m->AddItem ( "CPU: R5900", "Recompiler: R5900", OnClick_R5900CPU_Recompiler );
-#ifdef ENABLE_RECOMPILE2
-	m->AddItem ( "CPU: R5900", "Recompiler2: R5900", OnClick_R5900CPU_Recompiler2 );
-#endif
-	m->AddMenu ( "CPU", "CPU: VU0" );
-	m->AddItem ( "CPU: VU0", "Interpreter: VU0", OnClick_VU0_Interpreter );
-	m->AddItem ( "CPU: VU0", "Recompiler: VU0", OnClick_VU0_Recompiler );
-	m->AddMenu ( "CPU", "CPU: VU1" );
-	m->AddItem ( "CPU: VU1", "Interpreter: VU1", OnClick_VU1_Interpreter );
-	m->AddItem ( "CPU: VU1", "Recompiler: VU1", OnClick_VU1_Recompiler );
-
-	// vu1 multi-threading options
-	// note: removed/disabled for now
-	//m->AddMenu ( "CPU", "VU1: Threads" );
-	//m->AddItem ( "VU1: Threads", "VU1: 0 (single-thread)", OnClick_VU1_0Threads );
-	//m->AddItem ( "VU1: Threads", "VU1: 1 (multi-thread)", OnClick_VU1_1Threads );
-	
-#ifdef ENABLE_R5900_IDLE
-	m->AddItem ( "CPU", "Skip Idle Cycles", OnClick_Cpu_SkipIdleCycles );
-#endif
-	
-	m->AddMainMenuItem ( "GPU" );
-	m->AddMenu ( "GPU", "GPU: Threads" );
-	m->AddItem ( "GPU: Threads", "0 (single-thread)", OnClick_GPU_0Threads );
-	m->AddItem ( "GPU: Threads", "1 (multi-thread)", OnClick_GPU_1Threads );
-	*/
 	
 	cout << "\nShowing menu bar";
 	
 	// show the menu bar
 	m->Show ();
 	
+	/*
 	cout << "\nAdding shortcut keys";
 	
 	// need a shortcut key for "step into"
@@ -1524,6 +1356,7 @@ void hps2x64::InitializeProgram ()
 	// need shortcut keys for step instruction PS1/PS2
 	ProgramWindow->AddShortcutKey ( OnClick_Debug_StepPS1_Instr, '1' );
 	ProgramWindow->AddShortcutKey ( OnClick_Debug_StepPS2_Instr, '2' );
+	*/
 	
 	cout << "\nInitializing open gl for program window";
 
@@ -1788,15 +1621,14 @@ void hps2x64::RunProgram ()
 					// get the target platform timer value for this frame
 					// check if this is ntsc or pal
 					// ***TODO*** todo for PS2
-					/*
-					if ( _SYSTEM._GPU.GPU_CTRL_Read.VIDEO )
+					//if ( _SYSTEM._GPU.GPU_CTRL_Read.VIDEO )
+					if (_SYSTEM._GPU.iGraphicsMode == GPU::GRAPHICS_MODE_PAL_I)
 					{
 						// PAL //
 						//TargetTimer += ( TicksPerSec / 50 );
 						TargetTimer += ( ( (double) TicksPerSec ) / GPU::PAL_FramesPerSec );
 					}
 					else
-					*/
 					{
 						// NTSC //
 						//TargetTimer += ( TicksPerSec / 60 );
@@ -1910,9 +1742,29 @@ void hps2x64::RunProgram ()
 
 				// put program name into program caption
 				ss << "hps2x64";
+
+				
+				switch (_SYSTEM._GPU.iGraphicsMode)
+				{
+					case 1:
+						ss << " NTSCP";
+						break;
+
+					case 2:
+						ss << " NTSCI";
+						break;
+
+					case 3:
+						ss << " PALI";
+						break;
+
+					default:
+						ss << " UNKN";
+						break;
+				}
 				
 				// put in caption for statistic
-				ss << " - Speed(NTSC): " << fixed << setprecision(2);
+				ss << " - Speed: " << fixed << setprecision(2);
 
 				// get the difference in ticks between the time we started and the time we are at now
 				TicksLeft = ullPerfEnd_Timer - ullPerfStart_Timer;
@@ -2227,6 +2079,10 @@ void hps2x64::OnClick_File_Load_BIOS ( int i )
 	cout << "\nYou clicked File | Load | BIOS\n";
 	_HPS2X64.LoadBIOS ();
 	
+	cout << "\n->last bios set to: " << sLastBiosPath.c_str();
+
+	_HPS2X64.Update_CheckMarksOnMenu();
+
 	_MenuWasClicked = 1;
 }
 
@@ -2931,6 +2787,56 @@ void hps2x64::OnClick_Debug_Show_PS2_VU1 ( int i )
 	_MenuWasClicked = 1;
 }
 
+void hps2x64::OnClick_Debug_Show_PS2_IPU(int i)
+{
+	//MenuClicked m;
+	//m.Debug_ShowWindow_PS2_VU1 = true;
+	//x64ThreadSafe::Utilities::Lock_OR64 ( (long long&)_MenuClick.Value, (long long) m.Value );
+	cout << "\nYou clicked Debug | Show PS2 | IPU\n";
+
+	if (ProgramWindow->Menus->CheckItem("IPU") == MF_CHECKED)
+	{
+		// was already checked, so disable debug window for R3000A and uncheck item
+		cout << "Disabling debug window for IPU\n";
+		_HPS2X64._SYSTEM._IPU.DebugWindow_Disable();
+		ProgramWindow->Menus->UnCheckItem("IPU");
+	}
+	else
+	{
+		// was not already checked, so enable debugging
+		cout << "Enabling debug window for IPU\n";
+		_HPS2X64._SYSTEM._IPU.DebugWindow_Enable();
+	}
+
+	_MenuWasClicked = 1;
+}
+
+
+void hps2x64::OnClick_Debug_Show_PS2_GPU(int i)
+{
+	//MenuClicked m;
+	//m.Debug_ShowWindow_PS2_VU1 = true;
+	//x64ThreadSafe::Utilities::Lock_OR64 ( (long long&)_MenuClick.Value, (long long) m.Value );
+	cout << "\nYou clicked Debug | Show PS2 | GPU\n";
+
+	if (ProgramWindow->Menus->CheckItem("PS2 GPU") == MF_CHECKED)
+	{
+		// was already checked, so disable debug window for R3000A and uncheck item
+		cout << "Disabling debug window for PS2 GPU\n";
+		_HPS2X64._SYSTEM._GPU.DebugWindow_Disable2();
+		ProgramWindow->Menus->UnCheckItem("PS2 GPU");
+	}
+	else
+	{
+		// was not already checked, so enable debugging
+		cout << "Enabling debug window for PS2 GPU\n";
+		_HPS2X64._SYSTEM._GPU.DebugWindow_Enable2();
+	}
+
+	_MenuWasClicked = 1;
+}
+
+
 //void hps2x64::OnClick_Debug_Show_PS2_SPU ( int i )
 //{
 //	MenuClicked m;
@@ -3214,28 +3120,43 @@ void hps2x64::OnClick_Controllers0_Configure ( int i )
 	Dialog_KeyConfigure::KeyConfigure [ 14 ] = _HPS2X64._SYSTEM._PS1SYSTEM._SIO.RightAnalog_X [ 0 ];
 	Dialog_KeyConfigure::KeyConfigure [ 15 ] = _HPS2X64._SYSTEM._PS1SYSTEM._SIO.RightAnalog_Y [ 0 ];
 	
-	if ( Dialog_KeyConfigure::Show_ConfigureKeysDialog ( 0 ) )
+	// first make sure that there are joysticks connected
+	if (!DJoySticks::gameControllers.size())
 	{
-		_HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_X [ 0 ] = Dialog_KeyConfigure::KeyConfigure [ 0 ];
-		_HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_O [ 0 ] = Dialog_KeyConfigure::KeyConfigure [ 1 ];
-		_HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_Triangle [ 0 ] = Dialog_KeyConfigure::KeyConfigure [ 2 ];
-		_HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_Square [ 0 ] = Dialog_KeyConfigure::KeyConfigure [ 3 ];
-		_HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_R1 [ 0 ] = Dialog_KeyConfigure::KeyConfigure [ 4 ];
-		_HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_R2 [ 0 ] = Dialog_KeyConfigure::KeyConfigure [ 5 ];
-		_HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_R3 [ 0 ] = Dialog_KeyConfigure::KeyConfigure [ 6 ];
-		_HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_L1 [ 0 ] = Dialog_KeyConfigure::KeyConfigure [ 7 ];
-		_HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_L2 [ 0 ] = Dialog_KeyConfigure::KeyConfigure [ 8 ];
-		_HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_L3 [ 0 ] = Dialog_KeyConfigure::KeyConfigure [ 9 ];
-		_HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_Start [ 0 ] = Dialog_KeyConfigure::KeyConfigure [ 10 ];
-		_HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_Select [ 0 ] = Dialog_KeyConfigure::KeyConfigure [ 11 ];
-		_HPS2X64._SYSTEM._PS1SYSTEM._SIO.LeftAnalog_X [ 0 ] = Dialog_KeyConfigure::KeyConfigure [ 12 ];
-		_HPS2X64._SYSTEM._PS1SYSTEM._SIO.LeftAnalog_Y [ 0 ] = Dialog_KeyConfigure::KeyConfigure [ 13 ];
-		_HPS2X64._SYSTEM._PS1SYSTEM._SIO.RightAnalog_X [ 0 ] = Dialog_KeyConfigure::KeyConfigure [ 14 ];
-		_HPS2X64._SYSTEM._PS1SYSTEM._SIO.RightAnalog_Y [ 0 ] = Dialog_KeyConfigure::KeyConfigure [ 15 ];
+		Playstation1::SIO::DJoy.ReInit();
+	}
+
+	// make sure there is a game controller connected before showing dialog
+	if (DJoySticks::gameControllers.size())
+	{
+		if (Dialog_KeyConfigure::Show_ConfigureKeysDialog(0))
+		{
+			_HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_X[0] = Dialog_KeyConfigure::KeyConfigure[0];
+			_HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_O[0] = Dialog_KeyConfigure::KeyConfigure[1];
+			_HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_Triangle[0] = Dialog_KeyConfigure::KeyConfigure[2];
+			_HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_Square[0] = Dialog_KeyConfigure::KeyConfigure[3];
+			_HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_R1[0] = Dialog_KeyConfigure::KeyConfigure[4];
+			_HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_R2[0] = Dialog_KeyConfigure::KeyConfigure[5];
+			_HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_R3[0] = Dialog_KeyConfigure::KeyConfigure[6];
+			_HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_L1[0] = Dialog_KeyConfigure::KeyConfigure[7];
+			_HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_L2[0] = Dialog_KeyConfigure::KeyConfigure[8];
+			_HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_L3[0] = Dialog_KeyConfigure::KeyConfigure[9];
+			_HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_Start[0] = Dialog_KeyConfigure::KeyConfigure[10];
+			_HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_Select[0] = Dialog_KeyConfigure::KeyConfigure[11];
+			_HPS2X64._SYSTEM._PS1SYSTEM._SIO.LeftAnalog_X[0] = Dialog_KeyConfigure::KeyConfigure[12];
+			_HPS2X64._SYSTEM._PS1SYSTEM._SIO.LeftAnalog_Y[0] = Dialog_KeyConfigure::KeyConfigure[13];
+			_HPS2X64._SYSTEM._PS1SYSTEM._SIO.RightAnalog_X[0] = Dialog_KeyConfigure::KeyConfigure[14];
+			_HPS2X64._SYSTEM._PS1SYSTEM._SIO.RightAnalog_Y[0] = Dialog_KeyConfigure::KeyConfigure[15];
+		}
+	}
+	else
+	{
+		cout << "\n*** hps2x64: *ERROR* no game controller detected!!! ***\n";
 	}
 	
 	_MenuWasClicked = 1;
 }
+
 void hps2x64::OnClick_Controllers1_Configure ( int i )
 {
 	//MenuClicked m;
@@ -3259,25 +3180,39 @@ void hps2x64::OnClick_Controllers1_Configure ( int i )
 	Dialog_KeyConfigure::KeyConfigure [ 13 ] = _HPS2X64._SYSTEM._PS1SYSTEM._SIO.LeftAnalog_Y [ 1 ];
 	Dialog_KeyConfigure::KeyConfigure [ 14 ] = _HPS2X64._SYSTEM._PS1SYSTEM._SIO.RightAnalog_X [ 1 ];
 	Dialog_KeyConfigure::KeyConfigure [ 15 ] = _HPS2X64._SYSTEM._PS1SYSTEM._SIO.RightAnalog_Y [ 1 ];
-	
-	if ( Dialog_KeyConfigure::Show_ConfigureKeysDialog ( 1 ) )
+
+	// first make sure that there are joysticks connected
+	if (!DJoySticks::gameControllers.size())
 	{
-		_HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_X [ 1 ] = Dialog_KeyConfigure::KeyConfigure [ 0 ];
-		_HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_O [ 1 ] = Dialog_KeyConfigure::KeyConfigure [ 1 ];
-		_HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_Triangle [ 1 ] = Dialog_KeyConfigure::KeyConfigure [ 2 ];
-		_HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_Square [ 1 ] = Dialog_KeyConfigure::KeyConfigure [ 3 ];
-		_HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_R1 [ 1 ] = Dialog_KeyConfigure::KeyConfigure [ 4 ];
-		_HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_R2 [ 1 ] = Dialog_KeyConfigure::KeyConfigure [ 5 ];
-		_HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_R3 [ 1 ] = Dialog_KeyConfigure::KeyConfigure [ 6 ];
-		_HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_L1 [ 1 ] = Dialog_KeyConfigure::KeyConfigure [ 7 ];
-		_HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_L2 [ 1 ] = Dialog_KeyConfigure::KeyConfigure [ 8 ];
-		_HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_L3 [ 1 ] = Dialog_KeyConfigure::KeyConfigure [ 9 ];
-		_HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_Start [ 1 ] = Dialog_KeyConfigure::KeyConfigure [ 10 ];
-		_HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_Select [ 1 ] = Dialog_KeyConfigure::KeyConfigure [ 11 ];
-		_HPS2X64._SYSTEM._PS1SYSTEM._SIO.LeftAnalog_X [ 1 ] = Dialog_KeyConfigure::KeyConfigure [ 12 ];
-		_HPS2X64._SYSTEM._PS1SYSTEM._SIO.LeftAnalog_Y [ 1 ] = Dialog_KeyConfigure::KeyConfigure [ 13 ];
-		_HPS2X64._SYSTEM._PS1SYSTEM._SIO.RightAnalog_X [ 1 ] = Dialog_KeyConfigure::KeyConfigure [ 14 ];
-		_HPS2X64._SYSTEM._PS1SYSTEM._SIO.RightAnalog_Y [ 1 ] = Dialog_KeyConfigure::KeyConfigure [ 15 ];
+		Playstation1::SIO::DJoy.ReInit();
+	}
+	
+	// make sure there is a game controller connected before showing dialog
+	if (DJoySticks::gameControllers.size())
+	{
+		if (Dialog_KeyConfigure::Show_ConfigureKeysDialog(1))
+		{
+			_HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_X[1] = Dialog_KeyConfigure::KeyConfigure[0];
+			_HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_O[1] = Dialog_KeyConfigure::KeyConfigure[1];
+			_HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_Triangle[1] = Dialog_KeyConfigure::KeyConfigure[2];
+			_HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_Square[1] = Dialog_KeyConfigure::KeyConfigure[3];
+			_HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_R1[1] = Dialog_KeyConfigure::KeyConfigure[4];
+			_HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_R2[1] = Dialog_KeyConfigure::KeyConfigure[5];
+			_HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_R3[1] = Dialog_KeyConfigure::KeyConfigure[6];
+			_HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_L1[1] = Dialog_KeyConfigure::KeyConfigure[7];
+			_HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_L2[1] = Dialog_KeyConfigure::KeyConfigure[8];
+			_HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_L3[1] = Dialog_KeyConfigure::KeyConfigure[9];
+			_HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_Start[1] = Dialog_KeyConfigure::KeyConfigure[10];
+			_HPS2X64._SYSTEM._PS1SYSTEM._SIO.Key_Select[1] = Dialog_KeyConfigure::KeyConfigure[11];
+			_HPS2X64._SYSTEM._PS1SYSTEM._SIO.LeftAnalog_X[1] = Dialog_KeyConfigure::KeyConfigure[12];
+			_HPS2X64._SYSTEM._PS1SYSTEM._SIO.LeftAnalog_Y[1] = Dialog_KeyConfigure::KeyConfigure[13];
+			_HPS2X64._SYSTEM._PS1SYSTEM._SIO.RightAnalog_X[1] = Dialog_KeyConfigure::KeyConfigure[14];
+			_HPS2X64._SYSTEM._PS1SYSTEM._SIO.RightAnalog_Y[1] = Dialog_KeyConfigure::KeyConfigure[15];
+		}
+	}
+	else
+	{
+		cout << "\n*** hps2x64: *ERROR* no game controller detected!!! ***\n";
 	}
 	
 	_MenuWasClicked = 1;
@@ -4032,7 +3967,7 @@ void hps2x64::SaveState ( string FilePath )
 	// We need to prompt for the file to save state to
 	if ( !FilePath.compare ( "" ) )
 	{
-		FilePath = ProgramWindow->ShowFileSaveDialog_Savestate ();
+		FilePath = ProgramWindow->ShowFileSaveDialog ();
 	}
 
 	ofstream OutputFile ( FilePath.c_str (), ios::binary );
@@ -4091,10 +4026,10 @@ void hps2x64::LoadState ( string FilePath )
 	//_SYSTEM._CD.cd_image.WaitForAllReadsComplete ();
 	
 	////////////////////////////////////////////////////////
-	// We need to prompt for the file to load the save state from
+	// We need to prompt for the file to save state to
 	if ( !FilePath.compare( "" ) )
 	{
-		FilePath = ProgramWindow->ShowFileOpenDialog_Savestate ();
+		FilePath = ProgramWindow->ShowFileOpenDialog ();
 	}
 
 	ifstream InputFile ( FilePath.c_str (), ios::binary );
@@ -4155,15 +4090,24 @@ void hps2x64::LoadBIOS ( string FilePath )
 	if ( !FilePath.compare ( "" ) )
 	{
 		cout << "Prompting for BIOS file.\n";
-		FilePath = ProgramWindow->ShowFileOpenDialog_BIOS ();
+		FilePath = ProgramWindow->ShowFileOpenDialog ();
 	}
-	
+
+	if (!FilePath.compare(""))
+	{
+		cout << "\nNo file was chosen.\n";
+		return;
+	}
+
 	cout << "Loading into memory.\n";
 
 	if ( !_SYSTEM.LoadTestProgramIntoBios ( FilePath.c_str() ) )
 	{
 		// run the test code
 		cout << "\nProblem loading test code.\n";
+
+		// clearing last bios loaded into memory
+		sLastBiosPath = "";
 		
 #ifdef INLINE_DEBUG
 		debug << "\r\nProblem loading test code.";
@@ -4175,8 +4119,8 @@ void hps2x64::LoadBIOS ( string FilePath )
 		// code loaded successfully
 		cout << "\nCode loaded successfully into BIOS.\n";
 
-		// set the path for the bios
-		BiosPath = FilePath;
+		// setting path as the last bios loaded into memory
+		sLastBiosPath = FilePath;
 
 		NVMPath = GetPath ( FilePath.c_str () ) + GetFile ( FilePath.c_str () ) + ".nvm";
 		NVMPath.copy ( _SYSTEM.Last_NVM_Path, 2048 );
@@ -4210,8 +4154,8 @@ string hps2x64::LoadDisk ( string FilePath )
 	// We need to prompt for the TEST program to run
 	if ( !FilePath.compare ( "" ) )
 	{
-		cout << "Prompting for Disk Image file.\n";
-		FilePath = ProgramWindow->ShowFileOpenDialog_Image ();
+		cout << "Prompting for BIOS file.\n";
+		FilePath = ProgramWindow->ShowFileOpenDialog ();
 	}
 	
 	
@@ -4236,19 +4180,11 @@ void hps2x64::LoadConfig ( string ConfigFileName )
 		return;
 	}
 
-	json jsonSettings;
+	nlohmann::json jsonSettings;
 	i >> jsonSettings;
 
-	BiosPath = jsonSettings["BiosPath"];
-
-	cout << "\n\nLoading BIOS PATH: " << BiosPath << "\n";
-	if (!(BiosPath.empty()))
-	{
-		LoadBIOS(BiosPath);
-	}
-
 	// save the controller settings //
-	
+
 	// pad 1 //
 
 	_SYSTEM._PS1SYSTEM._SIO.ControlPad_Type [ 0 ] = jsonSettings [ "Controllers" ] [ "Pad1" ] [ "DigitalAnalog" ];
@@ -4309,7 +4245,15 @@ void hps2x64::LoadConfig ( string ConfigFileName )
 	_SYSTEM._PS1SYSTEM._SPU.NextPlayBuffer_Size = jsonSettings [ "SPU" ] [ "BufferSize" ];
 	_SYSTEM._PS1SYSTEM._SPU.GlobalVolume = jsonSettings [ "SPU" ] [ "GlobalVolume" ];
 
+	// Interface //
 
+	sLastBiosPath = jsonSettings["Interface"]["LastBiosPath"];
+
+	// should probably also go ahead and make an attempt to load the last bios file here also if it exists
+	if (sLastBiosPath.compare(""))
+	{
+		LoadBIOS(sLastBiosPath);
+	}
 }
 
 
@@ -4318,7 +4262,6 @@ void hps2x64::SaveConfig ( string ConfigFileName )
 	// save configuration as json (using nlohmann json)
 	nlohmann::json jsonSettings;
 
-	jsonSettings["BiosPath"] = BiosPath;
 
 	// save the controller settings //
 
@@ -4382,6 +4325,10 @@ void hps2x64::SaveConfig ( string ConfigFileName )
 	jsonSettings [ "SPU" ] [ "BufferSize" ] = _SYSTEM._PS1SYSTEM._SPU.NextPlayBuffer_Size;
 	jsonSettings [ "SPU" ] [ "GlobalVolume" ] = _SYSTEM._PS1SYSTEM._SPU.GlobalVolume;
 
+	// Interface //
+
+	jsonSettings["Interface"]["LastBiosPath"] = sLastBiosPath;
+
 
 	// write the settings to file as json //
 
@@ -4404,7 +4351,10 @@ void hps2x64::DebugWindow_Update ()
 	_SYSTEM._GPU.DebugWindow_Update ();
 	_SYSTEM._VU0.VU0.DebugWindow_Update ( 0 );
 	_SYSTEM._VU1.VU1.DebugWindow_Update ( 1 );
-	
+
+	_SYSTEM._IPU.DebugWindow_Update();
+	_SYSTEM._GPU.DebugWindow_Update2();
+
 	//_SYSTEM._SPU.DebugWindow_Update ();
 	//_SYSTEM._CD.DebugWindow_Update ();
 

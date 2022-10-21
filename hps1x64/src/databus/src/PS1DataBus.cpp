@@ -1269,7 +1269,14 @@ void DataBus::ConnectRegs_Write ( u32 AddressStart, PS1_BusInterface_Write Callb
 
 u32 DataBus::InvalidAddress_Read ( u32 Address )
 {
-	if ( ( Address >> 8 ) == 0x1f8010 )
+	if (((Address & 0x1fffffff) >> 8) < 0x1f8010)
+	{
+		// unsure if this is R3000A data cache mirror or not //
+		return 0;
+	}
+
+
+	if (((Address & 0x1fffffff) >> 8) == 0x1f8010)
 	{
 		// pull from reg cache
 		return _BUS->RegCache_0x1f8010 [ ( Address >> 2 ) & 0x3f ];
@@ -1463,6 +1470,12 @@ u32 DataBus::InvalidAddress_Read ( u32 Address )
 
 void DataBus::InvalidAddress_Write ( u32 Address, u32 Data, u32 Mask )
 {
+	if (((Address & 0x1fffffff) >> 8) < 0x1f8010)
+	{
+		// unsure if this is R3000A data cache mirror or not //
+		return;
+	}
+
 	if ( ( ( Address & 0x1fffffff ) >> 8 ) == 0x1f8010 )
 	{
 		// pull from reg cache
@@ -1646,7 +1659,7 @@ void DataBus::InvalidAddress_Write ( u32 Address, u32 Data, u32 Mask )
 	debug << ";INVALID; WRITE; ADDRESS = " << hex << setw ( 8 ) << Address;
 #endif
 
-			cout << "\nhps1x64: WRITE to invalid address. PC=" << hex << *_DebugPC << " Address=" << Address << " Cycle=" << dec << *_DebugCycleCount << "\n";
+			cout << "\nhps1x64: WRITE to invalid address. PC=" << hex << *_DebugPC << " Address=" << Address << " Data=" << Data << " Cycle#" << dec << *_DebugCycleCount << "\n";
 			break;
 	
 	}

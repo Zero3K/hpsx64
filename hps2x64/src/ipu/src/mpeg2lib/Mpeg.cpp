@@ -47,16 +47,15 @@ using namespace Playstation2;
 
 
 //#define VERBOSE_DEBUG_IPU
+//#define VERBOSE_INTRA_NON
 
 
 //#define INLINE_DEBUG_IPU
 
-//#define VERBOSE_INTRA_NON
 
 #define ENABLE_SSE_IPU
 
 
-//#define USE_PEEK_LE
 
 
 //extern __aligned16 decoder_t decoder;
@@ -99,13 +98,17 @@ int get_macroblock_modes()
 	int macroblock_modes;
 	const MBtab * tab;
 
+#ifdef VERBOSE_DEBUG_IPU
+	cout << "\nget_macroblock_modes";
+#endif
+
 	switch (decoder->coding_type)
 	{
 		case I_TYPE:
 			macroblock_modes = UBITS(2);
 
 #ifdef VERBOSE_DEBUG_IPU
-	cout << "\nI_TYPE";
+	cout << " I_TYPE";
 	cout << " UBITS(2)=" << hex << macroblock_modes;
 #endif
 
@@ -123,7 +126,11 @@ int get_macroblock_modes()
 			
 			// the length is supposed to go into upper 16-bits ??
 			macroblock_modes |= ( ( (u32) tab->len ) << 16 );
-			
+
+#ifdef VERBOSE_DEBUG_IPU
+			cout << " OUT=" << hex << macroblock_modes;
+#endif
+
 			return macroblock_modes;
 
 		case P_TYPE:
@@ -135,7 +142,7 @@ int get_macroblock_modes()
 #endif
 
 #ifdef VERBOSE_DEBUG_IPU
-	cout << "\nP_TYPE";
+	cout << " P_TYPE";
 	cout << " UBITS(6)=" << hex << macroblock_modes;
 #endif
 
@@ -163,18 +170,26 @@ int get_macroblock_modes()
 
 				// the length is supposed to go into upper 16-bits ??
 				macroblock_modes |= ( ( (u32) tab->len ) << 16 );
-				
+
+#ifdef VERBOSE_DEBUG_IPU
+		cout << " OUT=" << hex << macroblock_modes;
+#endif
+
 				return macroblock_modes;
 			}
 			else if (decoder->frame_pred_frame_dct)
 			{
 				// commenting this out since it does not look like it should return this in the return value ??
-				if (macroblock_modes & MACROBLOCK_MOTION_FORWARD)
-					macroblock_modes |= MC_FRAME;
+				//if (macroblock_modes & MACROBLOCK_MOTION_FORWARD)
+				//	macroblock_modes |= MC_FRAME;
 
 				// the length is supposed to go into upper 16-bits ??
 				macroblock_modes |= ( ( (u32) tab->len ) << 16 );
-				
+
+#ifdef VERBOSE_DEBUG_IPU
+	cout << " OUT=" << hex << macroblock_modes;
+#endif
+
 				return macroblock_modes;
 			}
 			else
@@ -191,7 +206,11 @@ int get_macroblock_modes()
 
 				// the length is supposed to go into upper 16-bits ??
 				macroblock_modes |= ( ( (u32) tab->len ) << 16 );
-				
+
+#ifdef VERBOSE_DEBUG_IPU
+	cout << " OUT=" << hex << macroblock_modes;
+#endif
+
 				return macroblock_modes;
 			}
 
@@ -204,7 +223,7 @@ int get_macroblock_modes()
 #endif
 
 #ifdef VERBOSE_DEBUG_IPU
-	cout << "\nB_TYPE";
+	cout << " B_TYPE";
 	cout << " UBITS(6)=" << hex << macroblock_modes;
 #endif
 
@@ -232,6 +251,9 @@ int get_macroblock_modes()
 #ifdef INLINE_DEBUG_IPU
 	IPU::debug << " Output=" << hex << (macroblock_modes | (tab->len << 16));
 #endif
+#ifdef VERBOSE_DEBUG_IPU
+	cout << " OUT=" << hex << (macroblock_modes | (tab->len << 16));
+#endif
 
 				return (macroblock_modes | (tab->len << 16));
 			}
@@ -244,10 +266,13 @@ int get_macroblock_modes()
 				/* if (! (macroblock_modes & MACROBLOCK_INTRA)) */
 				
 				// commenting this out since it does not look like it should be there for ps2?
-				macroblock_modes |= MC_FRAME;
+				//macroblock_modes |= MC_FRAME;
 				
 #ifdef INLINE_DEBUG_IPU
 	IPU::debug << " Output=" << hex << (macroblock_modes | (tab->len << 16));
+#endif
+#ifdef VERBOSE_DEBUG_IPU
+	cout << " OUT=" << hex << (macroblock_modes | (tab->len << 16));
 #endif
 
 				return (macroblock_modes | (tab->len << 16));
@@ -275,6 +300,9 @@ intra:
 #ifdef INLINE_DEBUG_IPU
 	IPU::debug << " Output=" << hex << (macroblock_modes | (tab->len << 16));
 #endif
+#ifdef VERBOSE_DEBUG_IPU
+	cout << " OUT=" << hex << (macroblock_modes | (tab->len << 16));
+#endif
 
 				return (macroblock_modes | (tab->len << 16));
 			}
@@ -289,11 +317,16 @@ intra:
 			//DevCon.Warning(" Rare MPEG command! ");
 
 #ifdef VERBOSE_DEBUG_IPU
-	cout << "\nD_TYPE";
+	cout << " D_TYPE";
 	cout << " GETBITS(1)=" << hex << macroblock_modes;
 #endif
 			
 			if (macroblock_modes == 0) return 0;   // error
+
+#ifdef VERBOSE_DEBUG_IPU
+	cout << " OUT=" << hex << (MACROBLOCK_INTRA | (1 << 16));
+#endif
+
 			return (MACROBLOCK_INTRA | (1 << 16));
 
 		default:
@@ -336,6 +369,7 @@ int /* __fi */ get_motion_delta(const int f_code)
 	u16 code = UBITS(16);
 
 #ifdef VERBOSE_DEBUG_IPU
+	cout << "\nget_motion_delta";
 	cout << " UBITS(16)=" << hex << code;
 #endif
 
@@ -346,6 +380,11 @@ int /* __fi */ get_motion_delta(const int f_code)
 	if ((code & 0x8000))
 	{
 		DUMPBITS(1);
+
+#ifdef VERBOSE_DEBUG_IPU
+	cout << " OUT=" << hex << 0x00010000;
+#endif
+
 		return 0x00010000;
 	}
 	else if ((code & 0xf000) || ((code & 0xfc00) == 0x0c00))
@@ -362,7 +401,11 @@ int /* __fi */ get_motion_delta(const int f_code)
 
 	sign = SBITS(1);
 	DUMPBITS(1);
-	
+
+#ifdef VERBOSE_DEBUG_IPU
+	cout << " OUT=" << hex << ((((delta ^ sign) - sign) & 0xffff) | ((tab->len + 1) << 16));
+#endif
+
 	// modification: added the "& 0xffff" (vs pcsx2 code) since for some reason gives me the wrong value here otherwise
 	// modification: also added 1 to tab->len because it was returning one less
 	return ( (((delta ^ sign) - sign) & 0xffff ) | ((tab->len+1) << 16));
@@ -371,9 +414,18 @@ int /* __fi */ get_motion_delta(const int f_code)
 // commented out "__fi"
 int /* __fi */ get_dmv()
 {
+#ifdef VERBOSE_DEBUG_IPU
+	cout << "\nget_dmv";
+	cout << " UBITS(2)=" << hex << UBITS(2);
+#endif
+
 	const DMVtab* tab = DMV_2 + UBITS(2);
 	DUMPBITS(tab->len);
-	
+
+#ifdef VERBOSE_DEBUG_IPU
+	cout << " OUT=" << hex << ((((s32)tab->dmv) & 0xffff) | (tab->len << 16));
+#endif
+
 	// tab->dmv could be -1, so masked it to 16-bits
 	return ( ( ((s32)tab->dmv) & 0xffff ) | (tab->len << 16) );
 }
@@ -384,6 +436,12 @@ int get_macroblock_address_increment()
 	
 	u16 code = UBITS(16);
 
+#ifdef VERBOSE_DEBUG_IPU
+	cout << "\nget_macroblock_address_increment";
+	cout << " UBITS(16)=" << hex << code;
+#endif
+
+
 	if (code >= 4096)
 		mba = MBA.mba5 + (UBITS(5) - 2);
 	else if (code >= 768)
@@ -392,12 +450,22 @@ int get_macroblock_address_increment()
 	{
 		case 8:		/* macroblock_escape */
 			DUMPBITS(11);
+
+#ifdef VERBOSE_DEBUG_IPU
+			cout << " OUT=" << hex << 0xb0023;
+#endif
+
 			return 0xb0023;
 
 		case 15:	/* macroblock_stuffing (MPEG1 only) */
 			if (decoder->mpeg1)
 			{
 				DUMPBITS(11);
+
+#ifdef VERBOSE_DEBUG_IPU
+	cout << " OUT=" << hex << 0xb0022;
+#endif
+
 				return 0xb0022;
 			}
 
@@ -406,6 +474,10 @@ int get_macroblock_address_increment()
 	}
 
 	DUMPBITS(mba->len);
+
+#ifdef VERBOSE_DEBUG_IPU
+	cout << " OUT=" << hex << ((mba->mba + 1) | (mba->len << 16));
+#endif
 
 	return ((mba->mba + 1) | (mba->len << 16));
 }
@@ -459,13 +531,13 @@ static __fi int get_chroma_dc_dct_diff()
 	}
 	else
 	{
-	    code = UBITS(10) - 0x3e0;
-	    size = DCtable.chrom1[code].size;
+		code = UBITS(10) - 0x3e0;
+		size = DCtable.chrom1[code].size;
 		DUMPBITS(DCtable.chrom1[code].len);
 	}
 	
 	if (size==0)
-	    dc_diff = 0;
+		dc_diff = 0;
 	else
 	{
 		dc_diff = GETBITS(size);
@@ -479,11 +551,11 @@ static __fi int get_chroma_dc_dct_diff()
 	return dc_diff;
 }
 
-#define SATURATE(val)					\
-do {							\
-	 if (((u32)(val + 2048) > 4095))	\
-	val = (((s32)val) >> 31) ^ 2047;			\
-} while (0)
+static /*__fi*/ void SATURATE(int& val)
+{
+	if ((u32)(val + 2048) > 4095)
+		val = (val >> 31) ^ 2047;
+}
 
 static bool get_intra_block()
 {
@@ -544,19 +616,19 @@ static bool get_intra_block()
 			tab = &DCT.tab2[(code >> 4) - 16];
 		}
 		else if (code >= 128)
-		{    
+		{
 			tab = &DCT.tab3[(code >> 3) - 16];
 		}
 		else if (code >= 64)
-		{    
+		{
 			tab = &DCT.tab4[(code >> 2) - 16];
 		}
 		else if (code >= 32)
-		{    
+		{
 			tab = &DCT.tab5[(code >> 1) - 16];
 		}
 		else if (code >= 16)
-		{    
+		{
 			tab = &DCT.tab6[code - 16];
 		}
 		else
@@ -682,7 +754,7 @@ static bool get_non_intra_block(int * last)
 				tab = &DCT.tab0[(code >> 8) - 4];
 			}
 			else if (code >= 512)
-			{		
+			{
 				tab = &DCT.tab1[(code >> 6) - 8];
 			}
 
@@ -692,23 +764,23 @@ static bool get_non_intra_block(int * last)
 			// have lots of room to spare.
 
 			else if (code >= 256)
-			{		
+			{
 				tab = &DCT.tab2[(code >> 4) - 16];
 			}
 			else if (code >= 128)
-			{		
+			{
 				tab = &DCT.tab3[(code >> 3) - 16];
 			}
 			else if (code >= 64)
-			{		
+			{
 				tab = &DCT.tab4[(code >> 2) - 16];
 			}
 			else if (code >= 32)
-			{		
+			{
 				tab = &DCT.tab5[(code >> 1) - 16];
 			}
 			else if (code >= 16)
-			{		
+			{
 				tab = &DCT.tab6[code - 16];
 			}
 			else
@@ -1093,11 +1165,7 @@ finish_idec:
 
 		// replace of pcsx2 specific code
 		//ipuRegs.top = BigEndian(ipuRegs.top);
-#ifdef USE_PEEK_LE
-		IPU::_IPU->Regs.TOP.BSTOP = IPU::EndianSwap32 ( PEEKBITS ( 32 ) );
-#else
 		IPU::_IPU->Regs.TOP.BSTOP = PEEKBITS ( 32 );
-#endif
 
 		
 		break;
@@ -1229,7 +1297,7 @@ finish_idec:
 #ifdef ENABLE_SSE_IPU
 				__m128i zeroreg = _mm_setzero_si128();
 
-				for (uint i = 0; i < (256+64+64) / 32; ++i)
+				for (uint i = 0; i < (256+64+64) / 32; i++)
 				{
 					//*d++ = *s++;
 					__m128i woot1 = _mm_load_si128((__m128i*)s);
@@ -1261,6 +1329,11 @@ finish_idec:
 				{
 				case 0:
 					decoder->coded_block_pattern = get_coded_block_pattern();  // max 9bits
+
+#ifdef VERBOSE_INTRA_NON
+	cout << " CBP=" << hex << decoder->coded_block_pattern;
+#endif
+
 				case 1:
 					if (decoder->coded_block_pattern & 0x20)
 					{
@@ -1390,11 +1463,7 @@ finish_idec:
 		
 		// replace of pcsx2 specific code
 		//ipuRegs.top = BigEndian(ipuRegs.top);
-#ifdef USE_PEEK_LE
-		IPU::_IPU->Regs.TOP.BSTOP = IPU::EndianSwap32 ( PEEKBITS ( 32 ) );
-#else
 		IPU::_IPU->Regs.TOP.BSTOP = PEEKBITS ( 32 );
-#endif
 		
 		
 		break;

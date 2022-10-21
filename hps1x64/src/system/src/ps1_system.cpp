@@ -464,6 +464,17 @@ void Playstation1::System::Test ( void )
 }
 
 
+#ifdef PS2_COMPILE
+
+void Playstation1::System::GetNextStopCycle(void)
+{
+	ullStopCycle = NextEvent_Cycle;
+	//if ( ( Playstation2::System::_SYSTEM->NextEvent_Cycle >> 2 ) < ullStopCycle ) { ullStopCycle = ( Playstation2::System::_SYSTEM->NextEvent_Cycle >> 2 ); }
+	if ((Playstation2::System::_SYSTEM->_CPU.CycleCount >> 2) < ullStopCycle) { ullStopCycle = (Playstation2::System::_SYSTEM->_CPU.CycleCount >> 2); }
+}
+
+#endif
+
 void Playstation1::System::GetNextEventCycle ( void )
 {
 #ifdef INLINE_DEBUG_NEXT_EVENT
@@ -506,11 +517,9 @@ void Playstation1::System::GetNextEventCycle ( void )
 	if ( _SPU2.NextEvent_Cycle < NextEvent_Cycle ) { NextEvent_Cycle = _SPU2.NextEvent_Cycle; NextEvent_Idx = _SPU2.NextEvent_Idx; }
 	if ( _USB.NextEvent_Cycle < NextEvent_Cycle ) { NextEvent_Cycle = _USB.NextEvent_Cycle; NextEvent_Idx = _USB.NextEvent_Idx; }
 	
-	//if ( ( Playstation2::System::_SYSTEM->NextEvent_Cycle >> 2 ) < NextEvent_Cycle ) { NextEvent_Cycle = ( Playstation2::System::_SYSTEM->NextEvent_Cycle >> 2 ); NextEvent_Idx = Playstation2::System::_SYSTEM->NextEvent_Idx2; }
-	//if ( ( Playstation2::System::_SYSTEM->_CPU.CycleCount >> 2 ) < NextEvent_Cycle ) { NextEvent_Cycle = ( Playstation2::System::_SYSTEM->_CPU.CycleCount >> 2 ); NextEvent_Idx = Playstation2::System::_SYSTEM->NextEvent_Idx2; }
-	ullStopCycle = NextEvent_Cycle;
-	if ( ( Playstation2::System::_SYSTEM->NextEvent_Cycle >> 2 ) < ullStopCycle ) { ullStopCycle = ( Playstation2::System::_SYSTEM->NextEvent_Cycle >> 2 ); }
-	if ( ( Playstation2::System::_SYSTEM->_CPU.CycleCount >> 2 ) < ullStopCycle ) { ullStopCycle = ( Playstation2::System::_SYSTEM->_CPU.CycleCount >> 2 ); }
+	//ullStopCycle = NextEvent_Cycle;
+	//if ( ( Playstation2::System::_SYSTEM->_CPU.CycleCount >> 2 ) < ullStopCycle ) { ullStopCycle = ( Playstation2::System::_SYSTEM->_CPU.CycleCount >> 2 ); }
+	GetNextStopCycle();
 	
 #endif
 }
@@ -524,84 +533,6 @@ void Playstation1::System::RunDevices ()
 	debug << " EventFunc [ NextEvent_Idx ]=" << hex << (u64) (EventFunc [ NextEvent_Idx ]);
 #endif
 
-/*
-#ifdef INLINE_DEBUG_DEVICE
-	debug << "; TIMERS";
-#endif
-
-		// *important* must do timer interrupt events first
-		// this is because the GPU updates the timers, but you must catch the timer transition so you don't miss it
-		// would probably make more sense for the timers to update themselves every so often, though
-		_TIMERS.Run ();
-
-#ifdef INLINE_DEBUG_DEVICE
-	debug << "; GPU";
-#endif
-
-		// ps2 does not have a ps1 gpu, but would still need to update timers
-		_GPU.Run ();
-
-
-// only run CD and SPU1 events if not compiling for ps2 for now
-#ifndef PS2_COMPILE
-
-#ifdef INLINE_DEBUG_DEVICE
-	debug << "; CD";
-#endif
-
-		_CD.Run ();
-
-#ifdef INLINE_DEBUG_DEVICE
-	debug << "; SPU";
-#endif
-
-		_SPU.Run ();
-		
-#endif
-
-
-
-#ifdef INLINE_DEBUG_DEVICE
-	debug << "; PIO";
-#endif
-
-		_PIO.Run ();
-	
-#ifdef INLINE_DEBUG_DEVICE
-	debug << "; DMA";
-#endif
-
-		_DMA.Run ();
-	
-#ifdef INLINE_DEBUG_DEVICE
-	debug << "; SIO";
-#endif
-
-		_SIO.Run ();
-
-
-#ifdef PS2_COMPILE
-
-#ifdef INLINE_DEBUG_DEVICE
-	debug << "; CDVD";
-#endif
-
-		_CDVD.Run ();
-
-#ifdef INLINE_DEBUG_DEVICE
-	debug << "; SPU2";
-#endif
-
-		_SPU2.Run ();
-
-#ifdef INLINE_DEBUG_DEVICE
-	debug << "; USB";
-#endif
-
-		_USB.Run ();
-		
-#endif
-*/
 
 		EventFunc [ NextEvent_Idx ] ();
 
@@ -663,40 +594,14 @@ void Playstation1::System::RunEvents ()
 	tCycleCount = _CPU.CycleCount;
 #endif
 	
-// if compiling for ps2, need this for now since transfer can come from SIF at any time
-/*
-#ifdef PS2_COMPILE
-	// update the CPU cycle count based on bus activity
-	// check if the bus is occupied
-	//if ( _CPU.CycleCount < _BUS.BusyUntil_Cycle )
-	if ( tCycleCount < _BUS.BusyUntil_Cycle )
-	{
-		//cout << "\nhps1x64 ALERT: CycleCount has not reached BUS BusyUntil_Cycle. Cycle#" << dec << _CPU.CycleCount << "\n";
-		
-		// if the bus is busy, on a PS1, the cpu waits
-		//_CPU.CycleCount = _BUS.BusyUntil_Cycle;
-		tCycleCount = _BUS.BusyUntil_Cycle;
-	}
-#endif
-*/
-
-	/*
-	if ( NextEvent_Cycle <= tCycleCount )
-	{
-#ifdef INLINE_DEBUG_DEVICE
-	debug << "\r\nPS1System::RunEvents";
-	debug << " SystemCycle#" << dec << CycleCount;
-	debug << " CPUCycle#" << dec << _CPU.CycleCount;
-#endif
-	}
-	*/
 	
 	// only run components when they are busy with something
 	// should run event for cycle before running cpu for cycle
 #ifdef ENABLE_FIXED_CYCLE_COUNT
 	while ( NextEvent_Cycle <= tCycleCount )
 #else
-	while ( NextEvent_Cycle <= _CPU.CycleCount )
+	//while ( NextEvent_Cycle <= _CPU.CycleCount )
+	while (NextEvent_Cycle < _CPU.CycleCount)
 #endif
 	{
 #ifdef INLINE_DEBUG_RUN_DEVICES
@@ -705,39 +610,10 @@ void Playstation1::System::RunEvents ()
 	debug << " CPU:CycleCount=" << dec << _CPU.CycleCount;
 #endif
 
-		// save the cycle to run events until
-		//tCycleCount = _CPU.CycleCount;
-
-		//do
-		//{
-			// check if the next event is past where we can run system until
-			// can be compiled with ps1 for testing or consistency, but MUST be compiled with ps2 probably
-			
-			// set the cycle count as the cycle the event that was skipped was supposed to happen at
-//#ifndef USE_SYSTEM_CYCLE
-//			_CPU.CycleCount = NextEvent_Cycle;
-//#endif
 			CycleCount = NextEvent_Cycle;
 			
 			RunDevices ();
 				
-			
-			// check if the bus is busy (do this before running DMA device to reach current cycle first)
-			// can't do this for ps2, because need to only run until specified cycle to synchronize with R5900
-			//if ( _CPU.CycleCount < _BUS.BusyUntil_Cycle )
-			/*
-			if ( tCycleCount < _BUS.BusyUntil_Cycle )
-			{
-				// if the bus is busy, on a PS1, the cpu waits
-				tCycleCount = _BUS.BusyUntil_Cycle;
-				//_CPU.CycleCount = _BUS.BusyUntil_Cycle;
-			}
-			*/
-		
-		// } while ( NextEvent_Cycle <= tCycleCount );
-		
-		// restore the current cycle count for CPU
-		//_CPU.CycleCount = tCycleCount;
 	}
 
 	// this must be here so that the current system cycle is at the cpu cycle
@@ -749,6 +625,8 @@ void Playstation1::System::RunEvents ()
 #else
 	CycleCount = _CPU.CycleCount;
 #endif
+
+
 	
 #ifdef INLINE_DEBUG_RUN_DEVICES
 	debug << "\nRunDevicesLoop->DONE";
@@ -774,22 +652,14 @@ void Playstation1::System::Run ()
 #endif
 
 
+
 #ifdef PS2_COMPILE
-#ifdef ENABLE_R3000A_IDLE
-	if ( !_CPU.ulWaitingForInterrupt )
-	{
-#endif
+	// need to know where to stop R3000A and start running R5900 on ps2
+	GetNextStopCycle();
 #endif
 
 
 	_CPU.Run ();
-	
-
-#ifdef PS2_COMPILE
-#ifdef ENABLE_R3000A_IDLE
-	}
-#endif
-#endif
 
 }
 

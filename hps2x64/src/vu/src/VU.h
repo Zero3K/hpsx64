@@ -1052,8 +1052,8 @@ namespace Playstation2
 		// this will need to return how many quadwords were fully read from device out of number requested
 		u32 DMA_ReadBlock ( u64* Data, u32 QuadwordCount );
 		
-		bool DMA_Write_Ready ();
-		bool DMA_Read_Ready ();
+		u64 DMA_Write_Ready ();
+		u64 DMA_Read_Ready ();
 		
 		void Start ( int Number );
 
@@ -2152,8 +2152,8 @@ namespace Playstation2
 		inline static u32 DMA_WriteBlock ( u64* Data, u32 QuadwordCount ) { return _VU0->DMA_WriteBlock ( Data, QuadwordCount ); }
 		//inline static void DMA_ReadBlock ( u64* Data, u32 QuadwordCount ) { _VU0->DMA_ReadBlock ( Data, QuadwordCount ); }
 		
-		inline static bool DMA_Write_Ready () { return _VU0->DMA_Write_Ready (); }
-		inline static bool DMA_Read_Ready () { return _VU0->DMA_Read_Ready (); }
+		inline static u64 DMA_Write_Ready () { return _VU0->DMA_Write_Ready (); }
+		inline static u64 DMA_Read_Ready () { return _VU0->DMA_Read_Ready (); }
 		
 		// run from main thread
 		static void sRun () { _VU0->Run (); }
@@ -2208,8 +2208,8 @@ namespace Playstation2
 		inline static u32 DMA_WriteBlock ( u64* Data, u32 QuadwordCount ) { return _VU1->DMA_WriteBlock ( Data, QuadwordCount ); }
 		inline static u32 DMA_ReadBlock ( u64* Data, u32 QuadwordCount ) { return _VU1->DMA_ReadBlock ( Data, QuadwordCount ); }
 		
-		inline static bool DMA_Write_Ready () { return _VU1->DMA_Write_Ready (); }
-		inline static bool DMA_Read_Ready () { return _VU1->DMA_Read_Ready (); }
+		inline static u64 DMA_Write_Ready () { return _VU1->DMA_Write_Ready (); }
+		inline static u64 DMA_Read_Ready () { return _VU1->DMA_Read_Ready (); }
 		
 		// run function for VU1
 		static void sRun ();

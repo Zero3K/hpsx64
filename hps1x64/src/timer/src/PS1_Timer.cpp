@@ -859,7 +859,7 @@ void Timers::Update_NextEventCycle ()
 	for ( int i = 0; i < c_iNumberOfChannels; i++ )
 	{
 		//if ( TheTimers [ i ].NextEvent_Cycle > *_SystemCycleCount && ( TheTimers [ i ].NextEvent_Cycle < NextEvent_Cycle || NextEvent_Cycle <= *_SystemCycleCount ) )
-		if ( TheTimers [ i ].NextEvent_Cycle <= NextEvent_Cycle )
+		if ( TheTimers [ i ].NextEvent_Cycle < NextEvent_Cycle )
 		{
 			// the next event is the next event for device
 			NextEvent_Cycle = TheTimers [ i ].NextEvent_Cycle;
@@ -867,7 +867,7 @@ void Timers::Update_NextEventCycle ()
 	}
 
 	//if ( NextEvent_Cycle > *_SystemCycleCount && ( NextEvent_Cycle < *_NextSystemEvent || *_NextSystemEvent <= *_SystemCycleCount ) ) *_NextSystemEvent = NextEvent_Cycle;
-	if ( NextEvent_Cycle <= *_NextSystemEvent )
+	if ( NextEvent_Cycle < *_NextSystemEvent )
 	{
 		*_NextSystemEvent = NextEvent_Cycle;
 		*_NextEventIdx = NextEvent_Idx;
@@ -1871,8 +1871,9 @@ void Timer::SetMode( u32 Data )
 	// write new mode value
 	// bits 10 & 11 & 12 are read only
 	//MODE.Value = Data;
-	MODE.Value = ( MODE.Value & 0x1800 ) | ( Data & 0x63ff );
-	
+	//MODE.Value = ( MODE.Value & 0x1800 ) | ( Data & 0x63ff );
+	MODE.Value = (MODE.Value & 0x1c00) | (Data & 0x63ff);
+
 	// from Nocash PSX Specifications
 	// writing to mode register sets bit 10 (InterruptRequest=No=1)
 	// but only if irq toggle not set?
@@ -3126,7 +3127,7 @@ void Timers::DebugWindow_Enable ()
 	static constexpr int DebugWindow_X = 10;
 	static constexpr int DebugWindow_Y = 10;
 	static constexpr int DebugWindow_Width = 200;
-	static constexpr int DebugWindow_Height = 200;
+	static constexpr int DebugWindow_Height = 220;
 	
 	static constexpr int TimerList_X = 0;
 	static constexpr int TimerList_Y = 0;

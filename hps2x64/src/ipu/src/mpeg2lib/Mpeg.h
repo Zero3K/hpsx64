@@ -64,7 +64,7 @@ enum picture_structure
 /* picture coding type */
 enum picture_coding_type
 {
-	I_TYPE  =1,
+	I_TYPE = 1,
 	P_TYPE = 2,
 	B_TYPE = 3,
 	D_TYPE = 4
@@ -121,15 +121,15 @@ struct decoder_t {
 	/* next inside a slice, and is never used outside of mpeg2_slice() */
 
 	/* DCT coefficients - should be kept aligned ! */
-	s16 DCTblock[64];
+	alignas(16) s16 DCTblock[64];
 
-	u8 niq[64];			//non-intraquant matrix (sequence header)
-	u8 iq[64];			//intraquant matrix (sequence header)
+	alignas(16) u8 niq[64];			//non-intraquant matrix (sequence header)
+	alignas(16) u8 iq[64];			//intraquant matrix (sequence header)
 
-	macroblock_8 mb8;
-	macroblock_16 mb16;
-	macroblock_rgb32 rgb32;
-	macroblock_rgb16 rgb16;
+	alignas(16) macroblock_8 mb8;
+	alignas(16) macroblock_16 mb16;
+	alignas(16) macroblock_rgb32 rgb32;
+	alignas(16) macroblock_rgb16 rgb16;
 
 	uint ipu0_data;		// amount of data in the output macroblock (in QWC)
 	uint ipu0_idx;
@@ -297,7 +297,7 @@ extern int slice (u8 * buffer);
 #define BigEndian64(in) __builtin_bswap64(in) // or we could use the asm function bswap...
 #endif
 
-extern __aligned16 const mpeg2_scan_pack mpeg2_scan;
+alignas(16) extern const mpeg2_scan_pack mpeg2_scan;
 extern const int non_linear_quantizer_scale[];
 
 // The IPU can only do one task at once and never uses other buffers so all mpeg state variables
@@ -307,6 +307,6 @@ extern const int non_linear_quantizer_scale[];
 //extern __aligned16 tIPU_BP g_BP;
 
 extern u32 *ipu_cmd_pos;
-extern decoder_t *decoder;
+alignas(16) extern decoder_t *decoder;
 
 

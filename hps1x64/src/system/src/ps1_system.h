@@ -133,6 +133,9 @@ namespace Playstation1
 #ifdef PS2_COMPILE
 		// cycle number to stop and switch to ps2 at (not necessarily where next event is)
 		u64 ullStopCycle;
+
+		// get next cycle to stop R3000A at and continue running R5900 on ps2
+		void GetNextStopCycle(void);
 #endif
 		
 		// the cycle to exit at

@@ -723,7 +723,7 @@ namespace R3000A
 		static const u32 c_ScratchPadRam_Addr = 0x1f800000;
 
 		// 1KB of D-Cache - not like a regular D-Cache, but more like a RAM unless you reverse I$ and D$
-		static const u32 DCache_Base = 0x1f800000;
+		static const u32 DCache_Base = c_ScratchPadRam_Addr;
 		static const u32 DCache_Size = 0x400;
 		
 		

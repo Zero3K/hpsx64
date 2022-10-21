@@ -46,6 +46,10 @@ namespace Playstation1
 		
 		static WindowClass::Window *ProgramWindow;
 
+		// the last bios path loaded in the interface
+		static string sLastBiosPath;
+
+		// the playstation 1 system
 		System _SYSTEM;
 		
 		// this can't be static

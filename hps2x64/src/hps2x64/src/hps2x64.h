@@ -40,6 +40,10 @@ namespace Playstation2
 		
 		static WindowClass::Window *ProgramWindow;
 
+		// the last bios path loaded in the interface
+		static string sLastBiosPath;
+
+		// the playstation 2 system
 		System _SYSTEM;
 		
 		
@@ -188,7 +192,6 @@ namespace Playstation2
 		
 		static const int c_iExeMaxPathLength = 2048;
 		static string ExecutablePath;
-		static string BiosPath;
 		
 		// events for menu items //
 		
@@ -205,9 +208,11 @@ namespace Playstation2
 		static void OnClick_Debug_Show_PS2_TIMER ( int i );
 		static void OnClick_Debug_Show_PS2_VU0 ( int i );
 		static void OnClick_Debug_Show_PS2_VU1 ( int i );
+		static void OnClick_Debug_Show_PS2_IPU(int i);
 		static void OnClick_Debug_Show_PS2_SPU ( int i );
 		static void OnClick_Debug_Show_PS2_CD ( int i );
 		static void OnClick_Debug_Show_PS2_INTC ( int i );
+		static void OnClick_Debug_Show_PS2_GPU(int i);
 
 		static void OnClick_Debug_Show_All ( int i );
 		static void OnClick_Debug_Show_FrameBuffer ( int i );

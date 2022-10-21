@@ -457,16 +457,7 @@ void Playstation2::System::GetNextEventCycle ( void )
 	if ( _VU1.VU1.eCycleCount < NextEvent_Cycle ) { NextEvent_Cycle = _VU1.VU1.eCycleCount; NextEvent_Idx = _VU1.VU1.NextEvent_Idx; }
 	
 	
-	if ( ( _PS1SYSTEM.NextEvent_Cycle << 2 ) < NextEvent_Cycle ) { NextEvent_Cycle = ( _PS1SYSTEM.NextEvent_Cycle << 2 ); NextEvent_Idx = _PS1SYSTEM.NextEvent_Idx2; }
-	
-#ifdef ENABLE_R3000A_IDLE
-	if ( !_PS1SYSTEM._CPU.ulWaitingForInterrupt )
-	{
-		//if ( _PS1SYSTEM._CPU.bEnable_SkipIdleCycles )
-		//{
-
-#endif
-
+	//if ( ( _PS1SYSTEM.NextEvent_Cycle << 2 ) < NextEvent_Cycle ) { NextEvent_Cycle = ( _PS1SYSTEM.NextEvent_Cycle << 2 ); NextEvent_Idx = _PS1SYSTEM.NextEvent_Idx2; }
 	if ( ( _PS1SYSTEM._CPU.CycleCount << 2 ) < NextEvent_Cycle ) { NextEvent_Cycle = ( _PS1SYSTEM._CPU.CycleCount << 2 ); NextEvent_Idx = _PS1SYSTEM.NextEvent_Idx2; }
 	
 #ifdef ENABLE_R3000A_IDLE
@@ -490,64 +481,6 @@ void Playstation2::System::RunDevices ()
 	//debug << "\r\nPS1CD NextEvent=" << dec << _PS1SYSTEM._CD.NextEvent_Cycle;
 #endif
 
-/*
-#ifdef INLINE_DEBUG_DEVICE
-	debug << "; TIMERS";
-	debug << " GNE=" << _GPU.NextEvent_Cycle;
-#endif
-
-		// *important* must do timer interrupt events first
-		// this is because the GPU updates the timers, but you must catch the timer transition so you don't miss it
-		// would probably make more sense for the timers to update themselves every so often, though
-		_TIMERS.Run ();
-		
-#ifdef INLINE_DEBUG_DEVICE
-	debug << "; GPU";
-	debug << " GNE=" << _GPU.NextEvent_Cycle;
-#endif
-
-		_GPU.Run ();
-
-
-
-//#ifdef INLINE_DEBUG_DEVICE
-//	debug << "; PIO";
-//#endif
-
-		//_PIO.Run ();
-	
-	
-//#ifdef INLINE_DEBUG_DEVICE
-//	debug << "; SIO";
-//#endif
-
-		//_SIO.Run ();
-
-
-#ifdef INLINE_DEBUG_DEVICE
-	debug << "; DMA";
-	debug << " GNE=" << _GPU.NextEvent_Cycle;
-#endif
-
-		_DMA.Run ();
-
-#ifdef INLINE_DEBUG_DEVICE
-	debug << "; IPU";
-	debug << " GNE=" << _GPU.NextEvent_Cycle;
-#endif
-
-		// this has to run after dma for now, since it might initiate transfers in run function
-		_IPU.Run ();
-
-
-#ifdef INLINE_DEBUG_DEVICE
-	debug << "; SIF";
-	debug << " GNE=" << _GPU.NextEvent_Cycle;
-#endif
-
-		_SIF.Run ();
-*/
-
 		
 		EventFunc [ NextEvent_Idx ] ();
 
@@ -565,42 +498,6 @@ void Playstation2::System::RunEvents ()
 	debug << "\r\nRunEvents CpuCycle#" << dec << _CPU.CycleCount << " SystemCycle#" << dec << CycleCount << " NextEventCycle#" << dec << NextEvent_Cycle;
 #endif
 
-	/*
-	u64 tCycleCount;
-	
-	// no need to check if bus is busy here, since the CPU can just add memory latencies onto cycle timing
-	// just in case for now
-	// can be compiled with ps1 for testing or consistency, but MUST be compiled with ps2 probably
-	
-	// save the cycle to run events until
-	tCycleCount = _CPU.CycleCount;
-	
-// if compiling for ps2, need this for now since transfer can come from SIF at any time
-#ifdef PS2_COMPILE
-	// update the CPU cycle count based on bus activity
-	// check if the bus is occupied
-	//if ( _CPU.CycleCount < _BUS.BusyUntil_Cycle )
-	if ( tCycleCount < _BUS.BusyUntil_Cycle )
-	{
-		//cout << "\nhps1x64 ALERT: CycleCount has not reached BUS BusyUntil_Cycle. Cycle#" << dec << _CPU.CycleCount << "\n";
-		
-		// if the bus is busy, on a PS1, the cpu waits
-		//_CPU.CycleCount = _BUS.BusyUntil_Cycle;
-		tCycleCount = _BUS.BusyUntil_Cycle;
-	}
-#endif
-	*/
-
-	/*
-	if ( NextEvent_Cycle <= tCycleCount )
-	{
-#ifdef INLINE_DEBUG_DEVICE
-	debug << "\r\nPS1System::RunEvents";
-	debug << " SystemCycle#" << dec << CycleCount;
-	debug << " CPUCycle#" << dec << _CPU.CycleCount;
-#endif
-	}
-	*/
 
 #ifdef ENABLE_R5900_IDLE
 	if ( _CPU.ulIdle )
@@ -619,7 +516,8 @@ void Playstation2::System::RunEvents ()
 	// only run components when they are busy with something
 	// should run event for cycle before running cpu for cycle
 	//while ( NextEvent_Cycle <= tCycleCount )
-	while ( NextEvent_Cycle <= _CPU.CycleCount )
+	//while ( NextEvent_Cycle <= _CPU.CycleCount )
+	while (NextEvent_Cycle < _CPU.CycleCount)
 	{
 #ifdef INLINE_DEBUG_RUN
 	debug << " RunDevices";
@@ -627,39 +525,10 @@ void Playstation2::System::RunEvents ()
 	debug << " _CPU.CycleCount=" << dec << _CPU.CycleCount;
 #endif
 
-		// save the cycle to run events until
-		//tCycleCount = _CPU.CycleCount;
-
-		//do
-		//{
-			// check if the next event is past where we can run system until
-			// can be compiled with ps1 for testing or consistency, but MUST be compiled with ps2 probably
-			
-			// set the cycle count as the cycle the event that was skipped was supposed to happen at
-//#ifndef USE_SYSTEM_CYCLE
-//			_CPU.CycleCount = NextEvent_Cycle;
-//#endif
 			CycleCount = NextEvent_Cycle;
 			
 			RunDevices ();
 				
-			
-			/*
-			// check if the bus is busy (do this before running DMA device to reach current cycle first)
-			// can't do this for ps2, because need to only run until specified cycle to synchronize with R5900
-			//if ( _CPU.CycleCount < _BUS.BusyUntil_Cycle )
-			if ( tCycleCount < _BUS.BusyUntil_Cycle )
-			{
-				// if the bus is busy, on a PS1, the cpu waits
-				tCycleCount = _BUS.BusyUntil_Cycle;
-				//_CPU.CycleCount = _BUS.BusyUntil_Cycle;
-			}
-			*/
-		
-		// } while ( NextEvent_Cycle <= tCycleCount );
-		
-		// restore the current cycle count for CPU
-		//_CPU.CycleCount = tCycleCount;
 	}
 
 	// this must be here so that the current system cycle is at the cpu cycle

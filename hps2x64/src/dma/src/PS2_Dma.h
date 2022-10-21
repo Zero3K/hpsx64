@@ -925,7 +925,7 @@ namespace Playstation2
 		// must use this to add a reference to the bus
 		//void ConnectDevices ( DataBus *BUS, MDEC *mdec, GPU *g, CD *cd, SPU *spu, R5900::Cpu *cpu );
 		
-		typedef bool (*fnReady) ( void );
+		typedef u64 (*fnReady) ( void );
 		
 		// this one should return the amount of data transferred
 		typedef u32 (*fnTransfer_FromMemory) ( u64* Data, u32 QuadwordCount );
@@ -963,8 +963,8 @@ namespace Playstation2
 		void Update_CPCOND0 ();
 
 		
-		static bool SPRout_DMA_Ready ();
-		static bool SPRin_DMA_Ready ();
+		static u64 SPRout_DMA_Ready ();
+		static u64 SPRin_DMA_Ready ();
 		
 		static u32 SPRout_DMA_Read ( u64* Data, u32 QuadwordCount );
 		static u32 SPRin_DMA_Write ( u64* Data, u32 QuadwordCount );

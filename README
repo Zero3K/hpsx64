@@ -13,8 +13,9 @@ Current System Requirements:
 
 Status: In development - Pre-initial Source code and binary release - Development/Testing usage only
 Current Version:
-hps1x64 v0390 - json settings, json menubar, Visual Studio compatibility, SPU2 fixes
+hps1x64 v0400 - fixed wrong pal/ntsc ps1 timer settings in ps2 mode, last bios used saved in settings and loaded automatically on open
 Older Versions:
+hps1x64 v0390 - json settings, json menubar, Visual Studio compatibility, SPU2 fixes
 hps1x64 v0380 - dma priority changes, spu2 KON/KOFF fixes, spu2 LOOP flag fixes, dma timing fix, cdvd early dual layer support
 hps1x64 v0370 - spu2 interrupt fixes
 hps1x64 v0360 - removed multi-threading from hps1
@@ -69,13 +70,14 @@ hps2x64 - Playstation 2 simulator
 
 Current System Requirements:
 64-bit x64 Processor (4+ cores)
-SSE 4.2 (for R5900 recompiler)
+SSE 4.2 (for R5900 recompiler and VU)(but avx-512 needed in the future for performance)
 1GB RAM free
 
 Status: In development - Not ready for release
 Current Version:
-hps2x64 v026 - json settings, json menubar, Visual Studio compatibility, vu static analysis, VU fixes
+hps2x64 v027 - pal/ntsc timing fixes, pcrtc fixes, IPU fixes, last bios used saved in settings and loaded automatically on open
 Older Versions:
+hps2x64 v026 - json settings, json menubar, Visual Studio compatibility, vu static analysis, VU fixes
 hps2x64 v025 - fixed an issue with HWREG, compatibility improvements, ps2 dma start/continue fixes
 hps2x64 v024 - vu recompiler state cache, gpu optimizations, better pcrtc, gpu code fixes, removed/disabled multi-threaded vu1 option, temporarily disabled R5900 DCache
 hps2x64 v023 - gpu buffer in/out/copy fixes, gpu optimizations, early vu state cache
@@ -117,6 +119,7 @@ hps2x64 vXXX - very early pre-initial WIP evaluation only release. TEST/DEVELOPM
 
 To run bios dumped from a Playstation system:
 Use File | Load | Bios to load a bios dump. Use File | Run to run a bios dump after loading it.
+If there is a tick mark next to the File | Load | Bios option, then it means that the last bios you loaded is already successfully loaded in bios.
 
 To run Playstation formatted game discs:
 Can run bin/img/iso images with cue, ccd, and sub support.
@@ -152,6 +155,7 @@ Currently only the MDEC backend is currently adapted from mame/mess/etc and is n
 
 To run bios dumped from a Playstation 2 system:
 Use File | Load | Bios to load a bios dump. Use File | Run to run a bios dump after loading it.
+If there is a tick mark next to the File | Load | Bios option, then it means that the last bios you loaded is already successfully loaded in bios.
 
 To run Playstation 2 formatted game discs:
 Can run bin/iso images.

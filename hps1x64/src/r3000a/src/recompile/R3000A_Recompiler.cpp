@@ -27,6 +27,9 @@ using namespace R3000A;
 
 #ifdef PS2_COMPILE
 
+// skips idle cycles on R3000A
+#define ENABLE_R3000A_SKIP_IDLE_CYCLES
+
 //#define ENABLE_CPU_IDLE
 
 /*
@@ -4445,6 +4448,8 @@ cout << "\nbIsBlockInICache";
 
 //#ifndef ENABLE_AUTO_BRANCH
 
+#ifdef ENABLE_R3000A_SKIP_IDLE_CYCLES
+
 
 		// check for processor waiting
 		if ( ! NextInst.Value )
@@ -4461,32 +4466,42 @@ cout << "\nbIsBlockInICache";
 				// get the pointer to the branch
 				pBranch = pCodeStart [ ( Address >> 2 ) & ulIndex_Mask ];
 				
-				// check if equal
-				if ( pBranchedTo == pBranch )
+				if (TargetAddress <= Address)
 				{
-					// update cycles
-					e->MovMemImm32 ( (long*) & r->NextPC, TargetAddress );
+					// check if equal
+					if (pBranchedTo == pBranch)
+					{
+						// update cycles
+						e->MovMemImm32((long*)&r->NextPC, TargetAddress);
 
-					// update CycleCount
-					// ***todo*** should be the cycles plus one instruction since branch into delay slot has already been executed
-					//e->AddMem64ImmX ( (long long*) & r->CycleCount, LocalCycleCount );
-					e->MovRegMem64 ( RCX, (long long*) & r->CycleCount );
-					e->AddReg64ImmX( RCX, LocalCycleCount );
-					
-					// check against the next event cycle
-					e->CmpRegMem64 ( RCX, (long long*) & Playstation1::System::_SYSTEM->NextEvent_Cycle );
-					e->CmovBRegMem64 ( RCX, (long long*) & Playstation1::System::_SYSTEM->NextEvent_Cycle );
-					
-					// store as the new cycle count
-					e->MovMemReg64 ( (long long*) & r->CycleCount, RCX );
-					
-					// should be done
-					e->Ret ();
-					
+						// update CycleCount
+						// ***todo*** should be the cycles plus one instruction since branch into delay slot has already been executed
+						//e->AddMem64ImmX ( (long long*) & r->CycleCount, LocalCycleCount );
+						e->MovRegMem64(RCX, (long long*)&r->CycleCount);
+
+						// this should be at least two instructions and a jump that get counted here (the jump + the nop + the pipeline refill)
+						// and then minus one instruction that will get added when it returns (so 1 + branch pipeline refill)
+						//e->AddReg64ImmX( RCX, LocalCycleCount );
+						e->AddReg64ImmX(RCX, LocalCycleCount + 1 + r->c_ullLatency_PipelineRefill);
+
+						// check against the next event/ps2 stop cycle
+						//e->CmpRegMem64 ( RCX, (long long*) & Playstation1::System::_SYSTEM->NextEvent_Cycle );
+						//e->CmovBRegMem64 ( RCX, (long long*) & Playstation1::System::_SYSTEM->NextEvent_Cycle );
+						e->CmpRegMem64(RCX, (long long*)&Playstation1::System::_SYSTEM->ullStopCycle);
+						e->CmovBRegMem64(RCX, (long long*)&Playstation1::System::_SYSTEM->ullStopCycle);
+
+						// store as the new cycle count
+						e->MovMemReg64((long long*)&r->CycleCount, RCX);
+
+						// should be done
+						e->Ret();
+
+					}
 				}
 			}
 		}
 
+#endif
 
 
 #ifdef VERBOSE_NORMAL_BRANCH

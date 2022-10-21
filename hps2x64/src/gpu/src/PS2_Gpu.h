@@ -1891,7 +1891,7 @@ namespace Playstation2
 		void DMA_Write ( u32* Data, int ByteWriteCount );
 		
 		// right now, this says path 3 is not ready if it is masked
-		static bool DMA_Write_Ready ();
+		static u64 DMA_Write_Ready ();
 		
 		// these return the amound of data written/read
 		static u32 DMA_WriteBlock ( u64* Data, u32 QuadwordCount );
@@ -2012,6 +2012,12 @@ namespace Playstation2
 				// bits 43-53
 				u64 DBY : 11;
 			};
+
+			struct
+			{
+				u32 Lo;
+				u32 Hi;
+			};
 			
 			u64 Value;
 		};
@@ -2051,9 +2057,18 @@ namespace Playstation2
 				// height of display minus one in pixels
 				u64 DH : 11;
 			};
-			
+
+			struct
+			{
+				u32 Lo;
+				u32 Hi;
+			};
+
 			u64 Value;
 		};
+
+		// this will mask the DH value in DISPLAY_t
+		static constexpr u32 c_ulDisplayHeight_Mask = 0x1ff;
 		
 
 		// 0x1200 1010 - IMR - Interrupt mask
@@ -2114,7 +2129,87 @@ namespace Playstation2
 			
 			u64 Value;
 		};
-		
+
+
+		// ripped from pcsx2
+		union SYNCV_t
+		{
+			struct
+			{
+				// Vertical Front Porchinterval (?s)
+				u64 VFP : 10;
+
+				// Vertical Front Porchinterval End (?s)
+				u64 VFPE : 10;
+
+				// Vertical Back Porchinterval (?s)
+				u64 VBP : 12;
+
+				// Vertical Back Porchinterval End (?s)
+				u64 VBPE : 10;
+
+				// Vertical Differential Phase
+				u64 VDP : 11;
+
+				// Vertical Synchronization Timing
+				u64 VS : 11;
+			};
+
+			struct
+			{
+				u32 Lo;
+				u32 Hi;
+			};
+
+			u64 Value;
+		};
+
+
+		// ripped from pcsx2
+		union SMODE1_t
+		{
+
+			/*
+			// pal
+			CLKSEL=1 CMOD=3 EX=0 GCONT=0 LC=32 NVCK=1 PCK2=0 PEHS=0 PEVS=0 PHS=0 PRST=1 PVS=0 RC=4 SINT=0 SLCK=0 SLCK2=1 SPML=4 T1248=1 VCKSEL=1 VHP=0 XPCK=0
+			// ntsc
+			CLKSEL=1 CMOD=2 EX=0 GCONT=0 LC=32 NVCK=1 PCK2=0 PEHS=0 PEVS=0 PHS=0 PRST=1 PVS=0 RC=4 SINT=0 SLCK=0 SLCK2=1 SPML=4 T1248=1 VCKSEL=1 VHP=0 XPCK=0
+			// ntsc progressive (SoTC)
+			CLKSEL=1 CMOD=0 EX=0 GCONT=0 LC=32 NVCK=1 PCK2=0 PEHS=0 PEVS=0 PHS=0 PRST=1 PVS=0 RC=4 SINT=0 SLCK=0 SLCK2=1 SPML=2 T1248=1 VCKSEL=1 VHP=1 XPCK=0
+			*/
+
+			struct
+			{
+				u64 RC : 3;
+				u64 LC : 7;
+				u64 T1248 : 2;
+				u64 SLCK : 1;
+				u64 CMOD : 2;
+				u64 EX : 1;
+				u64 PRST : 1;
+				u64 SINT : 1;
+				u64 XPCK : 1;
+				u64 PCK2 : 2;
+				u64 SPML : 4;
+
+				// YCrCb
+				u64 GCONT : 1;
+
+				u64 PHS : 1;
+				u64 PVS : 1;
+				u64 PEHS : 1;
+				u64 PEVS : 1;
+				u64 CLKSEL : 2;
+				u64 NVCK : 1;
+				u64 SLCK2 : 1;
+				u64 VCKSEL : 2;
+				u64 VHP : 1;
+				u64 _PAD1 : 27;
+			};
+
+			u64 Value;
+		};
+
 		
 		// GIF TAG
 		
@@ -2358,12 +2453,12 @@ namespace Playstation2
 			struct
 			{
 				u64 PMODE;
-				u64 SMODE1;
+				SMODE1_t SMODE1;
 				SMODE2_t SMODE2;
 				u64 SRFSH;
 				u64 SYNCH1;
 				u64 SYNCH2;
-				u64 SYNCV;
+				SYNCV_t SYNCV;
 				DISPFB_t DISPFB1;
 				DISPLAY_t DISPLAY1;
 				DISPFB_t DISPFB2;
@@ -2483,6 +2578,23 @@ namespace Playstation2
 		
 		// 0x120010X0
 		GPURegs1_t GPURegs1;
+		
+
+		enum {
+			// unknown graphics mode
+			GRAPHICS_MODE_UNKNOWN = 0,
+
+			// ntsc progressive scan (SMODE1.CMOD==0)
+			GRAPHICS_MODE_NTSC_P = 1,
+
+			// ntsc interlaced scan (SMODE1.CMOD==2)
+			GRAPHICS_MODE_NTSC_I = 2,
+			
+			// pal interlaced scan (SMODE1.CMOD==3)
+			GRAPHICS_MODE_PAL_I = 3
+		};
+		int iGraphicsMode;
+
 		
 		
 		/*
@@ -4312,7 +4424,7 @@ static void Refresh_FRAME ( u32 lContext, u64 ullValue )
 		// free buffer space required for program to run while multi-threading
 		static const u32 c_ulRequiredBuffer = 20000;
 		
-		static const u64 c_ulInputBuffer_Size = 1ull << 22;	//18;
+		static const u64 c_ulInputBuffer_Size = 1ull << 23;	//18;
 		static const u64 c_ulInputBuffer_Mask = c_ulInputBuffer_Size - 1;
 		static const u64 c_ulInputBuffer_Shift = 0;	//4;
 		//volatile u32 ulThreads_Idle;
@@ -8979,13 +9091,20 @@ inline void PlotPixel_Texture ( s32 x0, s32 y0, s64 z0, u32 bgr, u32 c1, u32 c2,
 		static u64* _DebugCycleCount;
 		static u32* _NextEventIdx;
 		
+		// debug window for the frame buffer //
 		static bool DebugWindow_Enabled;
 		static void DebugWindow_Enable ();
 		static void DebugWindow_Disable ();
 		static void DebugWindow_Update ();
 
-		
-		
+		// debug window for the register values //
+		static bool DebugWindow_Enabled2;
+		static WindowClass::Window* DebugWindow2;
+		static DebugValueList<u32>* ValueList2;
+		static void DebugWindow_Enable2();
+		static void DebugWindow_Disable2();
+		static void DebugWindow_Update2();
+
 
 		
 		
@@ -28057,7 +28176,9 @@ static void Draw_Screen_thx8(u64* p_inputbuffer, u32 ulThreadNum, u32 SELECTION1
 
 	DISPFB1_PSM = (DISPFB1 >> 15) & 0x1f;
 
+	//DISPLAY1_DH = (DISPLAY1 >> 44) & 0x7ff & c_ulDisplayHeight_Mask;
 	DISPLAY1_DH = (DISPLAY1 >> 44) & 0x7ff;
+	DISPLAY1_DH = (DISPLAY1_DH > 256) ? 256 : DISPLAY1_DH;
 
 
 	DISPFB2_FBP = (DISPFB2 >> 0) & 0x1ff;
@@ -28067,7 +28188,9 @@ static void Draw_Screen_thx8(u64* p_inputbuffer, u32 ulThreadNum, u32 SELECTION1
 
 	DISPFB2_PSM = (DISPFB2 >> 15) & 0x1f;
 
+	//DISPLAY2_DH = (DISPLAY2 >> 44) & 0x7ff & c_ulDisplayHeight_Mask;
 	DISPLAY2_DH = (DISPLAY2 >> 44) & 0x7ff;
+	DISPLAY2_DH = (DISPLAY2_DH > 256) ? 256 : DISPLAY2_DH;
 
 
 	// check if laying down zero, rc1, rc2, or bgcolor for the first selection
@@ -28184,6 +28307,20 @@ static void Draw_Screen_thx8(u64* p_inputbuffer, u32 ulThreadNum, u32 SELECTION1
 	}
 #endif
 
+#ifdef ENABLE_PIXELBUF_NON_INTERLACING
+	// half draw height if not interlaced ??
+	if (!SMODE2_INTER)
+	{
+		// only draw half the draw height for now
+		draw_height >>= 1;
+
+		// set to read every line, so need to skip lines when writing to pixel buffer for interlacing
+		//if ((lScanline & 1))
+		//{
+		//	Index += draw_width;
+		//}
+	}
+#endif
 
 	{
 
@@ -28413,7 +28550,8 @@ static void Draw_Screen_thx8(u64* p_inputbuffer, u32 ulThreadNum, u32 SELECTION1
 
 #ifdef ENABLE_PIXELBUF_INTERLACING	
 				// if reading every other line, only copy every other line to pixel buffer
-				if (SMODE2_FFMD && SMODE2_INTER)
+				//if (SMODE2_FFMD && SMODE2_INTER)
+				if (SMODE2_INTER)
 				{
 					Index += draw_width;
 				}
@@ -28671,7 +28809,8 @@ static void Draw_Screen_thx8(u64* p_inputbuffer, u32 ulThreadNum, u32 SELECTION1
 
 #ifdef ENABLE_PIXELBUF_INTERLACING	
 				// if reading every other line, only copy every other line to pixel buffer
-				if (SMODE2_FFMD && SMODE2_INTER)
+				//if (SMODE2_FFMD && SMODE2_INTER)
+				if (SMODE2_INTER)
 				{
 					Index += draw_width;
 				}
@@ -28752,6 +28891,7 @@ static void Draw_Screen_th ( u64* p_inputbuffer, u32 ulThreadNum, u32 SELECTION1
 #endif
 
 	int x, y;
+	int iYUpdate;
 	
 	u32* buf_ptr;
 	u32 *buf_ptr32;
@@ -28792,6 +28932,24 @@ static void Draw_Screen_th ( u64* p_inputbuffer, u32 ulThreadNum, u32 SELECTION1
 
 	u64 *inputdata_ptr;
 
+	// can only have 480 lines on screen for ntsc, 576 for pal
+	int iMaxLines;
+
+	// where to draw source image on the actual screen
+	int iFrameBufStartX, iFrameBufStartY;
+
+	// the width of the source frame buffer and the horizontal resolution of the actual screen are not related
+	int iFrameBufWidth;
+
+	// number of black lines on the top and bottom
+	int iBlackTopLines, iBlackBottomLines;
+
+	// the interlacing offset for source image is automatically put in by the hardware NOT the software
+	int iOffset;
+
+	int display_magh;
+	int display_dw;
+
 #ifdef _ENABLE_SSE41
 	__m128i vZero;
 	vZero = _mm_setzero_si128 ();
@@ -28821,6 +28979,10 @@ static void Draw_Screen_th ( u64* p_inputbuffer, u32 ulThreadNum, u32 SELECTION1
 
 	// don't know yet if blending is needed
 	bEnableBlend = false;
+
+
+	// set max lines for screen in screen mode
+	iMaxLines = VBlank_Y_LUT[(((_GPU->iGraphicsMode & 3) + 1) >> 2) & 1];
 	
 
 	PMODE = p_inputbuffer [ 0 ];
@@ -28897,7 +29059,7 @@ static void Draw_Screen_th ( u64* p_inputbuffer, u32 ulThreadNum, u32 SELECTION1
 
 	DISPFB2_PSM = ( DISPFB2 >> 15 ) & 0x1f;
 
-	DISPLAY2_DH = ( DISPLAY2 >> 44 ) & 0x7ff;
+	DISPLAY2_DH = (DISPLAY2 >> 44) & 0x7ff;
 
 
 	// check if laying down zero, rc1, rc2, or bgcolor for the first selection
@@ -28949,18 +29111,94 @@ static void Draw_Screen_th ( u64* p_inputbuffer, u32 ulThreadNum, u32 SELECTION1
 	DISPFBX_DBX = ( DISPFBX >> 32 ) & 0x7ff;
 	DISPFBX_DBY = ( DISPFBX >> 43 ) & 0x7ff;
 	
-	DISPLAYX_DH = ( DISPLAYX >> 44 ) & 0x7ff;
+	DISPLAYX_DH = (DISPLAYX >> 44) & 0x7ff;
 
 
 	draw_buffer_offset = DISPFBX_FBP << 11;
+
 	
 	buf_ptr = & ( _GPU->RAM32 [ draw_buffer_offset ] );
 
-	
-	draw_width = DISPFBX_FBW << 6;
+
+	// this is the width of image in source frame buffer
+	//draw_width = DISPFBX_FBW << 6;
+	iFrameBufWidth = DISPFBX_FBW << 6;
+
+	display_magh = (DISPLAYX >> 23) & 0xf;
+	display_dw = (DISPLAYX >> 32) & 0xfff;
+	display_magh++;
+	display_dw++;
+	draw_width = display_dw / display_magh;
+
+	// get height of image in display
 	draw_height = DISPLAYX_DH + 1;
+
+	// get x location to start drawing from in source image
 	start_x = DISPFBX_DBX;
+
+	// get y location to start drawing from in source image
 	start_y = DISPFBX_DBY;
+
+
+	// can't draw more lines than are on the screen
+	draw_height = (draw_height > iMaxLines) ? iMaxLines : draw_height;
+
+
+	// get x location to start drawing in frame buffer
+	iFrameBufStartX = (DISPLAYX >> 0) & 0xfff;
+
+	// get y location to start drawing in frame buffer
+	iFrameBufStartY = (DISPLAYX >> 12) & 0x7ff;
+
+	// maybe half this value ??
+	iFrameBufStartY >>= 1;
+
+
+	// but if not interlaced, use half that
+	if (!SMODE2_INTER)
+	{
+		draw_height = (draw_height > (iMaxLines>>1)) ? (iMaxLines>>1) : draw_height;
+
+		// and then double that
+		draw_height <<= 1;
+	}
+
+
+
+	// if the draw height in the frame buffer is less than max on screen, then fill the rest with black lines on bottom
+	iBlackTopLines = 0;
+	iBlackBottomLines = 0;
+	if (draw_height < iMaxLines)
+	{
+		iBlackBottomLines = iMaxLines - draw_height;
+	}
+
+	// update the number of black lines at the top if drawing further down on the screen
+	iBlackTopLines += iFrameBufStartY;
+
+	// either subtract from lines on bottom or the draw height (total draw height does not change)
+	if (iBlackBottomLines >= iFrameBufStartY)
+	{
+		// push the image down on the screen by removing any black bars on the bottom
+		iBlackBottomLines -= iFrameBufStartY;
+	}
+	else
+	{
+		// this is going to cut the image off the screen vertically ?
+		//int iTemp;
+		//iTemp = iFrameBufStartY - iBlackBottomLines;
+		draw_height -= (iFrameBufStartY - iBlackBottomLines);
+		draw_height -= iBlackBottomLines;
+		iBlackBottomLines = 0;
+	}
+
+	// if the draw_height is less than or equal to zero, then just draw all black bars because no image
+	if ((draw_height <= 0) || (draw_height > iMaxLines))
+	{
+		iBlackBottomLines = iMaxLines;
+		iBlackTopLines = 0;
+		draw_height = 0;
+	}
 	
 	buf_ptr32 = buf_ptr;
 	buf_ptr16 = (u16*) buf_ptr;
@@ -28994,23 +29232,67 @@ static void Draw_Screen_th ( u64* p_inputbuffer, u32 ulThreadNum, u32 SELECTION1
 	// draw width can only be a maximum of 1024
 	draw_width = ( ( draw_width > c_iScreen_MaxWidth ) ? c_iFrameBuffer_DisplayWidth : draw_width );
 
-	
+	// by default read every line of source image
+	iYUpdate = 1;
+
 #ifdef ENABLE_PIXELBUF_INTERLACING
 	// if set to read every line, then half draw height for now
 	// *todo* need to take into account whether interlaced or not
 	// comment this out to show correct screen at top for now
 	//if ( GPURegs0.SMODE2.FFMD ) draw_height >>= 1;
 	// check if this is set to read every line
-	if ( SMODE2_FFMD && SMODE2_INTER )
+	//if ( SMODE2_FFMD && SMODE2_INTER )
+	//{
+	//	// only draw half the draw height for now
+	//	draw_height >>= 1;
+	//	
+	//	// set to read every line, so need to skip lines when writing to pixel buffer for interlacing
+	//	if ( ( lScanline & 1 ) )
+	//	{
+	//		Index += draw_width;
+	//	}
+	//}
+
+	// if interlaced, then only draw either the even or the odd fields this pass
+	iOffset = 0;
+	if (SMODE2_INTER)
 	{
-		// only draw half the draw height for now
-		draw_height >>= 1;
-		
 		// set to read every line, so need to skip lines when writing to pixel buffer for interlacing
-		if ( ( lScanline & 1 ) )
+		if ((lScanline & 1))
+		{
+			//Index += draw_width;
+			iOffset = 1;
+		}
+
+		// check if should draw every line in source image or every other line
+		if (SMODE2_FFMD)
+		{
+			// drawing every line, so source image is half the height
+			draw_height >>= 1;
+			iOffset = 0;
+		}
+		else
+		{
+			// read every other line of source image
+			iYUpdate = 2;
+		}
+	}
+	// if not interlaced, then half the height ??
+	else
+	{
+		// and then half that again for the source image
+		draw_height >>= 1;
+
+		// still need to interlace for now in 480i mode at least
+		/*
+		if ((lScanline & 1))
 		{
 			Index += draw_width;
+
+			// this should be zero when reading every line
+			//iOffset = 1;
 		}
+		*/
 	}
 #endif
 
@@ -29108,34 +29390,53 @@ static void Draw_Screen_th ( u64* p_inputbuffer, u32 ulThreadNum, u32 SELECTION1
 	//start_x = 0;
 	//start_y = 0;
 
-
+	// check if there is extra space on the bottom that needs filling in
+	if (iBlackBottomLines)
+	{
 		// pad on the bottom with zeros if needed for now
+
+		// start at the end of the image
 		y = 0;
-		while ( y < start_y )
+
+		// draw until the edge of the viewable area
+		//while (y < start_y)
+		while ( y < iBlackBottomLines )
 		{
 #ifdef _ENABLE_SSE41
-			for ( x = 0; x < ( draw_width - 3 ); x += 4 )
+			for (x = 0; x < (draw_width - 3); x += 4)
 			{
 				//PixelBuffer [ Index++ ] = 0;
 				//_mm_storeu_si128 ( (__m128i*) & PixelBuffer [ Index ], vZero );
-				_mm_store_si128 ( (__m128i*) & PixelBuffer [ Index ], vZero );
+				_mm_store_si128((__m128i*) & PixelBuffer[Index], vZero);
 				Index += 4;
 			}
-			for ( ; x < draw_width; x++ )
+			for (; x < draw_width; x++)
 			{
-				PixelBuffer [ Index++ ] = 0;
+				PixelBuffer[Index++] = 0;
 			}
 #else
-			for ( x = 0; x < draw_width; x++ )
+			for (x = 0; x < draw_width; x++)
 			{
-				PixelBuffer [ Index++ ] = 0;
+				PixelBuffer[Index++] = 0;
 			}
 #endif
-			
+
 			y++;
 		} // end while ( y < start_y )
 
-			
+	} // end if (iBlackBottomLines)
+
+
+
+	// always interlacing for now
+	// alternate the scanlines
+	if ((lScanline & 1))
+	{
+		Index += draw_width;
+	}
+
+
+
 #ifdef _ENABLE_SSE41
 		vWidth = _mm_set1_epi32 ( draw_width );
 #endif
@@ -29154,15 +29455,19 @@ static void Draw_Screen_th ( u64* p_inputbuffer, u32 ulThreadNum, u32 SELECTION1
 		
 		
 		// copy the pixels into pixel buffer
+		// need to traverse the pixels on screen buffer for the outer loop
+		// note: drawing pixesl
 		//for ( y = start_y + ( draw_height - 1 ); y >= start_y; y-- )
-		for ( y = draw_height - 1; y >= start_y; y-- )
+		//for ( y = draw_height - 1; y >= start_y; y-- )
+		for (y = (draw_height+start_y) - 1 - iOffset; y >= start_y; y -= iYUpdate)
 		{
 #ifdef _ENABLE_SSE41
 
 #ifdef ENABLE_CALC_FULL_PIX_ADDR
 			vY = _mm_set1_epi32 ( y );
 #else
-			vY = _mm_set1_epi32 ( CvtAddrPix32( 0, y, draw_width ) );
+			//vY = _mm_set1_epi32 ( CvtAddrPix32( 0, y, draw_width ) );
+			vY = _mm_set1_epi32(CvtAddrPix32(0, y, iFrameBufWidth));
 #endif
 			vX = _mm_set1_epi32 ( start_x );
 			vX = _mm_add_epi32 ( vX, vIdentity );
@@ -29291,7 +29596,8 @@ static void Draw_Screen_th ( u64* p_inputbuffer, u32 ulThreadNum, u32 SELECTION1
 			}
 			for ( ; x < draw_width; x++ )
 			{
-				PixelBuffer [ Index++ ] = buf_ptr32 [ CvtAddrPix32( x, y, draw_width ) ];
+				//PixelBuffer [ Index++ ] = buf_ptr32 [ CvtAddrPix32( x, y, draw_width ) ];
+				PixelBuffer[Index++] = buf_ptr32[CvtAddrPix32(x, y, iFrameBufWidth)];
 			}
 			x = 0;
 			while ( x < ( start_x - 3 ) )
@@ -29321,7 +29627,9 @@ static void Draw_Screen_th ( u64* p_inputbuffer, u32 ulThreadNum, u32 SELECTION1
 			
 #ifdef ENABLE_PIXELBUF_INTERLACING	
 			// if reading every other line, only copy every other line to pixel buffer
-			if ( SMODE2_FFMD && SMODE2_INTER )
+			//if (SMODE2_FFMD && SMODE2_INTER)
+			// assume always interlaced for now
+			//if ( SMODE2_INTER )
 			{
 				Index += draw_width;
 			}
@@ -29341,7 +29649,8 @@ static void Draw_Screen_th ( u64* p_inputbuffer, u32 ulThreadNum, u32 SELECTION1
 		
 		
 		//for ( y = start_y + ( draw_height - 1 ); y >= start_y; y-- )
-		for ( y = draw_height - 1; y >= start_y; y-- )
+		//for ( y = draw_height - 1; y >= start_y; y-- )
+		for ( y = (draw_height+start_y) - 1 - iOffset; y >= start_y; y-=iYUpdate )
 		{
 #ifdef _ENABLE_SSE41
 //_DRAWBUFFER16
@@ -29352,11 +29661,13 @@ static void Draw_Screen_th ( u64* p_inputbuffer, u32 ulThreadNum, u32 SELECTION1
 			switch ( DISPFBX_PSM )
 			{
 				case 2:
-					vY = _mm_set1_epi32 ( CvtAddrPix16( 0, y, draw_width ) );
+					//vY = _mm_set1_epi32 ( CvtAddrPix16( 0, y, draw_width ) );
+					vY = _mm_set1_epi32(CvtAddrPix16(0, y, iFrameBufWidth));
 					break;
 				case 0xa:
 //cout << "\ny=" << dec << y;
-					vY = _mm_set1_epi32 ( CvtAddrPix16S( 0, y, draw_width ) );
+					//vY = _mm_set1_epi32 ( CvtAddrPix16S( 0, y, draw_width ) );
+					vY = _mm_set1_epi32(CvtAddrPix16S(0, y, iFrameBufWidth));
 					break;
 			}
 #endif
@@ -29538,7 +29849,8 @@ static void Draw_Screen_th ( u64* p_inputbuffer, u32 ulThreadNum, u32 SELECTION1
 			}
 			for ( ; x < draw_width; x++ )
 			{
-				PixelBuffer [ Index++ ] = buf_ptr32 [ CvtAddrPix32( x, y, draw_width ) ];
+				//PixelBuffer [ Index++ ] = buf_ptr32 [ CvtAddrPix32( x, y, draw_width ) ];
+				PixelBuffer[Index++] = buf_ptr32[CvtAddrPix32(x, y, iFrameBufWidth)];
 			}
 			x = 0;
 			while ( x < ( start_x - 3 ) )
@@ -29579,28 +29891,62 @@ static void Draw_Screen_th ( u64* p_inputbuffer, u32 ulThreadNum, u32 SELECTION1
 			
 #ifdef ENABLE_PIXELBUF_INTERLACING	
 			// if reading every other line, only copy every other line to pixel buffer
-			if ( SMODE2_FFMD && SMODE2_INTER )
+			//if (SMODE2_FFMD && SMODE2_INTER)
+			// assume always interlaced for now
+			//if ( SMODE2_INTER )
 			{
 				Index += draw_width;
 			}
 #endif
 
 		}
-	}
+
+	}	// end if ( DISPFBX_PSM < 2 )
 
 	}
-	
-	
-#ifdef ENABLE_PIXELBUF_INTERLACING	
-	// for now, if interlaced, need to put the draw_height back
-	if ( SMODE2_FFMD && SMODE2_INTER )
+
+
+	// check if there is extra space on the top that needs filling in
+	if (iBlackTopLines)
 	{
-		// only draw half the draw height for now
-		draw_height <<= 1;
-		
-	}
+		// pad on the bottom with zeros if needed for now
+
+		// start at the end of the image
+		y = 0;
+
+		// draw until the edge of the viewable area
+		//while (y < start_y)
+		while (y < iBlackTopLines)
+		{
+#ifdef _ENABLE_SSE41
+			for (x = 0; x < (draw_width - 3); x += 4)
+			{
+				//PixelBuffer [ Index++ ] = 0;
+				//_mm_storeu_si128 ( (__m128i*) & PixelBuffer [ Index ], vZero );
+				_mm_store_si128((__m128i*) & PixelBuffer[Index], vZero);
+				Index += 4;
+			}
+			for (; x < draw_width; x++)
+			{
+				PixelBuffer[Index++] = 0;
+			}
+#else
+			for (x = 0; x < draw_width; x++)
+			{
+				PixelBuffer[Index++] = 0;
+			}
 #endif
+
+			y++;
+		} // end while ( y < start_y )
+
+	} // end if (iBlackTopLines)
+
+
 	
+
+	// the height of image is for now going to be 480 for ntsc, 5xx for pal
+	draw_height = iMaxLines;
 	
 		
 	// *** output of pixel buffer to screen *** //
@@ -29727,7 +30073,11 @@ static void Select_DrawScreen_t ( u64* x_inputbuffer, u32 ulThreadNum )
 
 	DISPFB1 = p_inputbuffer [ 1 ];
 	
-	DISPLAY1_DH = ( p_inputbuffer [ 3 ] >> 44 ) & 0x7ff;
+	//DISPLAY1_DH = ( p_inputbuffer [ 3 ] >> 44 ) & 0x7ff & c_ulDisplayHeight_Mask;
+	DISPLAY1_DH = (p_inputbuffer[3] >> 44) & 0x7ff;
+	DISPLAY1_DH = (DISPLAY1_DH > 256) ? 256 : DISPLAY1_DH;
+
+
 	DISPFB1_FBW = ( DISPFB1 >> 9 ) & 0x3f;
 
 	

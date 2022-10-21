@@ -38,14 +38,15 @@ using namespace std;
 
 
 // use double-precision to implement PS2 floating point
-#define USE_DOUBLE_MATH_ADD
-#define USE_DOUBLE_MATH_SUB
-#define USE_DOUBLE_MATH_MUL
-#define USE_DOUBLE_MATH_MADD
-#define USE_DOUBLE_MATH_MSUB
-#define USE_DOUBLE_MATH_DIV
-#define USE_DOUBLE_MATH_SQRT
-#define USE_DOUBLE_MATH_RSQRT
+//#define USE_DOUBLE_MATH_ADD
+//#define USE_DOUBLE_MATH_SUB
+//#define USE_DOUBLE_MATH_MUL
+//#define USE_DOUBLE_MATH_MADD
+//#define USE_DOUBLE_MATH_MSUB
+//#define USE_DOUBLE_MATH_DIV
+//#define USE_DOUBLE_MATH_SQRT
+//#define USE_DOUBLE_MATH_RSQRT
+
 
 
 // use integer math when more simplistic
@@ -548,110 +549,135 @@ namespace PS2Float
 
 	
 	// add float as integer
-	inline static long addfloat ( long fs, long ft, int index, unsigned short* StatusFlag, unsigned short* MACFlag )
+	inline static long addfloat(long fs, long ft, int index, unsigned short* StatusFlag, unsigned short* MACFlag)
 	{
+		static const long c_iHiddenBits = 1;
 		long es, et, ed;
 		long ss, st, sd;
-		
+
 		long temp;
-		
+
 		long ms, mt, md;
-		
+
 		long ext;
-		
+
 		long sign;
-		
+
 		long fd;
-		
-		
+
+
 		// get the magnitude
 		ms = fs & 0x7fffffff;
 		mt = ft & 0x7fffffff;
-		
+
 		// sort the values by magnitude
-		if ( ms < mt )
+		if (ms < mt)
 		{
 			temp = fs;
 			fs = ft;
 			ft = temp;
 		}
-		
+
 		// get the exponents
-		es = ( fs >> 23 ) & 0xff;
-		et = ( ft >> 23 ) & 0xff;
+		es = (fs >> 23) & 0xff;
+		et = (ft >> 23) & 0xff;
 		ed = es - et;
-		
+
 		// debug
 		//e1 = es;
 		//e2 = et;
 		//e3 = ed;
-		
+
 		// get the signs
 		ss = fs >> 31;
 		st = ft >> 31;
-		
+
 		// get the mantissa and add the hidden bit
 		ms = fs & 0x007fffff;
 		mt = ft & 0x007fffff;
-		
+
 		// add hidden bit
 		ms |= 0x00800000;
 		mt |= 0x00800000;
-		
+
+		//cout << "\nAfter hidden bit ms=" << hex << ms << " mt=" << mt;
+
 		// apply the zeros
-		if ( !es ) ms = 0;
-		if ( !et ) mt = 0;
-		
+		if (!es) ms = 0;
+		if (!et) mt = 0;
+
 		// apply the signs
-		ms = ( ms ^ ss ) - ss;
-		mt = ( mt ^ st ) - st;
-		
+		//ms = ( ms ^ ss ) - ss;
+		//mt = ( mt ^ st ) - st;
+
 		// do the shift
-		if ( ed > 23 )
+		//if ( ed > 23 )
+		if (ed > (24 + c_iHiddenBits))
 		{
-			ed = 24;
+			//ed = 24;
+			ed = (24 + c_iHiddenBits);
 		}
-		
+
+		// shift up so we don't lose precision
+		ms <<= c_iHiddenBits;
+		mt <<= c_iHiddenBits;
+
+		// shift smaller value down
 		mt >>= ed;
-		
+
+		//cout << "\nAfter shift down mt=" << hex << mt;
+
+		// apply the signs
+		ms = (ms ^ ss) - ss;
+		mt = (mt ^ st) - st;
+
+		//cout << "\nAfter signs ms=" << hex << ms << " mt=" << mt;
+
 		// do the addition
 		md = ms + mt;
 
+		// shift back down result
+		//md >>= 4;
 
 		// debug
 		//e4 = ms;
 		//e5 = mt;
 		//e6 = md;
-		
-		
+
+
+		//cout << "\nAfter addition md=" << hex << md;
+
+
 		// get the sign
 		sd = md >> 31;
-		
+
 		// remove sign
-		md = ( md ^ sd ) - sd;
+		md = (md ^ sd) - sd;
 
-		
 
-		
+		//cout << "\nAfter removing sign md=" << hex << md;
+
+
 		// get new shift amount
 		//ed = 8 - __builtin_clz( md );
-		ed = 8 - clz32(md);
+		//ed = 8 - clz32(md);
+		ed = (8 - c_iHiddenBits) - clz32(md);
 
-		
-		
-		
+
+
+
 		// update exponent
 		ed += es;
 
-		
+
 		// debug
 		//e7 = es;
 		//e8 = ed;
 		//e9 = md;
 
-		
+
 		// make zero if the result is zero
-		if ( !md )
+		if (!md)
 		{
 			ed = 0;
 		}
@@ -660,72 +686,78 @@ namespace PS2Float
 			// get rid of the leading one (hidden bit)
 			//md <<= ( __builtin_clz( md ) + 1 );
 			md <<= (clz32(md) + 1);
-			md = ( (unsigned long) md ) >> 9;
+			md = ((unsigned long)md) >> 9;
 		}
-		
-		
-		
-		
+
+
+		//cout << "\nAfter removing leading one md=" << hex << md;
+
+
 		// remove hidden bit
 		//md &= 0x7fffff;
 
 
 
-		
+
 		// check for zero
-		if ( ed <= 0 )
+		if (ed <= 0)
 		{
 			md = 0;
-			
+
 			// set zero flag //
-			*MACFlag |= ( 1 << ( index + 0 ) );
+			*MACFlag |= (1 << (index + 0));
 			*StatusFlag |= 0x41;
-			
+
 			// check for underflow
-			if ( ed < 0 )
+			if (ed < 0)
 			{
 				// set underflow flag //
 				//statflag = 0x4008;
-				*MACFlag |= ( 1 << ( index + 8 ) );
+				*MACFlag |= (1 << (index + 8));
 				*StatusFlag |= 0x104;
 			}
-			
+
 			ed = 0;
-			
+
 			// get sign of zero
 			sd = ss & st;
 		}
-		
+
 		// check for overflow
-		if ( ed > 255 )
+		if (ed > 255)
 		{
 			// set overflow flag //
 			//statflag = 0x8010;
-			*MACFlag |= ( 1 << ( index + 12 ) );
+			*MACFlag |= (1 << (index + 12));
 			*StatusFlag |= 0x208;
-			
+
 			md = 0x7fffff;
 			ed = 255;
 		}
-		
+
 		// set sign flag //
-		*MACFlag |= sd & ( 1 << ( index + 4 ) );
+		*MACFlag |= sd & (1 << (index + 4));
 		*StatusFlag |= sd & 0x82;
 
-		
+
 		// debug
 		//e10 = md;
 		//e11 = ed;
 		//e12 = sd;
 
-		
+
 		// add in exponent
-		md += ( ed << 23 );
-		
-		
+		md += (ed << 23);
+
+
+		//cout << "\nAfter adding exponent md=" << hex << md;
+
+
 		// add in sign
-		fd = md + ( sd << 31 );
-		
+		fd = md + (sd << 31);
+
+		//cout << "\nAfter adding sign fd=" << hex << fd;
+
 		return fd;
 	}
 

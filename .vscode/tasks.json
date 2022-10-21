@@ -5,7 +5,7 @@
         "label": "build hps1x64",
         "type": "shell",
         "command": "mingw32-make",
-        "args": ["-B", "-f", "MakefilePS1.txt"],
+        "args": ["-f", "MakefilePS1.txt"],
         "group": {
           "kind": "build",
           "isDefault": true
@@ -15,7 +15,7 @@
         "label": "build hps1x64 (Debug)",
         "type": "shell",
         "command": "mingw32-make",
-        "args": ["-B", "-f", "MakefilePS1_Debug.txt"],
+        "args": ["-f", "MakefilePS1_Debug.txt"],
         "group": {
           "kind": "build",
           "isDefault": true
@@ -25,7 +25,7 @@
         "label": "build hps2x64",
         "type": "shell",
         "command": "mingw32-make",
-        "args": ["-B", "-f", "MakefilePS2.txt"],
+        "args": ["-f", "MakefilePS2.txt"],
         "group": {
           "kind": "build",
           "isDefault": true
@@ -35,7 +35,7 @@
         "label": "build hps2x64 (Debug)",
         "type": "shell",
         "command": "mingw32-make",
-        "args": ["-B", "-f", "MakefilePS2_Debug.txt"],
+        "args": ["-f", "MakefilePS2_Debug.txt"],
         "group": {
           "kind": "build",
           "isDefault": true

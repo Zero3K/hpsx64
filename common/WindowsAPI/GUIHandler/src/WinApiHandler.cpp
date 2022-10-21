@@ -22,11 +22,11 @@
 #include <iostream>
 
 #include <windows.h>
+
 #include <gl/gl.h>
 
 #pragma comment(lib, "comctl32")
 
-//#pragma comment(lib, "glew32.lib")  
 #pragma comment(lib, "opengl32")
 
 
@@ -964,7 +964,7 @@ int WindowClass::Window::WindowMessageLoop ()
 }
 
 
-string WindowClass::Window::ShowFileOpenDialog_BIOS()
+string WindowClass::Window::ShowFileOpenDialog ()
 {
 	OPENFILENAME ofn;       // common dialog box structure
 	char szFile[1024];       // buffer for file name
@@ -980,7 +980,7 @@ string WindowClass::Window::ShowFileOpenDialog_BIOS()
 	// use the contents of szFile to initialize itself.
 	ofn.lpstrFile[0] = '\0';
 	ofn.nMaxFile = sizeof(szFile);
-	ofn.lpstrFilter = "Bios\0*.bin\0";
+	ofn.lpstrFilter = "All\0*.*\0Text\0*.TXT\0";
 	ofn.nFilterIndex = 1;
 	ofn.lpstrFileTitle = NULL;
 	ofn.nMaxFileTitle = 0;
@@ -997,89 +997,11 @@ string WindowClass::Window::ShowFileOpenDialog_BIOS()
 		//return szFile;
 	}
 
-
 	//cout << "\nDEBUG: GetOpenFileName = FALSE.";
 	
 	return "";
 }
 
-string WindowClass::Window::ShowFileOpenDialog_Image()
-{
-	OPENFILENAME ofn;       // common dialog box structure
-	char szFile[1024];       // buffer for file name
-	//HWND hwnd;              // owner window
-	//HANDLE hf;              // file handle
-
-	// Initialize OPENFILENAME
-	ZeroMemory(&ofn, sizeof(ofn));
-	ofn.lStructSize = sizeof(ofn);
-	ofn.hwndOwner = hWnd;
-	ofn.lpstrFile = szFile;
-	// Set lpstrFile[0] to '\0' so that GetOpenFileName does not
-	// use the contents of szFile to initialize itself.
-	ofn.lpstrFile[0] = '\0';
-	ofn.nMaxFile = sizeof(szFile);
-	ofn.lpstrFilter = "Disk Image\0*.bin;*.cue;*.iso\0";
-	ofn.nFilterIndex = 1;
-	ofn.lpstrFileTitle = NULL;
-	ofn.nMaxFileTitle = 0;
-	ofn.lpstrInitialDir = NULL;
-	ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
-
-	// Display the Open dialog box.
-
-	if (GetOpenFileName(&ofn)==TRUE)
-	{
-		//cout << "\nDEBUG: GetOpenFileName = TRUE.";
-		
-		return ofn.lpstrFile;
-		//return szFile;
-	}
-
-
-	//cout << "\nDEBUG: GetOpenFileName = FALSE.";
-	
-	return "";
-}
-
-string WindowClass::Window::ShowFileOpenDialog_Savestate()
-{
-	OPENFILENAME ofn;       // common dialog box structure
-	char szFile[1024];       // buffer for file name
-	//HWND hwnd;              // owner window
-	//HANDLE hf;              // file handle
-
-	// Initialize OPENFILENAME
-	ZeroMemory(&ofn, sizeof(ofn));
-	ofn.lStructSize = sizeof(ofn);
-	ofn.hwndOwner = hWnd;
-	ofn.lpstrFile = szFile;
-	// Set lpstrFile[0] to '\0' so that GetOpenFileName does not
-	// use the contents of szFile to initialize itself.
-	ofn.lpstrFile[0] = '\0';
-	ofn.nMaxFile = sizeof(szFile);
-	ofn.lpstrFilter = "State\0*.state\0";
-	ofn.nFilterIndex = 1;
-	ofn.lpstrFileTitle = NULL;
-	ofn.nMaxFileTitle = 0;
-	ofn.lpstrInitialDir = NULL;
-	ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
-
-	// Display the Open dialog box.
-
-	if (GetOpenFileName(&ofn)==TRUE)
-	{
-		//cout << "\nDEBUG: GetOpenFileName = TRUE.";
-		
-		return ofn.lpstrFile;
-		//return szFile;
-	}
-
-
-	//cout << "\nDEBUG: GetOpenFileName = FALSE.";
-	
-	return "";
-}
 
 vector<string> WindowClass::Window::ShowFileOpenDialogMultiSelect ()
 {
@@ -1103,7 +1025,7 @@ vector<string> WindowClass::Window::ShowFileOpenDialogMultiSelect ()
 	// use the contents of szFile to initialize itself.
 	ofn.lpstrFile[0] = '\0';
 	ofn.nMaxFile = sizeof(szFile);
-	ofn.lpstrFilter = "State\0*.state\0";
+	ofn.lpstrFilter = "All\0*.*\0Text\0*.TXT\0";
 	ofn.nFilterIndex = 1;
 	ofn.lpstrFileTitle = NULL;
 	ofn.nMaxFileTitle = 0;
@@ -1152,7 +1074,7 @@ vector<string> WindowClass::Window::ShowFileOpenDialogMultiSelect ()
 }
 
 
-string WindowClass::Window::ShowFileSaveDialog_Savestate ()
+string WindowClass::Window::ShowFileSaveDialog ()
 {
 	OPENFILENAME ofn;       // common dialog box structure
 	char szFile[260];       // buffer for file name
