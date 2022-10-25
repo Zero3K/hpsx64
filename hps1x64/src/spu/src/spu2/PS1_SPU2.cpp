@@ -3298,8 +3298,8 @@ void SPU2::Start ()
 	GlobalVolume = c_iGlobalVolume_Default;
 	
 	// start the sound buffer out at 1m for now
-	PlayBuffer_Size = c_iPlayBuffer_MaxSize;
-	NextPlayBuffer_Size = c_iPlayBuffer_MaxSize;
+	PlayBuffer_Size = 8192;
+	NextPlayBuffer_Size = 8192;
 
 	wfx.nSamplesPerSec = 48000; /* sample rate */
 	wfx.wBitsPerSample = 16; /* sample size */
