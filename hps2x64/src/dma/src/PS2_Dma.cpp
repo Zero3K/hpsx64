@@ -105,6 +105,10 @@
 //#define ALIGN_DMA6_START_WITH_PS1
 
 
+// disable channel completely if PCE sets it to low priority
+//#define ENABLE_PCE_CHANNEL_DISABLE
+
+
 #define FIX_UNALIGNED_READ
 #define FIX_UNALIGNED_WRITE
 
@@ -116,7 +120,7 @@
 
 #define INLINE_DEBUG_ENABLE
 
-/*
+
 #define INLINE_DEBUG_WRITE
 #define INLINE_DEBUG_READ
 #define INLINE_DEBUG_START
@@ -186,7 +190,7 @@
 //#define INLINE_DEBUG_CD
 //#define INLINE_DEBUG_SPU
 //#define INLINE_DEBUG_ACK
-*/
+
 
 #endif
 
@@ -757,11 +761,13 @@ u32 Dma::Get_ChannelPriority ( int iChannel )
 	{
 		ulPriority += 1000;
 	}
+#ifdef ENABLE_PCE_CHANNEL_DISABLE
 	else
 	{
 		// if channel is disabled, then it does not run?
 		return 0;
 	}
+#endif
 	
 	// check if channel is zero (next highest priority) //
 	if ( !iChannel ) ulPriority += 100;
@@ -1094,39 +1100,42 @@ void Dma::Write ( u32 Address, u64 Data, u64 Mask )
 
 
 				// check if dma channel is running already
-				/*
 				if (PreviousValue & 0x100)
 				{
 #if defined INLINE_DEBUG_WRITE
 					debug << "\r\nWrite to DMA#" << dec << DmaChannelNum << " CHCR while CHCR alread enabled = " << hex << PreviousValue;
 #endif
-	cout << "\nWRITE to dma channel#" << hex << DmaChannelNum << " while running previous value:" << hex << PreviousValue << " new value:" << pDMARegs->Regs[Offset];
+
+					//cout << "\nWRITE to dma channel#" << hex << DmaChannelNum << " while running previous value:" << hex << PreviousValue << " new value:" << pDMARegs->Regs[Offset];
 					// check if dma has been halted/stopped
 					if (!(pDMARegs->ENABLER & 0x10000))
 					{
 						// ps2 dma NOT halted/stopped //
 						
-						cout << "\nps2 dma not halted";
+						//cout << "\nps2 dma not halted";
 
 #if defined INLINE_DEBUG_WRITE
 						debug << "\r\nWrite to DMA#" << dec << DmaChannelNum << " CHCR while DMA is NOT halted ENABLER/W.";
 #endif
 
 						// should only be able to modify CHCR while running if dma is halted/stopped ??
+						// only modify chcr
+						pDMARegs->Regs[Offset] = (pDMARegs->Regs[Offset] & 0x100) | (PreviousValue & ~0x100);
 
-						// set back to previous value
-						pDMARegs->Regs[Offset] = PreviousValue;
 						return;
 					}
 				}
-				*/
 
 
 				// some values in register are fixed for DIR field for some channels
 				pDMARegs->Regs [ Offset ] &= c_ulChcrAND [ DmaChannelNum ];
 				pDMARegs->Regs [ Offset ] |= c_ulChcrOR [ DmaChannelNum ];
 
-				if ( pDMARegs->CTRL.DMAE && ( !pDMARegs->PCR.PCE || ( pDMARegs->PCR.Value & ( 1 << ( DmaChannelNum + 16 ) ) ) ) && pRegData [ DmaChannelNum ]->CHCR.STR )
+				if ( pDMARegs->CTRL.DMAE
+#ifdef ENABLE_PCE_CHANNEL_DISABLE
+					&& ( !pDMARegs->PCR.PCE || ( pDMARegs->PCR.Value & ( 1 << ( DmaChannelNum + 16 ) ) ) )
+#endif
+					&& pRegData [ DmaChannelNum ]->CHCR.STR )
 				{
 					// transfer is set to start //
 					
@@ -2137,6 +2146,12 @@ void Dma::NormalTransfer_ToMemory ( int iChannel )
 			// set the amount total in the block to be transferred
 			QWC_BlockTotal [ iChannel ] = pRegData [ iChannel ]->QWC.QWC;
 			
+			// if qwc is zero, then transfer 0x10000
+			if (!pRegData[iChannel]->QWC.QWC)
+			{
+				QWC_BlockTotal[iChannel] = 0x10000;
+			}
+
 			// nothing transferred yet
 			QWC_Transferred [ iChannel ] = 0;
 		}
@@ -2464,6 +2479,12 @@ void Dma::NormalTransfer_FromMemory ( int iChannel )
 		{
 			// set the amount total in the block to be transferred
 			QWC_BlockTotal [ iChannel ] = pRegData [ iChannel ]->QWC.QWC;
+
+			// if qwc is zero, then transfer 0x10000
+			if (!pRegData[iChannel]->QWC.QWC)
+			{
+				QWC_BlockTotal[iChannel] = 0x10000;
+			}
 			
 			// nothing transferred yet
 			QWC_Transferred [ iChannel ] = 0;
@@ -4884,11 +4905,36 @@ void Dma::Update_NextEventCycle ()
 
 u64* Dma::GetMemoryPtr ( u32 Address )
 {
+	if (Address < DataBus::MainMemory_Size)
+	{
+		// otherwise, it is a main memory address
+		return &(DataBus::_BUS->MainMemory.b64[((Address & DataBus::MainMemory_Mask) >> 3) & ~1]);
+	}
+	
+	if (Address < 0x10000000)
+	{
+		// pcsx2 treats this as zeros for read and write?
+		cout << "\n***PS2 DMA ADDRESS SHOULD BE ZEROS FOR R/W? ADDR=" << hex << Address;
+	}
+
+	if (Address < 0x10004000)
+	{
+		// pcsx2 treats this as scratch pad area
+		return &(DataBus::_BUS->ScratchPad.b64[((Address & DataBus::ScratchPad_Mask) >> 3) & ~1]);
+	}
+
+	if ((Address & 0x70000000) == 0x70000000)
+	{
+		// treat as scratchpad too
+		return &(DataBus::_BUS->ScratchPad.b64[((Address & DataBus::ScratchPad_Mask) >> 3) & ~1]);
+	}
+
 	if ( Address >> 31 )
 	{
 		// if SPR bit is set, then it is an SPR Memory address
 		return & ( DataBus::_BUS->ScratchPad.b64 [ ( ( Address & DataBus::ScratchPad_Mask ) >> 3 ) & ~1 ] );
 	}
+
 	
 	if ( ( Address >> 24 ) == 0x11 )
 	{
@@ -4915,8 +4961,13 @@ u64* Dma::GetMemoryPtr ( u32 Address )
 		Address -= 0x1100c000;
 		return & ( DataBus::_BUS->VuMem1 [ ( ( Address & DataBus::MicroMem1_Mask ) >> 3 ) & ~1 ] );
 	}
+
+
+	// invalid address ?? //
 	
-	// otherwise, it is a main memory address
+	cout << "\n***hps2x64: ALERT: unknown PS2 DMA Address. using main memory. Addr=" << hex << Address;
+
+	// otherwise, for now treat it as a main memory address
 	return & ( DataBus::_BUS->MainMemory.b64 [ ( ( Address & DataBus::MainMemory_Mask ) >> 3 ) & ~1 ] );
 }
 

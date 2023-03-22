@@ -63,8 +63,8 @@
 
 
 //#define INLINE_DEBUG_UPDATE
-//#define INLINE_DEBUG_TICKCOUNT
-//#define INLINE_DEBUG_NEXTEVENT
+#define INLINE_DEBUG_TICKCOUNT
+#define INLINE_DEBUG_NEXTEVENT
 
 
 //#define INLINE_DEBUG_READ_MODE
@@ -2386,9 +2386,10 @@ void Timer::UpdateTimer_Scanline ()
 	
 	// if in free run mode, or this is timer 2, then can calculate like free run
 	if ( ( !MODE.RunMode ) || ( TimerNumber == 2 )
-#ifdef PS2_COMPILE
-		|| ( TimerNumber > 3 )
-#endif
+//#ifdef PS2_COMPILE
+//		// all the new timers 3,4,5 count cycles in free run mode when free run mode set
+//		|| ( TimerNumber > 3 )
+//#endif
 	)
 	{
 		// if this is timer 2 and sync mode is set and sync mode is 0 or 3, then  do not count
@@ -2848,9 +2849,10 @@ void Timer::Get_NextEvent_Scanline ()
 
 	// if in free run mode, or this is timer 2, then can calculate like free run
 	if ( ( !MODE.RunMode ) || ( TimerNumber == 2 )
-#ifdef PS2_COMPILE
-		|| ( TimerNumber > 3 )
-#endif
+//#ifdef PS2_COMPILE
+//		// all the new timers 3,4,5 count cycles in free run mode when free run mode set
+//		|| ( TimerNumber > 3 )
+//#endif
 	)
 	{
 		// timer is in free run //

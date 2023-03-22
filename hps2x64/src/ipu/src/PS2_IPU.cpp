@@ -225,7 +225,8 @@ void IPU::Run ()
 
 
 
-	if ( ( CMD_Write.Value != -1 ) && ( !decoder->ipu0_data ) )
+	//if ( ( CMD_Write.Value != -1 ) && ( !decoder->ipu0_data ) )
+	if (CMD_Write.Value != -1)
 	{
 #ifdef INLINE_DEBUG_RUN
 	debug << " IPURUNCMD";
@@ -768,7 +769,8 @@ u32 IPU::DMA_WriteBlock ( u64* Data, u32 QuadwordCount )
 
 	
 	// check for pending command
-	if ( ( _IPU->CMD_Write.Value != -1 ) && ( !decoder->ipu0_data ) )
+	//if ( ( _IPU->CMD_Write.Value != -1 ) && ( !decoder->ipu0_data ) )
+	if (_IPU->CMD_Write.Value != -1)
 	{
 		switch ( _IPU->CMD_Write.CODE )
 		{
@@ -843,7 +845,8 @@ u32 IPU::DMA_ReadBlock ( u64* Data, u32 QuadwordCount )
 	// update the output fifo size
 	_IPU->Update_OFC ();
 
-	if ( ( _IPU->CMD_Write.Value != -1 ) && ( !decoder->ipu0_data ) )
+	//if ( ( _IPU->CMD_Write.Value != -1 ) && ( !decoder->ipu0_data ) )
+	if (_IPU->CMD_Write.Value != -1)
 	{
 		_IPU->Process_CMD ();
 	}
@@ -1009,6 +1012,9 @@ void IPU::Clear_InputFifo ()
 	
 	// clear bit position
 	BitPosition = 0;
+
+	// should also clear command read since fifo is clear
+	CMD_Read.Lo = 0;
 	
 	// update input fifo
 	Update_IFC ();
@@ -1154,10 +1160,10 @@ bool IPU::Load_IQTable_FromBitstream ( u8* table )
 			// clear the command
 			CMD_Write.Value = -1;
 	
-//#ifndef DISABLE_INTERRUPTS
-//	// send interrupt now that command is complete
-//	SetInterrupt ();
-//#endif
+#ifndef DISABLE_INTERRUPTS
+		// send interrupt now that command is complete
+		SetInterrupt ();
+#endif
 
 			break;
 	
@@ -1218,10 +1224,10 @@ bool IPU::Load_VQTable_FromBitstream ( u16* table )
 			// clear the command
 			CMD_Write.Value = -1;
 	
-//#ifndef DISABLE_INTERRUPTS
-//	// send interrupt now that command is complete
-//	SetInterrupt ();
-//#endif
+#ifndef DISABLE_INTERRUPTS
+			// send interrupt now that command is complete
+			SetInterrupt ();
+#endif
 
 			break;
 	
@@ -1278,9 +1284,10 @@ u64 IPU::PeekBE ( u64 iBits, u32 uBitPosition )
 		uResult64 |= (u64) (*ptr8++);
 	}
 	
+	ptr8 = (u8*)(&FifoIn[(FifoIn_ReadIndex + 1) & c_iFifoMask64]);
+
 	if ( BytePosition )
 	{
-		ptr8 = (u8*) ( & FifoIn [ ( FifoIn_ReadIndex + 1 ) & c_iFifoMask64 ] );
 		for ( int i = 0; i < BytePosition; i++ )
 		{
 			uResult64 <<= 8;
@@ -1817,7 +1824,7 @@ void IPU::Update_IFC ()
 		{
 			//cout << "\nhps2x64: IPU: Data requested while DMA#4 IPU-IN is not started.\n";
 
-#ifndef DISABLE_INTERRUPTS
+#ifdef ENABLE_INTERRUPT_DATA_REQUEST
 				// trigger interrupt
 				SetInterrupt ();
 #endif
@@ -2144,10 +2151,10 @@ bool IPU::Execute_VDEC ()
 	// clear the command
 	CMD_Write.Value = -1;
 	
-//#ifndef DISABLE_INTERRUPTS
-//	// send interrupt now that command is complete
-//	SetInterrupt ();
-//#endif
+#ifndef DISABLE_INTERRUPTS
+	// send interrupt now that command is complete
+	SetInterrupt ();
+#endif
 	}	// end switch
 	
 	// executed succesfully
@@ -2223,10 +2230,10 @@ bool IPU::Execute_FDEC ()
 	debug << " (reverse)=" << Data;
 #endif
 	
-//#ifndef DISABLE_INTERRUPTS
-//	// send interrupt now that command is complete
-//	SetInterrupt ();
-//#endif
+#ifndef DISABLE_INTERRUPTS
+	// send interrupt now that command is complete
+	SetInterrupt ();
+#endif
 	
 	};	// end switch
 	
@@ -2373,6 +2380,10 @@ void IPU::Write ( u32 Address, u64 Data, u64 Mask )
 					// command complete
 					_IPU->CMD_Write.Value = -1;
 
+#ifndef DISABLE_INTERRUPTS_BCLR
+					// all commands interrupt when done ??
+					SetInterrupt();
+#endif
 					break;
 					
 				case CMD_IDEC:
@@ -2697,6 +2708,10 @@ void IPU::Write ( u32 Address, u64 Data, u64 Mask )
 	cout << " Cycle#" << dec << *_DebugCycleCount;
 #endif
 
+#ifndef DISABLE_INTERRUPTS_PACK
+					// all commands interrupt when done ??
+					SetInterrupt();
+#endif
 
 					break;
 					
@@ -2710,7 +2725,12 @@ void IPU::Write ( u32 Address, u64 Data, u64 Mask )
 					
 					// command complete
 					_IPU->CMD_Write.Value = -1;
-					
+
+#ifndef DISABLE_INTERRUPTS_SETTH
+					// all commands interrupt when done ??
+					SetInterrupt ();
+#endif
+
 					break;
 					
 				default:
@@ -2879,9 +2899,9 @@ u8 IPU::VQ ( u16 RGB16 )
 	u32 clut_r, clut_g, clut_b, clut_pixel;
 	
 	// split pixel into components
-	r = ( RGB16 >> 16 ) & 0xff;
-	g = ( RGB16 >> 8 ) & 0xff;
-	b = ( RGB16 >> 0 ) & 0xff;
+	r = ( RGB16 >> 10 ) & 0x1f;
+	g = ( RGB16 >> 5 ) & 0x1f;
+	b = ( RGB16 >> 0 ) & 0x1f;
 	
 	MinIndex = -1;
 	Min_d1 = 0xfffff;

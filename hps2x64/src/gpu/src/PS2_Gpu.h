@@ -82,6 +82,120 @@
 //using namespace x64Asm::Utilities;
 
 
+#define ALLOW_OPENCL_PS2
+#define ENABLE_COMPUTE_SHADER_RENDER
+
+
+#ifdef ALLOW_OPENCL_PS2
+
+// outputs debug info for flushing to hardware
+//#define VALIDATE_OPENCL_PS2_FLUSH2
+
+
+// this enables everything for allowing full hardware operation and no debugging and full blast
+#define ALLOW_OPENCL_PS2_ALL_PRIMITIVES
+
+#ifdef ALLOW_OPENCL_PS2_ALL_PRIMITIVES
+
+#define ALLOW_OPENCL_PS2_TRANSFEROUT
+//#define ALLOW_OPENCL_PS2_TRANSFEROUT_2
+
+#define ALLOW_OPENCL_PS2_TRANSFERMOVE
+
+#define ALLOW_OPENCL_PS2_TRANSFERIN
+#define ENABLE_HWPIXEL_INPUT
+#define ENABLE_OPENCL_MULTIPLE_TRANSFERIN
+
+#define ALLOW_OPENCL_PS2_VARIABLE
+#define ENABLE_OPENCL_MULTIPLE_VARS
+
+#define ALLOW_OPENCL_PS2_DRAWSCREEN
+
+#define ALLOW_OPENCL_PS2_SETDRAWVARS
+#define ALLOW_OPENCL_PS2_SETDRAWVARS_LINE
+
+#define ALLOW_OPENCL_PS2_PIXEL_COLOR
+#define ALLOW_OPENCL_PS2_LINE_COLOR
+#define ALLOW_OPENCL_PS2_RECTANGLE
+#define ALLOW_OPENCL_PS2_SPRITE
+#define ALLOW_OPENCL_PS2_TRIANGLE
+#define ALLOW_OPENCL_PS2_TRIANGLE_COLOR
+#define ALLOW_OPENCL_PS2_TRIANGLE_TEXTURE
+
+#else
+
+
+#define ALLOW_OPENCL_PS2_TRANSFEROUT
+//#define ALLOW_OPENCL_PS2_TRANSFEROUT_2
+
+#define ALLOW_OPENCL_PS2_TRANSFERMOVE
+//#define TEST_OPENCL_PS2_TRANSFERMOVE
+//#define VALIDATE_OPENCL_PS2_TRANSFERMOVE
+
+// for transfer-in need to enable the first two here for now
+#define ALLOW_OPENCL_PS2_TRANSFERIN
+#define ENABLE_HWPIXEL_INPUT
+#define ENABLE_OPENCL_MULTIPLE_TRANSFERIN
+//#define TEST_OPENCL_PS2_TRANSFERIN
+//#define VALIDATE_OPENCL_PS2_TRANSFERIN
+
+
+// send variables to gpu
+#define ALLOW_OPENCL_PS2_VARIABLE
+#define ENABLE_OPENCL_MULTIPLE_VARS
+//#define TEST_OPENCL_PS2_VARIABLE
+
+// this needs to be enabled to allow drawing of objects via shader
+#define ALLOW_OPENCL_PS2_SETDRAWVARS
+
+
+
+#define ALLOW_OPENCL_PS2_PIXEL_COLOR
+//#define TEST_OPENCL_PS2_PIXEL_COLOR
+//#define VALIDATE_OPENCL_PS2_PIXEL_COLOR
+
+#define ALLOW_OPENCL_PS2_LINE_COLOR
+//#define TEST_OPENCL_PS2_LINE_COLOR
+//#define VALIDATE_OPENCL_PS2_LINE_COLOR
+
+#define ALLOW_OPENCL_PS2_RECTANGLE
+//#define TEST_OPENCL_PS2_RECTANGLE
+//#define VALIDATE_OPENCL_PS2_RECTANGLE
+
+#define ALLOW_OPENCL_PS2_SPRITE
+//#define TEST_OPENCL_PS2_SPRITE
+//#define VALIDATE_OPENCL_PS2_SPRITE
+
+// this is for if using the templates
+#define ALLOW_OPENCL_PS2_TRIANGLE
+
+#define ALLOW_OPENCL_PS2_TRIANGLE_COLOR
+//#define TEST_OPENCL_PS2_TRIANGLE_COLOR
+//#define VALIDATE_OPENCL_PS2_TRIANGLE_COLOR
+
+#define ALLOW_OPENCL_PS2_TRIANGLE_TEXTURE
+//#define TEST_OPENCL_PS2_TRIANGLE_TEXTURE
+//#define VALIDATE_OPENCL_PS2_TRIANGLE_TEXTURE
+
+
+
+//#define ALLOW_OPENCL_PS2_DRAWSCREEN_FLUSH
+
+#define ALLOW_OPENCL_PS2_DRAWSCREEN
+//#define TEST_OPENCL_PS2_DRAWSCREEN
+//#define VALIDATE_OPENCL_PS2_DRAWSCREEN
+
+//#define VALIDATE_OPENCL_PS2_COPYCLUT
+//#define VALIDATE_OPENCL_PS2_COPYVARS
+
+#endif	// end else #ifdef ALLOW_OPENCL_PS2_ALL_PRIMITIVES
+
+
+#endif	// end #ifdef ALLOW_OPENCL_PS2
+
+
+
+
 #define EXTRACT_BITS(var,from,to)	( ( (var) >> (from) ) & ( (1 << ( (to)-(from)+1 )) - 1 ) )
 
 
@@ -190,9 +304,11 @@
 
 #endif
 
-
 // this is for multi-threading testing of opengl compute shader
-#define USE_TEMPLATES_PS2_DRAWSCREEN
+//#define USE_TEMPLATES_PS2_DRAWSCREEN
+
+// enable opencl/vulkan for template version of drawscreen function
+#define ALLOW_OPENCL_PS2_DRAWSCREEN_2
 
 
 // these are both in the cpp file as well as here in the h file
@@ -201,7 +317,7 @@
 
 // choose one here
 //#define ENABLE_OPENCL_ACTIVE_RENDER
-#define ENABLE_OPENCL_PASSIVE_RENDER
+//#define ENABLE_OPENCL_PASSIVE_RENDER
 
 
 
@@ -1949,6 +2065,9 @@ namespace Playstation2
 		static void Path2_WriteBlock ( u32* Data, u32 WordCount );
 		static void Path2_ReadBlock ( u64* Data, u32 QuadwordCount );
 		
+		void LoadVulkan();
+		void UnloadVulkan();
+
 		void Start ();
 
 		void Refresh ();
@@ -1967,6 +2086,10 @@ namespace Playstation2
 		void Copy_Buffer ( u32* dstbuf, u32* srcbuf, u32 dstbuffer_width, u32 dstbuffer_height, u32 srcbuffer_width, u32 srcbuffer_height, u32 SrcPixelFormat );
 		void Draw_FrameBuffers ();
 		
+		void Copy_VARS_toGPU();
+		void Copy_VARS_toCPU();
+		void Copy_CLUT_toGPU();
+		void Copy_CLUT_toCPU();
 		void Copy_VRAM_toGPU ();
 		void Copy_VRAM_toCPU ();
 
@@ -4372,34 +4495,91 @@ static void Refresh_FRAME ( u32 lContext, u64 ullValue )
 		
 		// also need to count frames for debugging
 		u32 Frame_Count;
+
+		// number of local sharder invocations for compute shader
+		static constexpr int GPU_PS2_HARDWARE_LOCAL_SIZE = 256;
 		
-		
+		// required number of shader cores for compute shader to work properly
+		static constexpr int GPU_PS2_MINIMUM_REQUIRED_SHADER_CORES = 1;
+
+		// maximum number of subgroups allowed before compute shader does not operate properly
+		static constexpr int GPU_PS2_MAXIMUM_LOCAL_SUBGROUPS = 8;
+
+		static constexpr int COMMAND_LIST_SIZE = (1 << 16);
+		static constexpr int PIXEL_LIST_SIZE = (1 << 21);
+		static constexpr int PRECOMPUTE_LIST_SIZE = (1 << 16);
+
+
+		static constexpr int COMMAND_LIST_ITEM_COUNT = (32);
+		static constexpr int PRECOMPUTE_LIST_ITEM_COUNT = (64);
+
+		// size of screen internally
+		static constexpr int SCREEN_X_SIZE = (640);
+		static constexpr int SCREEN_Y_SIZE = (480);
+
+	// set the sizes for the global memory areas here
+		static constexpr int GLOBAL_MEM_SCRATCH_SIZE_BYTES = (1024 * 4);
+		//#define GLOBAL_MEM_GPUVARS_SIZE_BYTES			(128*8)
+		//#define GLOBAL_MEM_GPUCLUT_SIZE_BYTES			(512*4)
+		//#define GLOBAL_MEM_SCRATCH2_SIZE_BYTES			(16*4)
+		static constexpr int GLOBAL_MEM_VRAM_SIZE_BYTES = (1 << 22);
+		static constexpr int GLOBAL_MEM_SVRAM_SIZE_BYTES = (1 << 22);
+		//#define GLOBAL_MEM_PIXELBUF_SIZE_BYTES			(1024*1024*4)
+		static constexpr int GLOBAL_MEM_INPUT_COMM_SIZE_BYTES = (COMMAND_LIST_ITEM_COUNT * COMMAND_LIST_SIZE * 4);
+		static constexpr int GLOBAL_MEM_INPUT_PIX_SIZE_BYTES = (PIXEL_LIST_SIZE * 4);
+		static constexpr int GLOBAL_MEM_XY_LUT_SIZE_BYTES = (16384 * 32 * 4);
+		//#define GLOBAL_MEM_XOFF_LUT_SIZE_BYTES			(4096 * 32 * 4)
+		//#define GLOBAL_MEM_YOFF_LUT_SIZE_BYTES			(128 * 32 * 4)
+
+		static constexpr int GLOBAL_MEM_WORK_AREA_SIZE_BYTES = (PRECOMPUTE_LIST_ITEM_COUNT * PRECOMPUTE_LIST_SIZE * 4);
+		static constexpr int GLOBAL_MEM_STAGING_SIZE_BYTES = (SCREEN_X_SIZE * SCREEN_Y_SIZE * 4);
+
+
 
 		// gpu shader command buffer //
 		u32 bEnable_OpenCL;
-		static const u64 c_ulHwInputBuffer_Size = 1ull << 16;
+		static const u64 c_ulHwInputBuffer_Size = COMMAND_LIST_SIZE;
 		static const u64 c_ulHwInputBuffer_Mask = c_ulHwInputBuffer_Size - 1;
 		static const u64 c_ulHwInputBuffer_Shift = 5;
 		static u64 ullHwInputBuffer_Index;
 		static u32 ulHwInputBuffer_Count;
-		alignas(32) static u64 pHwInputBuffer64 [ ( 1 << c_ulHwInputBuffer_Shift ) * c_ulHwInputBuffer_Size ];
-		static u32 *p_uHwInputData32;
+		alignas(32) static u32 pHwInputBuffer32 [ ( 1 << c_ulHwInputBuffer_Shift ) * c_ulHwInputBuffer_Size ];
+
+		// allow gpu hardware rendering on this particular system
+		// note: this needs to be static since it checks at program statup if this is allowed and don't want loading save states to overwrite this
+		static u32 bAllowGpuHardwareRendering;
+
+
+		static u32* p_uHwScratchData32;
+
+		static u64* p_uHwGpuVarsData64;
 		static u32 *p_uHwClutData32;
 		static u32 *p_uHwCbpxData32;
+
+		// this is the VRAM on hardware gpu for ps2
 		static u32 *p_uHwOutputData32;
+
+		// this is the shadow vram sharing space with the pixel buffer screen output from gpu
+		static u32 *p_ulHwPixelOutBuffer32;
+
+		static u32* p_uHwInputData32;
+		static u32* p_ulHwPixelInBuffer32;
+		static u32* p_ulHwXYLUT32;
+
+		static u32* p_ulHwXLUT32;
+		static u32* p_ulHwYLUT32;
 
 		static u64 ulHwInputBuffer_WriteIndex;
 		static u64 ulHwInputBuffer_TargetIndex;
 		static u64 ulHwInputBuffer_ReadIndex;
 
 
-		static const u64 c_ullPixelInBuffer_Size = 1 << 21;
+		static const u64 c_ullPixelInBuffer_Size = PIXEL_LIST_SIZE;
 		static const u64 c_ullPixelInBuffer_Mask = c_ullPixelInBuffer_Size - 1;
 		static volatile u64 ullPixelInBuffer_WriteIndex;
 		static volatile u64 ullPixelInBuffer_TargetIndex;
 		static volatile u64 ullPixelInBuffer_ReadIndex;
 		alignas(32) static u32 ulPixelInBuffer32 [ c_ullPixelInBuffer_Size ];
-		static u32 *p_ulHwPixelInBuffer32;
 
 
 		// threads
@@ -26791,6 +26971,7 @@ static void Render_Generic_CopyLocal_t( u64* p_inputbuffer, u32 ulThreadNum )
 	
 	u32 OffsetSrc, OffsetDst;
 	
+	u32* inputdata_ptr;
 
 
 	
@@ -26888,7 +27069,105 @@ if ( BITBLTBUF_DBW )
 	
 	// get transfer height (in pixels)
 	XferHeight = TRXREG_RRH;
-			
+
+
+#ifdef ALLOW_OPENCL_PS2_TRANSFERMOVE
+	// check if using gpu
+	if (_GPU->bEnable_OpenCL)
+	{
+		//inputdata_ptr = & pHwInputBuffer64 [ ( ulHwInputBuffer_WriteIndex & c_ulHwInputBuffer_Mask ) << c_ulHwInputBuffer_Shift ];
+		inputdata_ptr = &((u32*)pHwInputBuffer32)[(ulHwInputBuffer_WriteIndex & c_ulHwInputBuffer_Mask) << c_ulHwInputBuffer_Shift];
+
+		// set total pixel count
+		//inputdata_ptr [ 11 ] = w * h;
+
+	// transfer in command
+		inputdata_ptr[0] = 0xf1000000;
+
+
+		// new transfer command //
+
+		//inputdata_ptr [ 0 ] = GPURegsGp.BITBLTBUF.Value;
+		//inputdata_ptr [ 1 ] = GPURegsGp.TRXPOS.Value;
+		//inputdata_ptr [ 2 ] = GPURegsGp.TRXREG.Value;
+		//inputdata_ptr [ 3 ] = CurrentPath;
+		//inputdata_ptr [ 4 ] = WordCount32;
+		//inputdata_ptr [ 4 ] = iPixelCount24;
+
+		// offset to the data is zero
+		inputdata_ptr[1] = 0;
+
+		((u64*)inputdata_ptr)[1] = _GPU->GPURegsGp.BITBLTBUF.Value;
+
+		// set the total transfer count
+		inputdata_ptr[4] = 0;
+		inputdata_ptr[5] = XferWidth * XferHeight;
+
+		inputdata_ptr[8] = XferSrcX;
+		inputdata_ptr[9] = XferSrcY;
+		inputdata_ptr[10] = XferDstX;
+		inputdata_ptr[11] = XferDstY;
+
+		inputdata_ptr[12] = XferWidth;
+		inputdata_ptr[13] = XferHeight;
+
+		inputdata_ptr[14] = XferSrcBufWidth;
+		inputdata_ptr[15] = XferSrcOffset32;
+		inputdata_ptr[16] = XferDstBufWidth;
+		inputdata_ptr[17] = XferDstOffset32;
+
+		// padding to match up with transfer-in command format, these should be zero
+		inputdata_ptr[18] = 0;
+		inputdata_ptr[19] = 0;
+
+
+		// new command filled in
+		// send the command to the other thread
+		// *** todo ***
+		ulHwInputBuffer_WriteIndex++;
+
+
+#ifdef TEST_OPENCL_PS2_TRANSFERMOVE
+
+#ifdef VALIDATE_OPENCL_PS2_TRANSFERMOVE
+		/*
+		// output the inputs sent
+		for (int i = 0; i < 16; i++)
+		{
+			cout << "\nInput#" << dec << i << ": " << hex << inputdata_ptr[i];
+		}
+		*/
+#endif
+
+		// send command
+		Copy_VRAM_toGPU();
+		//FlushToHardware( 0, 1, ullPixelInBuffer_ReadIndex, ullPixelInBuffer_WriteIndex );
+		GPU::Flush();
+		Copy_VRAM_toCPU();
+
+
+#ifdef VALIDATE_OPENCL_PS2_TRANSFERMOVE
+		cout << "\nPS2: GPU: HW: TRANSFER-MOVE: Dst PixelFormat: " << PixelFormat_Names[GPURegsGp.BITBLTBUF.DPSM];
+
+		// output the validated inputs
+		/*
+		cout << "\nIndex#" << dec << p_ulHwPixelOutBuffer32[0];
+		for (int i = 0; i < 16; i++)
+		{
+			cout << "\nValidate#" << dec << i << ": " << hex << p_ulHwPixelOutBuffer32[i+1];
+		}
+		*/
+#endif
+
+#endif	// end #ifdef TEST_OPENCL_PS2_TRANSFERMOVE
+
+		// should be done
+		return;
+	}
+
+#endif	// end #ifdef ALLOW_OPENCL_PS2_TRANSFERMOVE
+
+
 			
 	// ***todo*** get transfer direction, and start transfer immediately if GPU->GPU transfer
 	//if ( ( Value & 3 ) == 2 )
@@ -29297,7 +29576,7 @@ static void Draw_Screen_th ( u64* p_inputbuffer, u32 ulThreadNum, u32 SELECTION1
 #endif
 
 
-#ifdef ALLOW_OPENCL_PS2_DRAWSCREEN
+#ifdef ALLOW_OPENCL_PS2_DRAWSCREEN_4
 	//bEnable_OpenCL = true;
 	if ( _GPU->bEnable_OpenCL )
 	{
@@ -29306,7 +29585,7 @@ static void Draw_Screen_th ( u64* p_inputbuffer, u32 ulThreadNum, u32 SELECTION1
 		// copy the vram into the gpu for testing
 		//Copy_VRAM_toGPU ();
 
-		inputdata_ptr = & pHwInputBuffer64 [ ( ulHwInputBuffer_WriteIndex & c_ulHwInputBuffer_Mask ) << c_ulHwInputBuffer_Shift ];
+		inputdata_ptr = & pHwInputBuffer32[(ulHwInputBuffer_WriteIndex & c_ulHwInputBuffer_Mask) << c_ulHwInputBuffer_Shift];
 
 		//inputdata_ptr [ 0 ] = _GPU->GPURegs0.PMODE;
 		//inputdata_ptr [ 1 ] = _GPU->GPURegs0.DISPFB1.Value;
@@ -30014,6 +30293,8 @@ static void Select_DrawScreen_t ( u64* x_inputbuffer, u32 ulThreadNum )
 	//u64 p_inputbuffer [ 16 ];
 	u64 *p_inputbuffer;
 
+	u32* inputdata_ptr;
+
 	//p_inputbuffer = (u64*) display_inputbuffer;
 	p_inputbuffer = (u64*) x_inputbuffer;
 	
@@ -30030,8 +30311,12 @@ static void Select_DrawScreen_t ( u64* x_inputbuffer, u32 ulThreadNum )
 		// also need bg color
 		p_inputbuffer [ 6 ] = _GPU->GPURegs0.BGCOLOR;
 
+		// need graphics mode
+		p_inputbuffer[7] = _GPU->iGraphicsMode;
+
 		p_inputbuffer [ 13 ] = _GPU->lScanline;
-	
+		p_inputbuffer[14] = *_DebugCycleCount;
+
 		// now that the data is set, if this is multi-threaded, then we are done if we are not on the GPU thread
 		//if ( _GPU->ulNumberOfThreads )
 		if ( GPU::ulThreadedGPU )
@@ -30069,6 +30354,56 @@ static void Select_DrawScreen_t ( u64* x_inputbuffer, u32 ulThreadNum )
 		}
 	}
 
+#ifdef ALLOW_OPENCL_PS2_DRAWSCREEN_2
+
+	//bEnable_OpenCL = true;
+	if (_GPU->bEnable_OpenCL)
+	{
+		//cout << "\nopengl draw screen";
+
+		// copy the vram into the gpu for testing
+		//Copy_VRAM_toGPU ();
+
+		inputdata_ptr = &((u32*)pHwInputBuffer32)[(ulHwInputBuffer_WriteIndex & c_ulHwInputBuffer_Mask) << c_ulHwInputBuffer_Shift];
+
+		// put in command
+		inputdata_ptr[0] = 0xfe000000ull;
+
+		//inputdata_ptr[1] = _GPU->lScanline;
+		inputdata_ptr[1] = p_inputbuffer[13];
+
+
+		//((u64*)inputdata_ptr)[1] = _GPU->GPURegs0.PMODE;
+		//((u64*)inputdata_ptr)[2] = _GPU->GPURegs0.DISPFB1.Value;
+		//((u64*)inputdata_ptr)[3] = _GPU->GPURegs0.DISPFB2.Value;
+		//((u64*)inputdata_ptr)[4] = _GPU->GPURegs0.DISPLAY1.Value;
+		//((u64*)inputdata_ptr)[5] = _GPU->GPURegs0.DISPLAY2.Value;
+		//((u64*)inputdata_ptr)[6] = _GPU->GPURegs0.SMODE2.Value;
+		((u64*)inputdata_ptr)[1] = p_inputbuffer[0];
+		((u64*)inputdata_ptr)[2] = p_inputbuffer[1];
+		((u64*)inputdata_ptr)[3] = p_inputbuffer[2];
+		((u64*)inputdata_ptr)[4] = p_inputbuffer[3];
+		((u64*)inputdata_ptr)[5] = p_inputbuffer[4];
+		((u64*)inputdata_ptr)[6] = p_inputbuffer[5];
+
+		//((u64*)inputdata_ptr)[14] = *_DebugCycleCount;
+		((u64*)inputdata_ptr)[14] = p_inputbuffer[14];
+
+		//inputdata_ptr[18] = _GPU->iGraphicsMode;
+		inputdata_ptr[18] = p_inputbuffer[7];
+
+		// commit command
+		ulHwInputBuffer_WriteIndex++;
+
+		// go ahead and flush gpu commands to hardware
+		// submit all the commands in buffer
+		GPU::Flush( ulThreadNum );
+
+		// should be done here
+		return;
+	}
+
+#endif
 
 
 	DISPFB1 = p_inputbuffer [ 1 ];
@@ -30753,7 +31088,16 @@ void TransferDataIn32_DS_t ( u32* Data, u32 WordCount32 )
 	u8 *DestBuffer8;
 	
 	u32 Offset;
-	
+
+	u32* inputdata_ptr;
+	u32* inputdata_ptr2;
+	u32* inputdata_ptr32;
+
+	int i;
+	int iCount;
+	s32 iPixelCount24;
+	u64 ullPixelBufStartIdx;
+
 	void *PtrEnd;
 	PtrEnd = RAM8 + c_iRAM_Size;
 	
@@ -30791,6 +31135,27 @@ void TransferDataIn32_DS_t ( u32* Data, u32 WordCount32 )
 	// check that there is data to transfer
 	if ( !XferWidth || !XferHeight ) return;
 	
+
+#ifdef ALLOW_OPENCL_PS2_TRANSFERIN
+
+	// check for new transfer
+	if (!XferX && !XferY)
+	{
+		// if it is a new transfer, give it a new id
+		XferId++;
+		XferCount32 = 0;
+
+		// reset count of 24-bit pixels
+		//iPixelCount24 = 0;
+
+		//if ( GPURegsGp.BITBLTBUF.DPSM > 0xa )
+		//{
+		//cout << "\nhps2x64: GPU: TransferIn-Compute: Type=" << PixelFormat_Names [ GPURegsGp.BITBLTBUF.DPSM ] << " XferId=" << dec << XferId << " x=" << XferX << " y=" << XferY << " w=" << XferWidth << " h=" << XferHeight;
+		//}
+	}
+
+#endif	// end #ifdef ALLOW_OPENCL_PS2_TRANSFERIN
+
 	
 	// if the X specified is greater than buffer width, then modulo
 	//if ( XferDstX >= XferDstBufWidth ) XferDstX %= XferDstBufWidth;
@@ -30804,7 +31169,199 @@ void TransferDataIn32_DS_t ( u32* Data, u32 WordCount32 )
 	if ( ( tBITBLTBUF_DPSM & 7 ) == 1 )
 	{
 		// 24-bit pixels //
-		
+
+
+#ifdef ALLOW_OPENCL_PS2_TRANSFERIN
+		// check if using gpu
+		if (bEnable_OpenCL)
+		{
+			inputdata_ptr = &((u32*)pHwInputBuffer32)[(ulHwInputBuffer_WriteIndex & c_ulHwInputBuffer_Mask) << c_ulHwInputBuffer_Shift];
+
+			// set the id
+			//inputdata_ptr [ 14 ] = XferId;
+
+
+			// set the count of 32-bit words in block
+			//inputdata_ptr [ 4 ] = WordCount32;
+
+			// set total pixel count
+			//inputdata_ptr [ 11 ] = w * h;
+
+		// get index that pixels start at in hardware buffer
+			ullPixelBufStartIdx = ullPixelInBuffer_WriteIndex;
+
+			// copy pixels into buffer
+			iPixelCount24 = 0;
+			//for ( i = 0; i < WordCount32; i++ )
+			while (WordCount32 || (PixelCount >= 3))
+			{
+				if (PixelCount < 3)
+				{
+					// load next data
+					PixelLoad = *Data++;
+
+					WordCount32--;
+
+					// put into pixel
+					PixelShift |= (PixelLoad << (PixelCount << 3));
+
+					PixelCount += 4;
+				}
+
+				ulPixelInBuffer32[ullPixelInBuffer_WriteIndex & c_ullPixelInBuffer_Mask] = PixelShift;
+				ullPixelInBuffer_WriteIndex++;
+
+				// count the transferred pixels
+				iPixelCount24++;
+
+				// shift (24-bit pixels)
+				PixelShift >>= 24;
+
+				// update pixel count
+				PixelCount -= 3;
+			}
+
+
+
+
+
+			//if ( WordCount32 > 32 )
+			//{
+			//	cout << "\nhps2x64: ALERT: WordCount32=" << dec << WordCount32;
+			//}
+
+#ifdef ENABLE_HWPIXEL_INPUT
+
+			// check that previous entry
+			inputdata_ptr2 = &((u32*)pHwInputBuffer32)[((ulHwInputBuffer_WriteIndex - 1) & c_ulHwInputBuffer_Mask) << c_ulHwInputBuffer_Shift];
+
+
+#ifdef ENABLE_OPENCL_MULTIPLE_TRANSFERIN
+			// check if part of previous command or new command
+			if (
+				(ulHwInputBuffer_TargetIndex > (ulHwInputBuffer_WriteIndex - 1))
+				|| (inputdata_ptr2[19] != XferId)
+				|| (inputdata_ptr2[0] != (0xf8ull << 24))
+				)
+#endif
+			{
+				// new transfer command //
+
+				// transfer in command
+				inputdata_ptr[0] = 0xf8000000ull;
+
+				((u64*)inputdata_ptr)[1] = GPURegsGp.BITBLTBUF.Value;
+
+				//inputdata_ptr [ 2 ] = GPURegsGp.TRXPOS.Value;
+				//inputdata_ptr [ 3 ] = GPURegsGp.TRXREG.Value;
+				inputdata_ptr[4] = CurrentPath;
+				//inputdata_ptr [ 4 ] = WordCount32;
+				inputdata_ptr[5] = iPixelCount24;
+
+				inputdata_ptr[6] = XferX;
+				inputdata_ptr[7] = XferY;
+
+				inputdata_ptr[8] = XferSrcX;
+				inputdata_ptr[9] = XferSrcY;
+				inputdata_ptr[10] = XferDstX;
+				inputdata_ptr[11] = XferDstY;
+
+				inputdata_ptr[12] = XferWidth;
+				inputdata_ptr[13] = XferHeight;
+
+				inputdata_ptr[14] = XferSrcBufWidth;
+				inputdata_ptr[15] = XferSrcOffset32;
+				inputdata_ptr[16] = XferDstBufWidth;
+				inputdata_ptr[17] = XferDstOffset32;
+
+				// put in the start count of 32-bit units
+				// ***todo*** if using the count for gpu transfers, then need to conver XferX,XferY before switching to cpu tranfer
+				inputdata_ptr[18] = XferCount32;
+
+				// need to know if transfer is related
+				inputdata_ptr[19] = XferId;
+
+
+				// clear index 1 - so that it synchronizes when switching from drawing
+				//inputdata_ptr[1] = 0;
+				// set the start index in pixel input buffer (start index from target index)
+				//inputdata_ptr [ 16 ] = ullPixelInBuffer_WriteIndex - ullPixelInBuffer_TargetIndex;
+				inputdata_ptr[1] = ullPixelBufStartIdx - ullPixelInBuffer_TargetIndex;
+
+				// get the write index
+				//cout << "\nWriteIndex#" << dec << ulHwInputBuffer_WriteIndex;
+
+				// new command filled in
+				// send the command to the other thread
+				// *** todo ***
+				ulHwInputBuffer_WriteIndex++;
+			}
+#ifdef ENABLE_OPENCL_MULTIPLE_TRANSFERIN
+			else
+			{
+				// same transfer command //
+
+				// update the count of pixels in previous command
+				//inputdata_ptr2 [ 4 ] += WordCount32;
+				inputdata_ptr2[5] += iPixelCount24;
+			}
+#endif
+
+
+			// update count of 32-bit data transferred
+			//XferCount32 += WordCount32;
+			XferCount32 += iPixelCount24;
+
+			// this is just to keep transfer from resetting for now
+			// can update XferX,XferY with the real values when switching between software/hardware
+			//XferX += WordCount32;
+			XferX += iPixelCount24;
+
+
+#ifdef TEST_OPENCL_PS2_TRANSFERIN
+
+#ifdef VALIDATE_OPENCL_PS2_TRANSFERIN
+			/*
+			// output the inputs sent
+			for (int i = 0; i < 16; i++)
+			{
+				cout << "\nInput#" << dec << i << ": " << hex << inputdata_ptr[i];
+			}
+			*/
+#endif
+
+			// send command
+			Copy_VRAM_toGPU();
+			//FlushToHardware( 0, 1, ullPixelInBuffer_ReadIndex, ullPixelInBuffer_WriteIndex );
+			GPU::Flush();
+			Copy_VRAM_toCPU();
+
+
+#ifdef VALIDATE_OPENCL_PS2_TRANSFERIN
+			cout << "\nPS2: GPU: HW: TRANSFER-IN: PixelFormat: " << PixelFormat_Names[GPURegsGp.BITBLTBUF.DPSM];
+
+			// output the validated inputs
+			/*
+			cout << "\nIndex#" << dec << p_ulHwPixelOutBuffer32[0];
+			for (int i = 0; i < 16; i++)
+			{
+				cout << "\nValidate#" << dec << i << ": " << hex << p_ulHwPixelOutBuffer32[i+1];
+			}
+			*/
+#endif
+
+#endif	// end #ifdef TEST_OPENCL_PS2_TRANSFERIN
+
+			// should be done
+			return;
+
+#endif	// end #ifdef ENABLE_HWPIXEL_INPUT
+
+		}
+
+#endif	// end #ifdef ALLOW_OPENCL_PS2_TRANSFERIN
+
+
 		if ( !XferX && !XferY )
 		{
 			// first transfer for PSMCT24, PSMZ24 //
@@ -30952,6 +31509,184 @@ void TransferDataIn32_DS_t ( u32* Data, u32 WordCount32 )
 	}
 	else
 	{
+		// not 24-bit pixels //
+
+#ifdef ALLOW_OPENCL_PS2_TRANSFERIN
+
+		// check if using gpu
+		if (bEnable_OpenCL)
+		{
+			inputdata_ptr = &((u32*)pHwInputBuffer32)[(ulHwInputBuffer_WriteIndex & c_ulHwInputBuffer_Mask) << c_ulHwInputBuffer_Shift];
+
+			// fill in data structure for gpu //
+			// inputbuffer
+			// 0: BITBLTBUF
+			// 1: TRXPOS
+			// 2: TRXREG
+			// 3: CurrentPath
+			// 4: Count64
+			// 5: XferX
+			// 6: XferY
+			// 7: XferDstX
+			// 8: XferDstY
+			// 9: XferWidth
+			// 10: XferHeight
+			// 11: XferDstBufWidth
+			// 12: XferDstOffset32
+			// 13: 
+			// 14: ADDITIONAL COMMAND
+			// -------------
+			// 15: PRIM (COMMAND)
+			// 16: Data0
+			// ...
+			// 31: Data15
+
+
+			//if ( WordCount32 > 32 )
+			//{
+			//	cout << "\nhps2x64: ALERT: WordCount32=" << dec << WordCount32;
+			//}
+
+#ifdef ENABLE_HWPIXEL_INPUT
+
+			// check that previous entry
+			inputdata_ptr2 = &((u32*)pHwInputBuffer32)[((ulHwInputBuffer_WriteIndex - 1) & c_ulHwInputBuffer_Mask) << c_ulHwInputBuffer_Shift];
+
+			//if (GPURegsGp.BITBLTBUF.DPSM != 0 && GPURegsGp.BITBLTBUF.DPSM != 2)
+			{
+				//cout << "\nPS2: GPU: HW: TRANSFER-IN: PixelFormat: " << PixelFormat_Names[GPURegsGp.BITBLTBUF.DPSM];
+			}
+
+#ifdef ENABLE_OPENCL_MULTIPLE_TRANSFERIN
+			// check if part of previous command or new command
+			if (
+				(ulHwInputBuffer_TargetIndex > (ulHwInputBuffer_WriteIndex - 1))
+				|| (inputdata_ptr2[19] != XferId)
+				|| (inputdata_ptr2[0] != (0xf8ull << 24))
+				)
+#endif
+			{
+				// new transfer command //
+
+				// transfer in command
+				inputdata_ptr[0] = 0xf8000000ull;
+
+				((u64*)inputdata_ptr)[1] = GPURegsGp.BITBLTBUF.Value;
+
+				//inputdata_ptr [ 2 ] = GPURegsGp.TRXPOS.Value;
+				//inputdata_ptr [ 3 ] = GPURegsGp.TRXREG.Value;
+				inputdata_ptr[4] = CurrentPath;
+				inputdata_ptr[5] = WordCount32;
+
+				inputdata_ptr[6] = XferX;
+				inputdata_ptr[7] = XferY;
+
+				inputdata_ptr[8] = XferSrcX;
+				inputdata_ptr[9] = XferSrcY;
+				inputdata_ptr[10] = XferDstX;
+				inputdata_ptr[11] = XferDstY;
+
+				inputdata_ptr[12] = XferWidth;
+				inputdata_ptr[13] = XferHeight;
+
+				inputdata_ptr[14] = XferSrcBufWidth;
+				inputdata_ptr[15] = XferSrcOffset32;
+				inputdata_ptr[16] = XferDstBufWidth;
+				inputdata_ptr[17] = XferDstOffset32;
+
+				// put in the start count of 32-bit units
+				// ***todo*** if using the count for gpu transfers, then need to conver XferX,XferY before switching to cpu tranfer
+				inputdata_ptr[18] = XferCount32;
+
+				// need to know if transfer is related
+				inputdata_ptr[19] = XferId;
+
+				// set the start index in pixel input buffer (start index from target index)
+				//inputdata_ptr [ 13 ] = ullPixelInBuffer_WriteIndex - ullPixelInBuffer_TargetIndex;
+				inputdata_ptr[1] = ullPixelInBuffer_WriteIndex - ullPixelInBuffer_TargetIndex;
+
+				// set total pixel count
+				//inputdata_ptr [ 11 ] = w * h;
+
+				// get the write index
+				//cout << "\nWriteIndex#" << dec << ulHwInputBuffer_WriteIndex;
+
+				// new command filled in
+				// send the command to the other thread
+				// *** todo ***
+				ulHwInputBuffer_WriteIndex++;
+			}
+#ifdef ENABLE_OPENCL_MULTIPLE_TRANSFERIN
+			else
+			{
+				// same transfer command //
+
+				// update the count of pixels in previous command
+				inputdata_ptr2[5] += WordCount32;
+			}
+#endif
+
+			// copy pixels into buffer
+			for (i = 0; i < WordCount32; i++)
+			{
+				ulPixelInBuffer32[ullPixelInBuffer_WriteIndex & c_ullPixelInBuffer_Mask] = Data[i];
+				ullPixelInBuffer_WriteIndex++;
+			}
+
+
+			// update count of 32-bit data transferred
+			XferCount32 += WordCount32;
+
+			// this is just to keep transfer from resetting for now
+			// can update XferX,XferY with the real values when switching between software/hardware
+			XferX += WordCount32;
+
+#ifdef TEST_OPENCL_PS2_TRANSFERIN
+
+#ifdef VALIDATE_OPENCL_PS2_TRANSFERIN
+
+			// output the inputs sent
+			/*
+			for (int i = 0; i < 16; i++)
+			{
+				cout << "\nInput#" << dec << i << ": " << hex << inputdata_ptr[i];
+			}
+			*/
+#endif
+
+			// send command
+			Copy_VRAM_toGPU();
+			//FlushToHardware(0, 1, ullPixelInBuffer_ReadIndex, ullPixelInBuffer_WriteIndex);
+			GPU::Flush();
+			Copy_VRAM_toCPU();
+
+
+#ifdef VALIDATE_OPENCL_PS2_TRANSFERIN
+			cout << "\nPS2: GPU: HW: TRANSFER-IN: PixelFormat: " << PixelFormat_Names[GPURegsGp.BITBLTBUF.DPSM];
+
+			// output the validated inputs
+			/*
+			cout << "\nIndex#" << dec << p_ulHwPixelOutBuffer32[0];
+			for (int i = 0; i < 16; i++)
+			{
+				cout << "\nValidate#" << dec << i << ": " << hex << p_ulHwPixelOutBuffer32[i + 1];
+			}
+			*/
+#endif
+
+#endif	// end #ifdef TEST_OPENCL_PS2_TRANSFERIN
+
+
+			// should be done
+			return;
+
+#endif	// end #ifdef ENABLE_HWPIXEL_INPUT
+
+		}
+
+#endif	// end #ifdef ALLOW_OPENCL_PS2_TRANSFERIN
+
+
 		if ( ( tBITBLTBUF_DPSM & 7 ) == 0 )
 		{
 			// 32-bit pixels //
@@ -31833,7 +32568,7 @@ static void Select_TransferIn_t ( u64* p_inputbuffer, u32 ulThreadNum, u64* pDat
 	//static void FlushToHardware ( u64 ullReadIdx, u64 ullWriteIdx );
 	static void FlushToHardware ( u64 ullReadIdx, u64 ullWriteIdx, u64 ullReadPixelIdx, u64 ullWritePixelIdx );
 
-	static void Flush ();
+	static void Flush ( int iCurrentThread = 0 );
 	static void Finish ();
 
 

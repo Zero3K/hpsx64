@@ -49,6 +49,21 @@ using namespace Math::Reciprocal;
 
 
 
+#include "vulkan_setup.h"
+
+
+
+
+// this is the compute shader renderer for ps1 as a header file array of "uint32_t" assigned to variable "ps1_gpu_spv_file"
+
+#include "ps2_gpu_spv_file.h"
+
+
+
+
+
+
+
 //#define USE_DIVIDE_GCC
 //#define USE_MULTIPLY_CUSTOM
 
@@ -167,7 +182,7 @@ using namespace Math::Reciprocal;
 //#define VERBOSE_TRANSFER_OUT
 //#define VERBOSE_TRANSFER_LOCAL
 //#define VERBOSE_TRANSFER_LOCAL_LIMIT
-#define VERBOSE_MSKPATH3
+//#define VERBOSE_MSKPATH3
 
 //#define VERBOSE_LOCAL_TRANSFER
 //#define VERBOSE_SPRITE_ERROR
@@ -257,13 +272,13 @@ using namespace Math::Reciprocal;
 #define INLINE_DEBUG_RASTER_VBLANK_START
 #define INLINE_DEBUG_RASTER_VBLANK_END
 
-//#define INLINE_DEBUG_RASTER_SCANLINE
+#define INLINE_DEBUG_RASTER_SCANLINE
 //#define INLINE_DEBUG_HBLANK_INT
 //#define INLINE_DEBUG_PATH1_WRITE
 //#define INLINE_DEBUG_PATH2_WRITE
+*/
 
-
-
+/*
 #define INLINE_DEBUG_READ
 #define INLINE_DEBUG_WRITE
 
@@ -434,6 +449,9 @@ u32 GPU::MainProgramWindow_Width;
 u32 GPU::MainProgramWindow_Height;
 
 
+u32 GPU::bAllowGpuHardwareRendering;
+
+
 bool GPU::DebugWindow_Enabled;
 //WindowClass::Window *GPU::DebugWindow;
 
@@ -453,11 +471,21 @@ void *GPU::PtrEndC;
 
 u64 GPU::ullHwInputBuffer_Index;
 u32 GPU::ulHwInputBuffer_Count;
-alignas(32) u64 GPU::pHwInputBuffer64 [ ( 1 << GPU::c_ulHwInputBuffer_Shift ) * GPU::c_ulHwInputBuffer_Size ];
-u32 *GPU::p_uHwInputData32;
+alignas(32) u32 GPU::pHwInputBuffer32 [ ( 1 << GPU::c_ulHwInputBuffer_Shift ) * GPU::c_ulHwInputBuffer_Size ];
+
+
+u32 *GPU::p_uHwScratchData32;
+u64 *GPU::p_uHwGpuVarsData64;
 u32 *GPU::p_uHwClutData32;
 u32 *GPU::p_uHwCbpxData32;
 u32 *GPU::p_uHwOutputData32;
+u32 *GPU::p_ulHwPixelOutBuffer32;
+u32 *GPU::p_uHwInputData32;
+u32 *GPU::p_ulHwPixelInBuffer32;
+u32 *GPU::p_ulHwXYLUT32;
+
+u32* GPU::p_ulHwXLUT32;
+u32* GPU::p_ulHwYLUT32;
 
 u64 GPU::ulHwInputBuffer_WriteIndex;
 u64 GPU::ulHwInputBuffer_TargetIndex;
@@ -468,7 +496,6 @@ volatile u64 GPU::ullPixelInBuffer_WriteIndex;
 volatile u64 GPU::ullPixelInBuffer_TargetIndex;
 volatile u64 GPU::ullPixelInBuffer_ReadIndex;
 alignas(32) u32 GPU::ulPixelInBuffer32 [ GPU::c_ullPixelInBuffer_Size ];
-u32 *GPU::p_ulHwPixelInBuffer32;
 
 
 //u32 GPU::ulNumberOfThreads;
@@ -716,31 +743,6 @@ static const unsigned short ucCLUT_Lookup_CSM02 [ 256 ] = { 0x00, 0x01, 0x02, 0x
 															0xf0, 0xf1, 0xf2, 0xf3, 0xf4, 0xf5, 0xf6, 0xf7, 0xf8, 0xf9, 0xfa, 0xfb, 0xfc, 0xfd, 0xfe, 0xff };
 
 
-/*
-#define ALLOW_OPENCL_PS2
-
-
-#define ALLOW_OPENCL_PS2_DRAWSCREEN
-#define ALLOW_OPENCL_PS2_SETDRAWVARS
-#define ALLOW_OPENCL_PS2_TRANSFERIN
-#define ALLOW_OPENCL_PS2_TRANSFERMOVE
-#define ENABLE_HWPIXEL_INPUT
-//#define ALLOW_OPENCL_PS2_TRANSFEROUT
-//#define ALLOW_OPENCL_PS2_LINE
-//#define ALLOW_OPENCL_PS2_POINT
-#define ALLOW_OPENCL_PS2_WRITECLUT
-#define ALLOW_OPENCL_PS2_TRIANGLE_COLOR
-#define ALLOW_OPENCL_PS2_TRIANGLE_TEXTURE
-#define ALLOW_OPENCL_PS2_RECTANGLE
-#define ALLOW_OPENCL_PS2_SPRITE
-
-#define ALLOW_OPENCL_PS2_TEST_CLUT
-
-
-// choose one here
-//#define ENABLE_OPENCL_ACTIVE_RENDER
-#define ENABLE_OPENCL_PASSIVE_RENDER
-*/
 
 
 // this needs to be set here and in compute shader
@@ -751,44 +753,6 @@ static const unsigned short ucCLUT_Lookup_CSM02 [ 256 ] = { 0x00, 0x01, 0x02, 0x
 //#define TEST_GPU_RENDER
 
 
-#ifdef ALLOW_OPENCL_PS2
-
-GLuint computeProgram;
-//GLuint buffers[NUM_BUFS];       //SSBO objects, one for IMG_0, one for IMG_1, and one for commands/response
-//static GLchar* computeSource;
-GLuint shaderProgram;
-//string computeSource;
-GLuint ssbo1;
-GLuint ssbo;
-
-GLuint ssbo_precompute;
-GLuint ssbo_sinputdata;
-GLuint ssbo_outputdata;
-GLuint ssbo_shadowvram;
-GLuint ssbo_pixelbuffer;
-GLuint ssbo2;
-GLuint ssbo_xlut;
-GLuint ssbo_ylut;
-//GLuint ssbo_xylut;
-GLuint ssbo_clut;
-GLuint ssbo_sclut;
-GLuint ssbo_cbpx;
-GLuint ssbo_scbpx;
-
-GLuint ssbo_sinputpixels;
-GLuint ssbo_inputpixels;
-
-int tex_w = 1024, tex_h = 1024;
-GLuint tex_output;
-GLuint fboId = 0;
-
-//#define GLSL(version,shader) "#version" #version "\n" #shader
-
-static const char* computeSource =
-#include "ps2gpu.comp"
-;
-
-#endif
 
 
 GPU::GPU ()
@@ -878,6 +842,179 @@ void GPU::Init()
 
 
 
+void GPU::LoadVulkan()
+{
+	bAllowGpuHardwareRendering = false;
+
+#ifdef ALLOW_OPENCL_PS2
+	// hooking in opencl //
+
+
+	// hooking in vulkan //
+
+	// initially assume that the shader is good for the platform
+	bAllowGpuHardwareRendering = true;
+
+	// using vulkan
+	char* pData;
+
+	int iSubgroupSize, iNumSubgroups;
+
+	//std::vector<char> ShaderContents;
+	//int iShaderFileSize = 0;
+
+
+
+
+
+	long external_var_sizes[] = {
+		GLOBAL_MEM_SCRATCH_SIZE_BYTES,
+		//GLOBAL_MEM_GPUVARS_SIZE_BYTES,
+		//GLOBAL_MEM_GPUCLUT_SIZE_BYTES,
+		//GLOBAL_MEM_SCRATCH2_SIZE_BYTES,
+		GLOBAL_MEM_VRAM_SIZE_BYTES,
+		GLOBAL_MEM_SVRAM_SIZE_BYTES,
+		GLOBAL_MEM_INPUT_COMM_SIZE_BYTES,
+		GLOBAL_MEM_INPUT_PIX_SIZE_BYTES,
+		GLOBAL_MEM_XY_LUT_SIZE_BYTES,
+
+		GLOBAL_MEM_SVRAM_SIZE_BYTES,
+	};
+
+	long internal_var_sizes[] = {
+		GLOBAL_MEM_WORK_AREA_SIZE_BYTES,
+		//GLOBAL_MEM_STAGING_SIZE_BYTES
+	};
+
+	// setting to x gpu threads for testing
+	vulkan_set_gpu_threads(GPU_PS2_MINIMUM_REQUIRED_SHADER_CORES);
+
+	vulkan_set_screen_size(GPU::MainProgramWindow_Width, GPU::MainProgramWindow_Height);
+
+	//pData = (char*)vulkan_setup(DisplayOutput_Window->hWnd, DisplayOutput_Window->hInstance, "ps1_gpu.spv", sizeof(_GPU->VRAM) * 2, sizeof(_GPU->VRAM) * 2, sizeof(inputdata), sizeof(ulPixelInBuffer32), 64 * (1 << 16) * 4 );
+	//pData = (char*)vulkan_setup(DisplayOutput_Window->hWnd, DisplayOutput_Window->hInstance, ShaderContents.data(), iShaderFileSize, sizeof(_GPU->VRAM) * 2, sizeof(_GPU->VRAM) * 2, sizeof(inputdata), sizeof(ulPixelInBuffer32), 64 * (1 << 16) * 4);
+	//pData = (char*)vulkan_setup(DisplayOutput_Window->hWnd, DisplayOutput_Window->hInstance, ShaderContents.data(), iShaderFileSize, external_var_sizes, sizeof(external_var_sizes) / sizeof(long), internal_var_sizes, sizeof(internal_var_sizes) / sizeof(long));
+	pData = (char*)vulkan_setup(DisplayOutput_Window->hWnd, DisplayOutput_Window->hInstance, (char*)ps2_gpu_spv_file, sizeof(ps2_gpu_spv_file), external_var_sizes, sizeof(external_var_sizes) / sizeof(long), internal_var_sizes, sizeof(internal_var_sizes) / sizeof(long));
+
+
+	iSubgroupSize = vulkan_get_subgroup_size();
+
+	iNumSubgroups = GPU_PS2_HARDWARE_LOCAL_SIZE / iSubgroupSize;
+
+	if (iNumSubgroups > GPU_PS2_MAXIMUM_LOCAL_SUBGROUPS)
+	{
+		cout << "\nERROR: PS2: GPU: Maximum allowed number of local subgrops is: " << dec << GPU_PS2_MAXIMUM_LOCAL_SUBGROUPS;
+		cout << " but you instead have: " << dec << iNumSubgroups;
+
+		// disable vulkan
+		pData = nullptr;
+	}
+
+	if (!pData)
+	{
+		// unable to render on gpu hardware using compute shader renderer because vulkan did not setup properly
+		bAllowGpuHardwareRendering = false;
+
+		cout << "\nERROR: PS2: GPU: Unable to setup vulkan. GPU hardware rendering disabled.\n";
+	}
+
+	// setup pointers
+	p_uHwScratchData32 = (u32*)(&pData[0]);
+
+	//p_uHwCbpxData32 = (u32*)(&pData[16]);
+	//p_uHwGpuVarsData64 = (u64*)(&pData[24]);
+	//p_uHwClutData32 = (u32*)(&pData[1048]);
+	p_uHwCbpxData32 = (u32*)(&pData[16 + 16]);
+	p_uHwGpuVarsData64 = (u64*)(&pData[24 + 16]);
+	p_uHwClutData32 = (u32*)(&pData[1048 + 16]);
+
+
+	// pointer to gpu ram on hardware
+	p_uHwOutputData32 = (u32*)(&pData[external_var_sizes[0]]);
+
+	// pointer to screen for gpu
+	p_ulHwPixelOutBuffer32 = (u32*)(&pData[external_var_sizes[0] + external_var_sizes[1]]);
+
+	// pointer to input command buffer on hardware
+	p_uHwInputData32 = (u32*)(&pData[external_var_sizes[0] + external_var_sizes[1] + external_var_sizes[2]]);
+
+	// pointer to input pixel buffer on hardware
+	p_ulHwPixelInBuffer32 = (u32*)(&pData[external_var_sizes[0] + external_var_sizes[1] + external_var_sizes[2] + external_var_sizes[3]]);
+
+	// xyoffset lut
+	p_ulHwXYLUT32 = (u32*)(&pData[external_var_sizes[0] + external_var_sizes[1] + external_var_sizes[2] + external_var_sizes[3] + external_var_sizes[4]]);
+
+	//p_ulHwXLUT32 = (u32*)(&pData[external_var_sizes[0] + external_var_sizes[1] + external_var_sizes[2] + external_var_sizes[3] + external_var_sizes[4] + external_var_sizes[5]]);
+	//p_ulHwYLUT32 = (u32*)(&pData[external_var_sizes[0] + external_var_sizes[1] + external_var_sizes[2] + external_var_sizes[3] + external_var_sizes[4] + external_var_sizes[5] + external_var_sizes[6]]);
+
+#endif
+
+
+
+	// simply loading vulkan shouldn't change whether shader renderer is enabled or nots
+	//bEnable_OpenCL = false;
+
+#ifdef ENABLE_COMPUTE_SHADER_RENDER
+	// if vulkan was setup ok, then allow compute shader renderer
+	if (pData)
+	{
+		//bEnable_OpenCL = true;
+
+		// copy in lut xy data for shader
+		memcpy(p_ulHwXYLUT32, LUT_XYOFFSET, sizeof(LUT_XYOFFSET));
+
+		//memcpy(p_ulHwXLUT32, LUT_XOFFSET, sizeof(LUT_XOFFSET));
+		//memcpy(p_ulHwYLUT32, LUT_YOFFSET, sizeof(LUT_YOFFSET));
+
+		// also if vulkan was loaded successfully, need to copy vram and gpu data to shader
+		Copy_VRAM_toGPU();
+		Copy_VARS_toGPU();
+		Copy_CLUT_toGPU();
+	}
+#endif
+
+}
+
+
+void GPU::UnloadVulkan()
+{
+	// check if currently using shader renderer
+	if (bEnable_OpenCL)
+	{
+		// before getting rid of vulkan, need to copy vram from shader to cpu or else
+		Copy_VRAM_toCPU();
+		Copy_VARS_toCPU();
+		Copy_CLUT_toCPU();
+	}
+
+	vulkan_destroy();
+
+	// all the pointers into global shader memory now need to be set to NULL so they don't get used //
+
+	p_uHwScratchData32 = nullptr;
+
+	p_uHwCbpxData32 = nullptr;
+	p_uHwGpuVarsData64 = nullptr;
+	p_uHwClutData32 = nullptr;
+
+	// pointer to gpu ram on hardware
+	p_uHwOutputData32 = nullptr;
+
+	// pointer to screen for gpu
+	p_ulHwPixelOutBuffer32 = nullptr;
+
+	// pointer to input command buffer on hardware
+	p_uHwInputData32 = nullptr;
+
+	// pointer to input pixel buffer on hardware
+	p_ulHwPixelInBuffer32 = nullptr;
+
+	// xyoffset lut
+	p_ulHwXYLUT32 = nullptr;
+
+}
+
+
 // actually, you need to start objects after everything has been initialized
 void GPU::Start ()
 {
@@ -932,13 +1069,6 @@ void GPU::Start ()
 	EndOfPacket [ 2 ] = 1;
 	EndOfPacket [ 3 ] = 1;
 
-	// 0 means on same thread, 1 or greater means on separate threads (power of 2 ONLY!!)
-	ulNumberOfThreads = 1;
-	ulThreadedGPU = 1;
-	
-	// no threads created yet
-	ulNumberOfThreads_Created = 0;
-	
 
 	
 	
@@ -978,272 +1108,32 @@ void GPU::Start ()
 	}
 
 
-
-#ifdef ALLOW_OPENCL_PS2
-	// hooking in opencl //
-	
-	DisplayOutput_Window->OpenGL_MakeCurrentWindow ();
-	
-
-	cout << "\nLoading program...";
-
-	//computeSource = LoadProgram("C:\\Users\\PCUser\\Desktop\\TheProject\\hpsx64\\hps1x64\\src\\gpu\\src\\compute.comp");
-    //if (computeSource == NULL)
-    //{
-    //    return;
-    //}
-
-	cout << "\nLoaded:" << (char*)computeSource;
-
-	cout << "\nInit glew...";
-
-	GLenum err = glewInit();
-
-	cout << "\nglewInit()= " << err;
-
-	/*
-	if (err != GLEW_OK)
+	// init lut xy tables
+	for (int i = 0; i < 16384; i++)
 	{
-	cout << "Error: " << glewGetErrorString(err);
-	//fprintf(stderr, "Error: %s\n", glewGetErrorString(err));
-	//...
-	}
-	fprintf(stdout, "Status: Using GLEW %s\n", glewGetString(GLEW_VERSION));
-	*/
+		int tx = i & 0x7f;
+		int ty = i >> 7;
 
-	cout << "\nCreating compute shader...";
+		// also setup the lookup tables for the gpu shader renderer
+		LUT_XYOFFSET[(0x0 << 14) | i] = CvtAddrPix32(tx & 0x3f, ty & 0x1f, 0);
+		LUT_XYOFFSET[(0x1 << 14) | i] = CvtAddrPix16(tx & 0x3f, ty & 0x3f, 0);
+		LUT_XYOFFSET[(0x5 << 14) | i] = CvtAddrPix16S(tx & 0x3f, ty & 0x3f, 0);
 
-	
-	GLuint computeShader = glCreateShader(GL_COMPUTE_SHADER);
+		LUT_XYOFFSET[(0x9 << 14) | i] = CvtAddrPix8(tx & 0x7f, ty & 0x3f, 0);
+		LUT_XYOFFSET[(0xa << 14) | i] = CvtAddrPix4(tx & 0x7f, ty & 0x7f, 0);
 
+		LUT_XYOFFSET[(0x0d << 14) | i] = CvtAddrPix32(tx & 0x3f, ty & 0x1f, 0);
+		LUT_XYOFFSET[(0x12 << 14) | i] = CvtAddrPix32(tx & 0x3f, ty & 0x1f, 0);
+		LUT_XYOFFSET[(0x16 << 14) | i] = CvtAddrPix32(tx & 0x3f, ty & 0x1f, 0);
 
-	cout << "\nglShaderSource...";
-
-    glShaderSource(computeShader, 1, &computeSource, NULL);
-
-	cout << "\nglCompileShader...";
-
-    glCompileShader(computeShader);
-
-	cout << "\nglCreateProgram...";
-
-    computeProgram = glCreateProgram();
-
-	cout << "\nglAttachShader...";
-
-    glAttachShader(computeProgram, computeShader);
-
-	cout << "\nglLinkProgram...";
-
-    glLinkProgram(computeProgram);
-
-	cout << "\nglGetProgramiv...";
-
-    GLint status;
-    glGetProgramiv(computeProgram, GL_LINK_STATUS, &status);
-
-    if (status == GL_TRUE)
-    {
-        printf("link good\n");
-    }
-    else
-    {
-        cout << "link bad\n";
-        GLchar log[4096];
-        GLsizei len;
-
-        glGetProgramInfoLog(computeProgram, 4096, &len, log);
-
-        cout << log << "\n";
-        //return;
-    }
-
-	cout << "\nglUseProgram...";
-
-	glUseProgram(computeProgram);
-
-	// input data copy //
-
-	// invalidate all input buffer entries
-	memset( pHwInputBuffer64, -1, sizeof(pHwInputBuffer64) );
-
-	glGenBuffers(1, &ssbo_sinputdata);
-	glBindBuffer ( GL_SHADER_STORAGE_BUFFER, ssbo_sinputdata );
-	glBufferStorage( GL_SHADER_STORAGE_BUFFER, sizeof(pHwInputBuffer64), NULL, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT );
-	p_uHwInputData32 = (u32*) glMapBufferRange ( GL_SHADER_STORAGE_BUFFER, 0, sizeof(pHwInputBuffer64), GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT );
-
-
-	// input pixel copy data map
-	glGenBuffers(1, &ssbo_sinputpixels);
-	glBindBuffer ( GL_SHADER_STORAGE_BUFFER, ssbo_sinputpixels );
-	glBufferStorage( GL_SHADER_STORAGE_BUFFER, sizeof(ulPixelInBuffer32), NULL, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT );
-	p_ulHwPixelInBuffer32 = (u32*) glMapBufferRange ( GL_SHADER_STORAGE_BUFFER, 0, sizeof(ulPixelInBuffer32), GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT );
-
-
-	glGenBuffers(1, &ssbo_inputpixels);
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 11, ssbo_inputpixels);
-	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(ulPixelInBuffer32), NULL, GL_DYNAMIC_COPY);
-
-
-#ifdef ALLOW_OPENCL_PS2_TEST_CLUT
-
-	glGenBuffers(1, &ssbo_sclut);
-	glBindBuffer ( GL_SHADER_STORAGE_BUFFER, ssbo_sclut );
-	glBufferStorage( GL_SHADER_STORAGE_BUFFER, sizeof(InternalCLUT) * 2, NULL, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT );
-	p_uHwClutData32 = (u32*) glMapBufferRange ( GL_SHADER_STORAGE_BUFFER, 0, sizeof(InternalCLUT) * 2, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT );
-
-	glGenBuffers(1, &ssbo_scbpx);
-	glBindBuffer ( GL_SHADER_STORAGE_BUFFER, ssbo_scbpx );
-	glBufferStorage( GL_SHADER_STORAGE_BUFFER, sizeof(CBPX), NULL, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT );
-	p_uHwCbpxData32 = (u32*) glMapBufferRange ( GL_SHADER_STORAGE_BUFFER, 0, sizeof(CBPX), GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT );
-
-	// clut
-	glGenBuffers(1, &ssbo_clut);
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 8, ssbo_clut);
-	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(InternalCLUT) * 2, NULL, GL_DYNAMIC_COPY);
-
-	// cbp0/cbp1
-	glGenBuffers(1, &ssbo_cbpx);
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 10, ssbo_cbpx);
-	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(CBPX), NULL, GL_DYNAMIC_COPY);
-
-#endif
-
-	// internal pre-compute buffer //
-	//glGenBuffers(1, &ssbo_precompute);
-	//glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ssbo_precompute);
-	//glBufferData(GL_SHADER_STORAGE_BUFFER, 128 * PRECOMPUTE_LIST_SIZE * 4, NULL, GL_DYNAMIC_COPY);
-
-
-	// setup internal command buffer //
-
-	glGenBuffers(1, &ssbo1);
-	//glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo1);
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, ssbo1);
-	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(pHwInputBuffer64), pHwInputBuffer64, GL_DYNAMIC_COPY);
-	//glBufferStorage( GL_SHADER_STORAGE_BUFFER, sizeof(inputdata), NULL, GL_DYNAMIC_STORAGE_BIT );
-
-
-	// setup VRAM //
-
-	// vram data copy and bind //
-	glGenBuffers(1, &ssbo);
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, ssbo);
-
-	// copy 2x the size of VRAM for now, will update later
-	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(_GPU->RAM32) * 2, NULL, GL_DYNAMIC_COPY);
-	//glBufferStorage( GL_SHADER_STORAGE_BUFFER, sizeof(_GPU->VRAM) * 2, NULL, GL_DYNAMIC_STORAGE_BIT );
-
-
-	// setup shadow VRAM //
-	glGenBuffers(1, &ssbo_shadowvram);
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, ssbo_shadowvram);
-
-	// copy 2x the size of VRAM for now, will update later
-	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(_GPU->RAM32) * 2, NULL, GL_DYNAMIC_COPY);
-	//glBufferStorage( GL_SHADER_STORAGE_BUFFER, sizeof(_GPU->VRAM) * 2, NULL, GL_DYNAMIC_STORAGE_BIT );
-
-	// setup 32-bit pixel buffer //
-
-	// pixel buffer
-	glGenBuffers(1, &ssbo_pixelbuffer);
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, ssbo_pixelbuffer);
-	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(PixelBuffer), NULL, GL_DYNAMIC_COPY); //sizeof(data) only works for statically sized C/C++ arrays.
-
-	// setup LUTs //
-
-	// x-lut
-	glGenBuffers(1, &ssbo_xlut);
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 6, ssbo_xlut);
-	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(LUT_XOFFSET), LUT_XOFFSET, GL_DYNAMIC_COPY);
-
-	// y-lut
-	glGenBuffers(1, &ssbo_ylut);
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 7, ssbo_ylut);
-	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(LUT_YOFFSET), LUT_YOFFSET, GL_DYNAMIC_COPY);
-
-	// xy-lut
-	//glGenBuffers(1, &ssbo_xylut);
-	//glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 9, ssbo_xylut);
-	//glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(LUT_XYOFFSET), LUT_XYOFFSET, GL_DYNAMIC_COPY);
-
-
-	// output data
-	glGenBuffers(1, &ssbo_outputdata);
-	glBindBuffer ( GL_SHADER_STORAGE_BUFFER, ssbo_outputdata );
-	glBufferStorage( GL_SHADER_STORAGE_BUFFER, sizeof(_GPU->RAM32) * 2, NULL, GL_MAP_READ_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT );
-	p_uHwOutputData32 = (u32*) glMapBufferRange ( GL_SHADER_STORAGE_BUFFER, 0, sizeof(_GPU->RAM32) * 2, GL_MAP_READ_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT );
-
-
-	// internal pre-compute buffer //
-	glGenBuffers(1, &ssbo_precompute);
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ssbo_precompute);
-	glBufferData(GL_SHADER_STORAGE_BUFFER, 128 * PRECOMPUTE_LIST_SIZE * 4, NULL, GL_DYNAMIC_COPY);
-
-
-	// setup output texture and frame buffer //
-
-	// test rendering to texture //
-	glGenTextures(1, &tex_output);
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, tex_output);
-	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	//glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8UI, tex_w, tex_h, 0, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE, NULL);
-	glTexStorage2D(GL_TEXTURE_2D,1,GL_RGBA8,tex_w,tex_h);
-	glBindImageTexture(5, tex_output, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA8);
-
-	glGenFramebuffers(1, &fboId);
-	glBindFramebuffer(GL_READ_FRAMEBUFFER, fboId);
-	glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, tex_output, 0);
-
-	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);  // if not already bound
-	//glBlitFramebuffer( 0, 0, width, height, 0, 0, width, height, GL_COLOR_BUFFER_BIT, GL_LINEAR );
-
-	//GLenum err;
-	while((err = glGetError()) != GL_NO_ERROR)
-	{
-		// Process/log the error.
-		cout << "\n***OPENGL ERROR*** value=" << hex << err;
+		LUT_XYOFFSET[(0x18 << 14) | i] = CvtAddrZBuf32(tx & 0x3f, ty & 0x1f, 0);
+		LUT_XYOFFSET[(0x19 << 14) | i] = CvtAddrZBuf16(tx & 0x3f, ty & 0x3f, 0);
+		LUT_XYOFFSET[(0x1d << 14) | i] = CvtAddrZBuf16S(tx & 0x3f, ty & 0x3f, 0);
 	}
 
-	GLint size;
-	glGetIntegerv(GL_MAX_SHADER_STORAGE_BLOCK_SIZE, &size);
-	std::cout << "\nGL_MAX_SHADER_STORAGE_BLOCK_SIZE is " << size << " bytes." << endl;
-	glGetIntegerv(GL_MAX_SHADER_STORAGE_BUFFER_BINDINGS, &size);
-	std::cout << "\nGL_MAX_SHADER_STORAGE_BUFFER_BINDINGS is " << size << " bytes." << endl;
-	glGetIntegerv(GL_MAX_COMPUTE_SHADER_STORAGE_BLOCKS, &size);
-	std::cout << "\nGL_MAX_COMPUTE_SHADER_STORAGE_BLOCKS is " << size << " bytes." << endl;
-	glGetIntegerv(GL_MAX_COMPUTE_ATOMIC_COUNTERS, &size);
-	std::cout << "\nGL_MAX_COMPUTE_ATOMIC_COUNTERS is " << size << " bytes." << endl;
-	glGetIntegerv(GL_MAX_COMPUTE_WORK_GROUP_INVOCATIONS, &size);
-	std::cout << "\nGL_MAX_COMPUTE_WORK_GROUP_INVOCATIONS is " << size << " bytes." << endl;
-	glGetIntegerv(GL_MAX_COMPUTE_WORK_GROUP_COUNT, &size);
-	std::cout << "\nGL_MAX_COMPUTE_WORK_GROUP_COUNT is " << size << " bytes." << endl;
-	glGetIntegerv(GL_MAX_COMPUTE_WORK_GROUP_SIZE, &size);
-	std::cout << "\nGL_MAX_COMPUTE_WORK_GROUP_SIZE is " << size << " bytes." << endl;
-	glGetIntegerv(GL_MAX_COMPUTE_UNIFORM_BLOCKS, &size);
-	std::cout << "\nGL_MAX_COMPUTE_UNIFORM_BLOCKS is " << size << " bytes." << endl;
-	glGetIntegerv(GL_MAX_COMPUTE_UNIFORM_COMPONENTS, &size);
-	std::cout << "\nGL_MAX_COMPUTE_UNIFORM_COMPONENTS is " << size << " bytes." << endl;
-	glGetIntegerv(GL_MAX_COMBINED_COMPUTE_UNIFORM_COMPONENTS, &size);
-	std::cout << "\nGL_MAX_COMBINED_COMPUTE_UNIFORM_COMPONENTS is " << size << " bytes." << endl;
-	glGetIntegerv(GL_MAX_COMPUTE_SHARED_MEMORY_SIZE, &size);
-	std::cout << "\nGL_MAX_COMPUTE_SHARED_MEMORY_SIZE is " << size << " bytes." << endl;
 
 
 
-	DisplayOutput_Window->OpenGL_ReleaseWindow ();
-
-
-#endif
-
-	// testing opencl
-	bEnable_OpenCL = false;
 
 	ulHwInputBuffer_WriteIndex = 0;
 	ulHwInputBuffer_ReadIndex = 0;
@@ -1253,6 +1143,11 @@ void GPU::Start ()
 	// 0 means on same thread, 1 or greater means on separate threads (power of 2 ONLY!!)
 	ulNumberOfThreads = 1;
 	ulThreadedGPU = 1;
+	//ulNumberOfThreads = 0;
+	//ulThreadedGPU = 0;
+
+	// no threads created yet
+	ulNumberOfThreads_Created = 0;
 
 	
 	cout << "done\n";
@@ -3468,7 +3363,11 @@ void GPU::WriteReg ( u32 lIndex, u64 Value, u32 ulThreadNum )
 	//u64 *inputdata_ptr;
 	u64 NumPixels;
 	u64 drawvars_ptr [ 16 ];
-	
+
+	u32 uIdx;
+	u32* inputdata_ptr2;
+	u32* inputdata_ptr32;
+
 	// make sure index is within range
 	if ( lIndex >= c_iGPURegsGp_Count )
 	{
@@ -3526,6 +3425,121 @@ void GPU::WriteReg ( u32 lIndex, u64 Value, u32 ulThreadNum )
 		// with new code, should set the register only on the correct thread, but should only get called from the correct thread
 		GPURegsGp.Regs [ lIndex ] = Value;
 	//}
+
+#ifdef ALLOW_OPENCL_PS2_VARIABLE
+
+		if (bEnable_OpenCL)
+		{
+			// shader needs to know about all vars btw XYZ2(0x5) and BITBLTBUF(0x50), except for FOG(0x0a) to res1(0x13)
+			if ((lIndex > 0x5) && (lIndex < 0x50))
+			{
+				if ((lIndex < 0xa) || (lIndex > 0x13))
+				{
+					// send variable to shader //
+					inputdata_ptr2 = &((u32*)pHwInputBuffer32)[((ulHwInputBuffer_WriteIndex - 1) & c_ulHwInputBuffer_Mask) << c_ulHwInputBuffer_Shift];
+
+#ifdef ENABLE_OPENCL_MULTIPLE_VARS
+					// check if previous command is variable command that has slots available that has not been sent already
+					if (
+						// make sure previous command has not been sent yet
+						(ulHwInputBuffer_TargetIndex > (ulHwInputBuffer_WriteIndex - 1))
+
+						// make sure there are slots in previous command available for another variable
+						|| (inputdata_ptr2[4] >= 7)
+
+						// check that previous command is a variable command
+						|| (inputdata_ptr2[0] != (0xf0ull << 24))
+						)
+#endif
+					{
+						// create NEW variable command //
+						inputdata_ptr32 = &((u32*)pHwInputBuffer32)[((ulHwInputBuffer_WriteIndex)&c_ulHwInputBuffer_Mask) << c_ulHwInputBuffer_Shift];
+
+						// put in command
+						inputdata_ptr32[0] = (0xf0) << 24;
+
+						// put in previous
+						inputdata_ptr32[1] = inputdata_ptr2[1];
+						((u64*)inputdata_ptr32)[1] = ((u64*)inputdata_ptr2)[1];
+
+						// put in count
+						inputdata_ptr32[4] = 1;
+
+						// put in variable index
+						inputdata_ptr32[5] = lIndex;
+
+						// put in 64-bit variable value
+						((u64*)inputdata_ptr32)[3] = Value;
+
+						// queue command to be sent to compute shader
+						ulHwInputBuffer_WriteIndex++;
+					}
+#ifdef ENABLE_OPENCL_MULTIPLE_VARS
+					else
+					{
+						// add variable to existing command //
+
+						// get the count
+						uIdx = inputdata_ptr2[4];
+
+						// increment the index first
+						uIdx++;
+
+						// put in variable index
+						inputdata_ptr2[(uIdx << 2) + 1] = lIndex;
+
+						// put in 64-bit variable value
+						((u64*)inputdata_ptr2)[(uIdx << 1) + 1] = Value;
+
+						// inc count
+						inputdata_ptr2[4] = uIdx;
+					}
+#endif
+
+#ifdef TEST_OPENCL_PS2_VARIABLE
+
+
+					// send the command to gpu
+					GPU::Flush();
+
+#ifdef VALIDATE_OPENCL_PS2_VARIABLE
+
+					// wait for process to finish
+					vulkan_wait();
+
+					// show index of variable
+					cout << "\nVarIndex#" << dec << lIndex << " Name: " << GPURegsGp_Names[lIndex] << " Value: " << hex << Value;
+
+					// validate
+					cout << " HWValue: " << hex << p_uHwGpuVarsData64[lIndex];
+
+					if (Value != p_uHwGpuVarsData64[lIndex])
+					{
+						cout << " ***ERROR***";
+					}
+
+					// output the validated inputs
+					cout << "\nIndex#" << dec << p_ulHwPixelOutBuffer32[0];
+					for (int i = 0; i < 16; i++)
+					{
+						cout << "\nValidate#" << dec << i << ": " << hex << p_ulHwPixelOutBuffer32[i + 1];
+					}
+					cout << "\nvaridx: " << hex << p_ulHwPixelOutBuffer32[20];
+					cout << "\nValue(lo): " << hex << p_ulHwPixelOutBuffer32[21];
+					cout << "\nValue(hi): " << hex << p_ulHwPixelOutBuffer32[22];
+
+#endif	// end #ifdef VALIDATE_OPENCL_PS2_VARIABLE
+
+#endif	// end #ifdef TEST_OPENCL_PS2_VARIABLE
+
+				}	// end if ((lIndex < 0xa) || (lIndex > 0x13))
+
+			}	// end if ((lIndex > 0x5) && (lIndex < 0x50))
+
+		}	// end if (bEnable_OpenCL)
+
+#endif	// end #ifdef ALLOW_OPENCL_PS2_VARIABLE
+
 	
 	// certain registers require an action be performed
 	switch ( lIndex )
@@ -4314,6 +4328,18 @@ void GPU::Start_Frame ( void )
 	
 //cout << "\nulThreadCount= " << dec << ulThreadCount;
 
+	// if OpenCL (now Vulkan) is enabled, then we need to load vulkan
+	/*
+	if (_GPU->bEnable_OpenCL)
+	{
+		cout << "\n*** LOADING VULKAN FOR SINGLE THREADING ***\n";
+
+		_GPU->LoadVulkan();
+	}
+	*/
+
+
+
 	//if ( ulThreadCount )
 	if ( ulThreadedGPU )
 	{
@@ -4401,7 +4427,13 @@ void GPU::Start_Frame ( void )
 			// wait for thread to be ready
 			WaitForSingleObject ( ghEvent_PS2GPU_Finish, INFINITE );
 
-		}
+		}	// end if ( ulThreadCount )
+
+	}	// end if ( ulThreadedGPU )
+	else
+	{
+		// single-threaded PS2 GPU //
+
 	}
 }
 
@@ -4412,7 +4444,17 @@ void GPU::End_Frame ( void )
 	u64 *inputdata_ptr;
 	
 //cout << "\nEND FRAME";
-	
+
+	/*
+	if (_GPU->bEnable_OpenCL)
+	{
+		cout << "\n*** UNLOADING VULKAN FOR SINGLE THREADING ***\n";
+
+		_GPU->UnloadVulkan();
+	}
+	*/
+
+
 	if ( ulNumberOfThreads_Created )
 	{
 		
@@ -4463,17 +4505,23 @@ void GPU::End_Frame ( void )
 		
 		ulNumberOfThreads_Created = 0;
 		
-	}	// if ( ulNumberOfThreads_Created )
+	}	// end if ( ulNumberOfThreads_Created )
 	
 	if ( ulThreadedGPU )
 	{
+		// multi-threaded PS2 GPU //
+		
 		// remove the events for now
 		CloseHandle ( ghEvent_PS2GPU_Finish );
 		CloseHandle ( ghEvent_PS2GPU_Frame );
 		CloseHandle ( ghEvent_PS2GPU_Update );
 
-	}	// if ( ulThreadedGPU )
+	}	// end if ( ulThreadedGPU )
+	else
+	{
+		// single-threaded PS2 GPU //
 
+	}
 }
 
 
@@ -4492,7 +4540,20 @@ int GPU::Start_GPUThread( void* Param )
 	ulTBufferIndex = 0;
 	ulP1BufferIndex = 0;
 
-//cout << "\nSTARTING: GPU THREAD";
+	cout << "\nSTARTING: GPU THREAD";
+	cout << " bEnable_OpenCl=" << _GPU->bEnable_OpenCL;
+
+
+	// if OpenCL (now Vulkan) is enabled, then we need to load vulkan
+	/*
+	if (_GPU->bEnable_OpenCL)
+	{
+		cout << "\n*** LOADING VULKAN ON GPU THREAD ***\n";
+
+		_GPU->LoadVulkan();
+	}
+	*/
+
 
 	// infinite loop
 	while ( 1 )
@@ -4567,6 +4628,20 @@ int GPU::Start_GPUThread( void* Param )
 		
 	}	// end while ( 1 )
 
+
+	cout << "\nENDING: GPU THREAD";
+	cout << " bEnable_OpenCL=" << _GPU->bEnable_OpenCL;
+
+
+	// if OpenCL (now Vulkan) is enabled, then we need to unload vulkan
+	/*
+	if (_GPU->bEnable_OpenCL)
+	{
+		cout << "\n*** UNLOADING VULKAN ON GPU THREAD ***\n";
+
+		_GPU->UnloadVulkan();
+	}
+	*/
 
 	return 0;
 }
@@ -5108,7 +5183,7 @@ void GPU::WriteInternalCLUT ( TEX0_t TEX02 )
 	//bEnable_OpenCL = true;
 	if ( bEnable_OpenCL )
 	{
-		inputdata_ptr = & pHwInputBuffer64 [ ( ulHwInputBuffer_WriteIndex & c_ulHwInputBuffer_Mask ) << c_ulHwInputBuffer_Shift ];
+		inputdata_ptr = & pHwInputBuffer32 [ ( ulHwInputBuffer_WriteIndex & c_ulHwInputBuffer_Mask ) << c_ulHwInputBuffer_Shift ];
 		inputdata_ptr [ 0 ] = TEX02.Value;
 		inputdata_ptr [ 1 ] = GPURegsGp.TEXCLUT.Value;
 
@@ -6274,6 +6349,14 @@ void GPU::FlushToHardware ( u64 ullReadIdx, u64 ullWriteIdx, u64 ullReadPixelIdx
 	u64 ullTransferByteCount2;
 	int i;
 
+#ifdef VALIDATE_OPENCL_PS2_FLUSH
+
+	// output the commands sent
+	cout << "\nFlushToHardware: ";
+	cout << " ReadIdx=" << dec << ullReadIdx;
+	cout << " WriteIdx=" << dec << ullWriteIdx;
+#endif
+
 	// check to make sure there is data to send to gpu hardware
 	if ( ullReadIdx >= ullWriteIdx )
 	{
@@ -6282,21 +6365,45 @@ void GPU::FlushToHardware ( u64 ullReadIdx, u64 ullWriteIdx, u64 ullReadPixelIdx
 	}
 
 	// make sure there is no buffer overflow
-	if ( ( ullWriteIdx - ullReadIdx ) > c_ulHwInputBuffer_Size )
+	if ( ( ullWriteIdx - ullReadIdx ) > COMMAND_LIST_SIZE)
 	{
 		cout << "\nhps2x64: GPU: ERROR: draw buffer overflow: " << dec << ( ullWriteIdx - ullReadIdx );
+
+#ifdef VALIDATE_OPENCL_PS2_FLUSH2
+
+		// output the commands sent
+		cout << "\n#Commands sent: " << dec << (ullWriteIdx - ullReadIdx);
+		cout << "\n#Pixels sent: " << dec << (ullWritePixelIdx - ullReadPixelIdx);
+		for (int i = 0; i < (1<<16); i += 32)
+		{
+			cout << "\nCommand#" << dec << i << ": " << hex << p_uHwInputData32[i];
+		}
+
+#endif
+
 		return;
 	}
 
 	// make sure pixel buffer has no overflow
-	if ( ( ullWritePixelIdx - ullReadPixelIdx ) > c_ullPixelInBuffer_Size )
+	if ( ( ullWritePixelIdx - ullReadPixelIdx ) > PIXEL_LIST_SIZE)
 	{
 		cout << "\nhps2x64: GPU: ERROR: pixel buffer overflow: " << dec << ( ullWritePixelIdx - ullReadPixelIdx );
 		return;
 	}
 
 
-	DisplayOutput_Window->OpenGL_MakeCurrentWindow ();
+	//DisplayOutput_Window->OpenGL_MakeCurrentWindow ();
+
+	// wait for previous job to complete before copying data into hardware buffers
+	//vulkan_wait_fence();
+	if (!vulkan_wait())
+	{
+		cout << "\nhps2x64: VULKAN: Problem waiting for queue. Reverting back to software renderer. Disabling hardware rendering.\n";
+
+		bAllowGpuHardwareRendering = false;
+		_GPU->bEnable_OpenCL = false;
+		return;
+	}
 
 
 	// first flush data/pixel input buffer //
@@ -6304,25 +6411,27 @@ void GPU::FlushToHardware ( u64 ullReadIdx, u64 ullWriteIdx, u64 ullReadPixelIdx
 
 	ullCircularBufferEdge = ( ( ullReadPixelIdx | c_ullPixelInBuffer_Mask ) + 1 );
 
-	glBindBuffer ( GL_COPY_READ_BUFFER, ssbo_sinputpixels );
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 11, ssbo_inputpixels);
+	//glBindBuffer ( GL_COPY_READ_BUFFER, ssbo_sinputpixels );
+	//glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 11, ssbo_inputpixels);
 	if( ullWritePixelIdx <= ullCircularBufferEdge )
 	{
 		// first copy data into hardware buffer
 		ullSourceIndex = ( ullReadPixelIdx & c_ullPixelInBuffer_Mask ) << 0;
-		ullTransferByteCount = 1 * 4 * ( ullWritePixelIdx - ullReadPixelIdx );
+		ullTransferByteCount = 1 * 4 * (ullWritePixelIdx - ullReadPixelIdx);
 
-		memcpy( & p_ulHwPixelInBuffer32 [ ullSourceIndex ], & ulPixelInBuffer32 [ ullSourceIndex ], ullTransferByteCount );
+		// for now, copy starting at beginning
+		//memcpy( & p_ulHwPixelInBuffer32 [ ullSourceIndex ], & ulPixelInBuffer32 [ ullSourceIndex ], ullTransferByteCount );
+		memcpy(&p_ulHwPixelInBuffer32[0], &ulPixelInBuffer32[ullSourceIndex], ullTransferByteCount);
 
 		// now dispatch a copy command
-		glCopyBufferSubData ( GL_COPY_READ_BUFFER, GL_SHADER_STORAGE_BUFFER, ullSourceIndex << 2, 0, ullTransferByteCount );
+		//glCopyBufferSubData ( GL_COPY_READ_BUFFER, GL_SHADER_STORAGE_BUFFER, ullSourceIndex << 2, 0, ullTransferByteCount );
 
 	}
 	else
 	{
 		// circular buffer is wrapping around //
 
-		//cout << "***BUFFER WRAP***";
+		//cout << "***PIXEL BUFFER WRAP***";
 
 		ullSourceIndex = ( ullReadPixelIdx & c_ullPixelInBuffer_Mask ) << 0;
 		ullTransferByteCount = 1 * 4 * ( ullCircularBufferEdge - ullReadPixelIdx );
@@ -6331,12 +6440,14 @@ void GPU::FlushToHardware ( u64 ullReadIdx, u64 ullWriteIdx, u64 ullReadPixelIdx
 		ullTransferByteCount2 = 1 * 4 * ( ullWritePixelIdx & c_ullPixelInBuffer_Mask );
 
 		// first copy the data in
-		memcpy( & p_ulHwPixelInBuffer32 [ ullSourceIndex ], & ulPixelInBuffer32 [ ullSourceIndex ], ullTransferByteCount );
-		memcpy( & p_ulHwPixelInBuffer32 [ ullSourceIndex2 ], & ulPixelInBuffer32 [ ullSourceIndex2 ], ullTransferByteCount2 );
+		//memcpy( & p_ulHwPixelInBuffer32 [ ullSourceIndex ], & ulPixelInBuffer32 [ ullSourceIndex ], ullTransferByteCount );
+		//memcpy( & p_ulHwPixelInBuffer32 [ ullSourceIndex2 ], & ulPixelInBuffer32 [ ullSourceIndex2 ], ullTransferByteCount2 );
+		memcpy(&p_ulHwPixelInBuffer32[0], &ulPixelInBuffer32[ullSourceIndex], ullTransferByteCount);
+		memcpy(&p_ulHwPixelInBuffer32[ullTransferByteCount >> 2], &ulPixelInBuffer32[ullSourceIndex2], ullTransferByteCount2);
 
 		// now copy the buffers
-		glCopyBufferSubData ( GL_COPY_READ_BUFFER, GL_SHADER_STORAGE_BUFFER, ullSourceIndex << 2, 0, ullTransferByteCount );
-		glCopyBufferSubData ( GL_COPY_READ_BUFFER, GL_SHADER_STORAGE_BUFFER, ullSourceIndex2 << 2, ullTransferByteCount, ullTransferByteCount2 );
+		//glCopyBufferSubData ( GL_COPY_READ_BUFFER, GL_SHADER_STORAGE_BUFFER, ullSourceIndex << 2, 0, ullTransferByteCount );
+		//glCopyBufferSubData ( GL_COPY_READ_BUFFER, GL_SHADER_STORAGE_BUFFER, ullSourceIndex2 << 2, ullTransferByteCount, ullTransferByteCount2 );
 
 	}
 #endif
@@ -6369,53 +6480,113 @@ void GPU::FlushToHardware ( u64 ullReadIdx, u64 ullWriteIdx, u64 ullReadPixelIdx
 	//cout << "\nSending Flush to gpu render. ReadIdx= " << dec << ulInputBuffer_ReadIndex << " WriteIdx= " << ulInputBuffer_WriteIndex;
 	ullCircularBufferEdge = ( ( ullReadIdx | c_ulHwInputBuffer_Mask ) + 1 );
 
-	glBindBuffer ( GL_COPY_READ_BUFFER, ssbo_sinputdata );
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, ssbo1);
+	//glBindBuffer ( GL_COPY_READ_BUFFER, ssbo_sinputdata );
+	//glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, ssbo1);
 	if( ullWriteIdx <= ullCircularBufferEdge )
 	{
 		// first copy data into hardware buffer
 		ullSourceIndex = ( ullReadIdx & c_ulHwInputBuffer_Mask ) << 5;
-		ullTransferByteCount = 32 * 8 * ( ullWriteIdx - ullReadIdx );
+		//ullTransferByteCount = 32 * 8 * ( ullWriteIdx - ullReadIdx );
+		ullTransferByteCount = 32 * 4 * (ullWriteIdx - ullReadIdx);
 
-		memcpy( & p_uHwInputData32 [ ullSourceIndex << 1 ], & pHwInputBuffer64 [ ullSourceIndex ], ullTransferByteCount );
+		// copy starting from beginning
+		//memcpy( & p_uHwInputData32 [ ullSourceIndex << 1 ], & ((u32*)pHwInputBuffer64) [ ullSourceIndex ], ullTransferByteCount );
+		//memcpy(&p_uHwInputData32[ullSourceIndex], &((u32*)pHwInputBuffer64)[ullSourceIndex], ullTransferByteCount);
+		memcpy(&p_uHwInputData32[0], &((u32*)pHwInputBuffer32)[ullSourceIndex], ullTransferByteCount);
 
 		// now dispatch a copy command
-		glCopyBufferSubData ( GL_COPY_READ_BUFFER, GL_SHADER_STORAGE_BUFFER, ullSourceIndex << 3, 0, ullTransferByteCount );
+		//glCopyBufferSubData ( GL_COPY_READ_BUFFER, GL_SHADER_STORAGE_BUFFER, ullSourceIndex << 3, 0, ullTransferByteCount );
 
-		glDispatchCompute(1, 1, 1);
-		//glMemoryBarrier( GL_SHADER_STORAGE_BARRIER_BIT | GL_SHADER_IMAGE_ACCESS_BARRIER_BIT );
-		glMemoryBarrier( GL_ALL_BARRIER_BITS );
+		//glDispatchCompute(1, 1, 1);
+		//glMemoryBarrier( GL_ALL_BARRIER_BITS );
 	}
 	else
 	{
 		// circular buffer is wrapping around //
 
-		//cout << "***BUFFER WRAP***";
+		//cout << "***COMM BUFFER WRAP***";
 
 		ullSourceIndex = ( ullReadIdx & c_ulHwInputBuffer_Mask ) << 5;
-		ullTransferByteCount = 32 * 8 * ( ullCircularBufferEdge - ullReadIdx );
+		//ullTransferByteCount = 32 * 8 * ( ullCircularBufferEdge - ullReadIdx );
+		ullTransferByteCount = 32 * 4 * (ullCircularBufferEdge - ullReadIdx);
 
 		ullSourceIndex2 = 0;
-		ullTransferByteCount2 = 32 * 8 * ( ullWriteIdx & c_ulHwInputBuffer_Mask );
+		//ullTransferByteCount2 = 32 * 8 * ( ullWriteIdx & c_ulHwInputBuffer_Mask );
+		ullTransferByteCount2 = 32 * 4 * (ullWriteIdx & c_ulHwInputBuffer_Mask);
 
 		// first copy the data in
-		memcpy( & p_uHwInputData32 [ ullSourceIndex << 1 ], & pHwInputBuffer64 [ ullSourceIndex ], ullTransferByteCount );
-		memcpy( & p_uHwInputData32 [ ullSourceIndex2 << 1 ], & pHwInputBuffer64 [ ullSourceIndex2 ], ullTransferByteCount2 );
+		//memcpy( & p_uHwInputData32 [ ullSourceIndex << 1 ], & ((u32*)pHwInputBuffer64) [ ullSourceIndex ], ullTransferByteCount );
+		//memcpy( & p_uHwInputData32 [ ullSourceIndex2 << 1 ], & ((u32*)pHwInputBuffer64) [ ullSourceIndex2 ], ullTransferByteCount2 );
+		//memcpy(&p_uHwInputData32[ullSourceIndex], &((u32*)pHwInputBuffer64)[ullSourceIndex], ullTransferByteCount);
+		//memcpy(&p_uHwInputData32[ullSourceIndex2], &((u32*)pHwInputBuffer64)[ullSourceIndex2], ullTransferByteCount2);
+		memcpy(&p_uHwInputData32[0], &((u32*)pHwInputBuffer32)[ullSourceIndex], ullTransferByteCount);
+		memcpy(&p_uHwInputData32[ullTransferByteCount >> 2], &((u32*)pHwInputBuffer32)[ullSourceIndex2], ullTransferByteCount2);
 
 		// now copy the buffers
-		glCopyBufferSubData ( GL_COPY_READ_BUFFER, GL_SHADER_STORAGE_BUFFER, ullSourceIndex << 3, 0, ullTransferByteCount );
-		glCopyBufferSubData ( GL_COPY_READ_BUFFER, GL_SHADER_STORAGE_BUFFER, ullSourceIndex2 << 3, ullTransferByteCount, ullTransferByteCount2 );
+		//glCopyBufferSubData ( GL_COPY_READ_BUFFER, GL_SHADER_STORAGE_BUFFER, ullSourceIndex << 3, 0, ullTransferByteCount );
+		//glCopyBufferSubData ( GL_COPY_READ_BUFFER, GL_SHADER_STORAGE_BUFFER, ullSourceIndex2 << 3, ullTransferByteCount, ullTransferByteCount2 );
 
-		glDispatchCompute(1, 1, 1);
-		//glMemoryBarrier( GL_SHADER_STORAGE_BARRIER_BIT | GL_SHADER_IMAGE_ACCESS_BARRIER_BIT );
-		glMemoryBarrier( GL_ALL_BARRIER_BITS );
+		//glDispatchCompute(1, 1, 1);
+		//glMemoryBarrier( GL_ALL_BARRIER_BITS );
 	}
 
-	//glFlush ();
+#ifdef VALIDATE_OPENCL_PS2_FLUSH
+
+	// output the commands sent
+	cout << "\n#Commands sent: " << dec << (ullWriteIdx - ullReadIdx);
+	cout << "\n#Pixels sent: " << dec << (ullWritePixelIdx - ullReadPixelIdx);
+	//for (int i = 0; i < 32; i++)
+	//{
+	//	cout << "\nCommand#" << dec << i << ": " << hex << p_uHwInputData32[i];
+	//}
+
+#endif
+
+	// set number of elements
+	// start index
+	p_uHwScratchData32[0] = 0;
+	// end index (exclusive)
+	p_uHwScratchData32[1] = ullWriteIdx - ullReadIdx;
+
+	// init sync
+	p_uHwScratchData32[2] = 0;
 
 
+	// flush mapped memory
+	vulkan_flush();
 
-	DisplayOutput_Window->OpenGL_ReleaseWindow ();
+
+	// check if the final command updates screen
+	u32* inputdata_ptr;
+	inputdata_ptr = & (((u32*)pHwInputBuffer32)[((ullWriteIdx - 1) & c_ulHwInputBuffer_Mask) << c_ulHwInputBuffer_Shift]);
+	if (inputdata_ptr[0] != (0xfe << 24))
+	{
+		//cout << "\nhps2x64: GPU: HARDWARE: SHADER: final command does not update screen.\n";
+		if (!vulkan_execute_compute_only())
+		{
+			cout << "\nhps2x64: PS2: GPU: PROBLEM: Unable to execute gpu hardware queue (COMPUTE). Minimum required hardware GPU CU Shader Cores is: " << dec << GPU_PS2_MINIMUM_REQUIRED_SHADER_CORES;
+			cout << "\nhps2x64: PS2: GPU: PROBLEM: Hardware GPU unable to handle minimum requirements (COMPUTE ONLY). Reverting back to SOFTWARE renderer.\n";
+
+			bAllowGpuHardwareRendering = false;
+			_GPU->bEnable_OpenCL = false;
+		}
+	}
+	else
+	{
+
+		//cout << "\nhps2x64: GPU: HARDWARE: SHADER: final command IS updating screen.\n";
+		if (!vulkan_execute())
+		{
+			cout << "\nhps2x64: PS2: GPU: PROBLEM: Unable to execute gpu hardware queue. Minimum required hardware GPU CU Shader Cores is: " << dec << GPU_PS2_MINIMUM_REQUIRED_SHADER_CORES;
+			cout << "\nhps2x64: PS2: GPU: PROBLEM: Hardware GPU unable to handle minimum requirements. Reverting back to SOFTWARE renderer.\n";
+
+			bAllowGpuHardwareRendering = false;
+			_GPU->bEnable_OpenCL = false;
+		}
+	}
+
+
+	//DisplayOutput_Window->OpenGL_ReleaseWindow ();
 
 #endif
 }
@@ -6458,7 +6629,7 @@ void GPU::Draw_Screen ()
 	u32 PixelFormat;
 	
 
-	u64 *inputdata_ptr;
+	u32 *inputdata_ptr;
 	
 	// can only have 480 lines on screen for ntsc, 576 for pal
 	int iMaxLines;
@@ -6702,6 +6873,18 @@ void GPU::Draw_Screen ()
 #endif
 
 
+#ifdef ALLOW_OPENCL_PS2_DRAWSCREEN_FLUSH
+
+	//cout << "\ndraw-screen";
+	
+	// send command
+	Copy_VRAM_toGPU();
+	//Copy_VARS_toGPU();
+	GPU::Flush();
+	Copy_VRAM_toCPU();
+
+#endif
+
 
 #ifdef ALLOW_OPENCL_PS2_DRAWSCREEN
 	//bEnable_OpenCL = true;
@@ -6712,53 +6895,117 @@ void GPU::Draw_Screen ()
 		// copy the vram into the gpu for testing
 		//Copy_VRAM_toGPU ();
 
-		inputdata_ptr = & pHwInputBuffer64 [ ( ulHwInputBuffer_WriteIndex & c_ulHwInputBuffer_Mask ) << c_ulHwInputBuffer_Shift ];
-
-		inputdata_ptr [ 0 ] = _GPU->GPURegs0.PMODE;
-		inputdata_ptr [ 1 ] = _GPU->GPURegs0.DISPFB1.Value;
-		inputdata_ptr [ 2 ] = _GPU->GPURegs0.DISPFB2.Value;
-		inputdata_ptr [ 3 ] = _GPU->GPURegs0.DISPLAY1.Value;
-		inputdata_ptr [ 4 ] = _GPU->GPURegs0.DISPLAY2.Value;
-		inputdata_ptr [ 5 ] = _GPU->GPURegs0.SMODE2.Value;
-		inputdata_ptr [ 13 ] = _GPU->lScanline;
+		inputdata_ptr = & ((u32*)pHwInputBuffer32) [ ( ulHwInputBuffer_WriteIndex & c_ulHwInputBuffer_Mask ) << c_ulHwInputBuffer_Shift ];
 
 		// put in command
-		inputdata_ptr [ 15 ] = 0xfe000000ull;
-		inputdata_ptr [ 14 ] = *_DebugCycleCount;
+		inputdata_ptr[0] = 0xfe000000ull;
+		inputdata_ptr[1] = _GPU->lScanline;
+
+		((u64*)inputdata_ptr)[14] = *_DebugCycleCount;
+
+		((u64*)inputdata_ptr)[ 1 ] = _GPU->GPURegs0.PMODE;
+		((u64*)inputdata_ptr)[ 2 ] = _GPU->GPURegs0.DISPFB1.Value;
+		((u64*)inputdata_ptr)[ 3 ] = _GPU->GPURegs0.DISPFB2.Value;
+		((u64*)inputdata_ptr)[ 4 ] = _GPU->GPURegs0.DISPLAY1.Value;
+		((u64*)inputdata_ptr)[ 5 ] = _GPU->GPURegs0.DISPLAY2.Value;
+		((u64*)inputdata_ptr)[ 6 ] = _GPU->GPURegs0.SMODE2.Value;
+
+		inputdata_ptr[18] = _GPU->iGraphicsMode;
 
 		// commit command
 		ulHwInputBuffer_WriteIndex++;
 
 
-#ifdef ENABLE_OPENCL_PASSIVE_RENDER
+		//DisplayOutput_Window->OpenGL_ReleaseWindow();
 
-#ifdef ENABLE_PIXELBUF_INTERLACING	
-	// for now, if interlaced, need to put the draw_height back
-	if ( GPURegs0.SMODE2.FFMD && GPURegs0.SMODE2.INTER )
-	{
-		// only draw half the draw height for now
-		draw_height <<= 1;
-		
-	}
+#ifdef TEST_OPENCL_PS2_DRAWSCREEN
+
+		//cout << "\ndraw-screen";
+
+		// send command
+		Copy_VRAM_toGPU();
+		//Copy_VARS_toGPU();
+		//GPU::Flush();
+		//Copy_VRAM_toCPU();
 #endif
 
-
-		DisplayOutput_Window->OpenGL_MakeCurrentWindow ();
-
-		//cout << "\ndrawing screen. WriteIdx=" << dec << ulHwInputBuffer_WriteIndex;
-
-		glBlitFramebuffer( 0, 0, draw_width, draw_height, 0, 0, MainProgramWindow_Width, MainProgramWindow_Height, GL_COLOR_BUFFER_BIT, GL_NEAREST );
-
-		// update screen
-		DisplayOutput_Window->FlipScreen ();
-
-#endif
 
 		// submit all the commands in buffer
 		//FlushToHardware( 0, 1 );
-		Flush ();
+		GPU::Flush();
+
+
+#ifdef VALIDATE_OPENCL_PS2_DRAWSCREEN
+
+		cout << "\ndraw-screen";
+		cout << "\nScanline:" << dec << _GPU->lScanline;
+		cout << "\nPMODE: " << hex << _GPU->GPURegs0.PMODE;
+		cout << "\nDISPFB1: " << hex << _GPU->GPURegs0.DISPFB1.Value;
+		cout << "\nDISPFB2: " << hex << _GPU->GPURegs0.DISPFB2.Value;
+		cout << "\nDISPLAY1: " << hex << _GPU->GPURegs0.DISPLAY1.Value;
+		cout << "\nDISPLAY2: " << hex << _GPU->GPURegs0.DISPLAY2.Value;
+		cout << "\nSMODE2: " << hex << _GPU->GPURegs0.SMODE2.Value;
+		cout << "\niGraphicsMode: " << _GPU->iGraphicsMode;
+		cout << "\nDISPFB1 PSM: " << PixelFormat_Names[_GPU->GPURegs0.DISPFB1.PSM];
+		cout << "\nDISPFB2 PSM: " << PixelFormat_Names[_GPU->GPURegs0.DISPFB2.PSM];
+		cout << "\nDISPFB1: DBX:" << dec << _GPU->GPURegs0.DISPFB1.DBX << " DBY:" << _GPU->GPURegs0.DISPFB1.DBY;
+		cout << "\nDISPFB2: DBX:" << dec << _GPU->GPURegs0.DISPFB2.DBX << " DBY:" << _GPU->GPURegs0.DISPFB2.DBY;
+		cout << "\nDISPLAY1 DH:" << dec << _GPU->GPURegs0.DISPLAY1.DH << " DX:" << _GPU->GPURegs0.DISPLAY1.DX << " DY:" << _GPU->GPURegs0.DISPLAY1.DY;
+		cout << "\nDISPLAY2 DH:" << dec << _GPU->GPURegs0.DISPLAY2.DH << " DX:" << _GPU->GPURegs0.DISPLAY2.DX << " DY:" << _GPU->GPURegs0.DISPLAY2.DY;
+
+
+		vulkan_wait();
+
+		/*
+		// output input
+		for (int i = 0; i < 32; i++)
+		{
+			cout << "\nInput#" << dec << i << ": " << hex << inputdata_ptr[i];
+		}
+
+		// validate input
+		for (int i = 0; i < 32; i++)
+		{
+			//cout << "\nValidate#" << dec << i << ": " << hex << p_uHwOutputData32[i];
+			cout << "\nValidate#" << dec << i << ": " << hex << p_ulHwPixelOutBuffer32[i];
+		}
+		*/
+
+		cout << "\niBlackBottomLines: " << dec << p_ulHwPixelOutBuffer32[32];
+		cout << "\niBlackTopLines: " << dec << p_ulHwPixelOutBuffer32[33];
+		cout << "\ndraw_width: " << dec << p_ulHwPixelOutBuffer32[34];
+		cout << "\ndraw_height: " << dec << p_ulHwPixelOutBuffer32[35];
+		cout << "\nstart_x: " << dec << p_ulHwPixelOutBuffer32[36];
+		cout << "\nstart_y: " << dec << p_ulHwPixelOutBuffer32[37];
+		cout << "\ndraw_buffer_offset: " << dec << p_ulHwPixelOutBuffer32[38];
+		cout << "\nPixelFormat: " << dec << p_ulHwPixelOutBuffer32[39];
+		cout << "\niFrameBufWidth: " << dec << p_ulHwPixelOutBuffer32[40];
+		cout << "\ncount: " << dec << p_ulHwPixelOutBuffer32[41];
+		cout << "\niOffset: " << dec << p_ulHwPixelOutBuffer32[42];
+		cout << "\niYUpdate: " << dec << p_ulHwPixelOutBuffer32[43];
+		cout << "\nSoftwareVars: ";
+		cout << "\niBlackBottomLines: " << dec << iBlackBottomLines;
+		cout << "\niBlackTopLines: " << dec << iBlackTopLines;
+		cout << "\ndraw_width: " << dec << draw_width;
+		cout << "\ndraw_height: " << dec << draw_height;
+		cout << "\nstart_x: " << dec << start_x;
+		cout << "\nstart_y: " << dec << start_y;
+		cout << "\ndraw_buffer_offset: " << dec << draw_buffer_offset;
+		cout << "\nPixelFormat: " << dec << PixelFormat;
+		cout << "\niFrameBufWidth: " << dec << iFrameBufWidth;
+		//cout << "\ncount: " << dec << count;
+		cout << "\niOffset: " << dec << iOffset;
+		cout << "\niYUpdate: " << dec << iYUpdate;
+
+#endif
+
+
+		//DisplayOutput_Window->OpenGL_MakeCurrentWindow();
 
 		//cout << "\nscreen drawn.";
+
+		// done ??
+		return;
 
 	}
 	else
@@ -7068,6 +7315,8 @@ void GPU::Draw_Screen ()
 	else
 #endif
 	{
+		//cout << "\nDrawing from Draw_Screen\n";
+
 	//glPixelZoom ( (float)MainProgramWindow_Width / (float)VisibleArea_Width, (float)MainProgramWindow_Height / (float)VisibleArea_Height );
 	glPixelZoom ( (float)MainProgramWindow_Width / (float)draw_width, (float)MainProgramWindow_Height / (float)draw_height );
 	//glDrawPixels ( VisibleArea_Width, VisibleArea_Height, GL_RGBA, GL_UNSIGNED_BYTE, (const GLvoid*) PixelBuffer );
@@ -7230,6 +7479,133 @@ void GPU::Draw_FrameBuffers ()
 }
 
 
+void GPU::Copy_VARS_toGPU()
+{
+#ifdef ALLOW_OPENCL_PS2
+
+	int iIdx;
+
+	if (p_uHwGpuVarsData64)
+	{
+		// make sure vulkan is idle
+		vulkan_wait();
+
+		for (iIdx = 0; iIdx < c_iGPURegsGp_Count; iIdx++)
+		{
+			p_uHwGpuVarsData64[iIdx] = GPURegsGp.Regs[iIdx];
+		}
+	}
+	else
+	{
+		cout << "\nhps2x64: GPU: VULKAN: ALERT: Attempting VARS/REGISTERS from CPU to GPU when VULKAN is NOT loaded.\n";
+	}
+
+
+#ifdef VALIDATE_OPENCL_PS2_COPYVARS
+
+	cout << "\nValidate VARS: ";
+	for (iIdx = 0; iIdx < 32; iIdx++)
+	{
+		cout << " vvar#" << dec << iIdx << ": " << hex << p_uHwGpuVarsData64[iIdx];
+	}
+
+#endif
+
+#endif
+
+}
+
+void GPU::Copy_VARS_toCPU()
+{
+#ifdef ALLOW_OPENCL_PS2
+
+	int iIdx;
+
+	if (p_uHwGpuVarsData64)
+	{
+		// make sure vulkan is idle
+		vulkan_wait();
+
+		for (iIdx = 0; iIdx < c_iGPURegsGp_Count; iIdx++)
+		{
+			GPURegsGp.Regs[iIdx] = p_uHwGpuVarsData64[iIdx];
+		}
+	}
+	else
+	{
+		cout << "\nhps2x64: GPU: VULKAN: ALERT: Attempting VARS/REGISTERS from GPU to CPU when VULKAN is NOT loaded.\n";
+	}
+
+
+#endif
+
+}
+
+
+void GPU::Copy_CLUT_toGPU()
+{
+#ifdef ALLOW_OPENCL_PS2
+
+	int iIdx;
+
+	if (p_uHwClutData32)
+	{
+		// make sure vulkan is idle
+		vulkan_wait();
+
+		p_uHwCbpxData32[0] = CBPX[0];
+		p_uHwCbpxData32[1] = CBPX[1];
+		for (iIdx = 0; iIdx < 512; iIdx++)
+		{
+			p_uHwClutData32[iIdx] = (u32)InternalCLUT[iIdx];
+		}
+	}
+	else
+	{
+		cout << "\nhps2x64: GPU: VULKAN: ALERT: Attempting CLUT from CPU to GPU when VULKAN is NOT loaded.\n";
+	}
+
+
+#ifdef VALIDATE_OPENCL_PS2_COPYCLUT
+
+	cout << "\nValidate CLUT: ";
+	for (iIdx = 0; iIdx < 16; iIdx++)
+	{
+		cout << " vc#" << dec << iIdx << ": " << hex << p_uHwClutData32[iIdx];
+	}
+
+#endif
+
+#endif
+
+}
+
+void GPU::Copy_CLUT_toCPU()
+{
+#ifdef ALLOW_OPENCL_PS2
+
+	int iIdx;
+
+	if (p_uHwClutData32)
+	{
+		// make sure vulkan is idle
+		vulkan_wait();
+
+		CBPX[0] = p_uHwCbpxData32[0];
+		CBPX[1] = p_uHwCbpxData32[1];
+		for (iIdx = 0; iIdx < 512; iIdx++)
+		{
+			InternalCLUT[iIdx] = (u16)p_uHwClutData32[iIdx];
+		}
+	}
+	else
+	{
+		cout << "\nhps2x64: GPU: VULKAN: ALERT: Attempting CLUT from GPU to CPU when VULKAN is NOT loaded.\n";
+	}
+
+#endif
+
+}
 
 void GPU::Copy_VRAM_toGPU ()
 {
@@ -7240,58 +7616,23 @@ void GPU::Copy_VRAM_toGPU ()
 	int iIdx;
 	int i;
 
-
-	// make sure gpu is completely finished with anything
-	//GPU::Finish ();
-
-
-	DisplayOutput_Window->OpenGL_MakeCurrentWindow ();
-
-
-	// make sure opengl is all synced up
-	glFinish();
-
-
-#ifdef ALLOW_OPENCL_PS2_TEST_CLUT
-	// copy clut
-	glBindBuffer ( GL_COPY_READ_BUFFER, ssbo_sclut );
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 8, ssbo_clut);
-	//memcpy( p_uHwClutData32, _GPU->InternalCLUT, sizeof(_GPU->InternalCLUT) );
-	for ( i = 0; i < 512; i++ )
+	// make sure vulkan is even loaded to copy to the gpu
+	if (p_uHwOutputData32)
 	{
-		p_uHwClutData32 [ i ] = ((u16*)_GPU->InternalCLUT)[ i ];
+		// make sure vulkan is idle
+		vulkan_wait();
+
+		for (iIdx = 0; iIdx < (c_iRAM_Size / sizeof(long)); iIdx++)
+		{
+			//VRAM [ iIdx ] = (u16) pBuf32 [ iIdx ];
+			//pBuf32 [ iIdx ] = (u32) VRAM [ iIdx ];
+			((u32*)p_uHwOutputData32)[iIdx] = RAM32[iIdx];
+		}
 	}
-
-	glCopyBufferSubData ( GL_COPY_READ_BUFFER, GL_SHADER_STORAGE_BUFFER, 0, 0, sizeof(_GPU->InternalCLUT) * 2 );
-
-	// copy cbpx
-	glBindBuffer ( GL_COPY_READ_BUFFER, ssbo_scbpx );
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 10, ssbo_cbpx);
-
-	memcpy( p_uHwCbpxData32, _GPU->CBPX, sizeof(_GPU->CBPX) );
-
-	glCopyBufferSubData ( GL_COPY_READ_BUFFER, GL_SHADER_STORAGE_BUFFER, 0, 0, sizeof(_GPU->CBPX) );
-#endif
-
-
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, ssbo);
-
-	pBuf32 = (u32*) glMapBuffer ( GL_SHADER_STORAGE_BUFFER, GL_WRITE_ONLY );
-
-	
-	//////////////////////////////////////////////////////
-	// transfer pixel of image from VRAM
-	for ( iIdx = 0; iIdx < (c_iRAM_Size >> 1); iIdx++ )
+	else
 	{
-		pBuf32 [ iIdx ] = (u32) RAM16 [ iIdx ];
+		cout << "\nhps2x64: GPU: VULKAN: ALERT: Attempting VRAM from CPU to GPU when VULKAN is NOT loaded.\n";
 	}
-
-	
-
-	glUnmapBuffer( GL_SHADER_STORAGE_BUFFER );
-
-
-	DisplayOutput_Window->OpenGL_ReleaseWindow ();
 
 #endif
 }
@@ -7303,58 +7644,24 @@ void GPU::Copy_VRAM_toCPU ()
 	u32 *pBuf32;
 	int iIdx;
 
-
-	// make sure gpu is completely finished with anything
-	//GPU::Finish ();
-
-
-	DisplayOutput_Window->OpenGL_MakeCurrentWindow ();
-
-	// make sure opengl is all synced up
-	glFinish();
-
-	// copy out vram
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, ssbo);
-
-	pBuf32 = (u32*) glMapBuffer ( GL_SHADER_STORAGE_BUFFER, GL_READ_ONLY );
-
-
-	
-	//////////////////////////////////////////////////////
-	// transfer pixel of image from VRAM
-	for ( iIdx = 0; iIdx < (c_iRAM_Size >> 1); iIdx++ )
+	// make sure vulkan is even loaded to copy from the gpu
+	if (p_uHwOutputData32)
 	{
-		RAM16 [ iIdx ] = (u16) pBuf32 [ iIdx ];
+		// make sure gpu is completely finished with anything
+		GPU::Finish();
+
+		// make sure vulkan is idle
+		vulkan_wait();
+
+		for (iIdx = 0; iIdx < (c_iRAM_Size / sizeof(long)); iIdx++)
+		{
+			RAM32[iIdx] = ((u32*)p_uHwOutputData32)[iIdx];
+		}
 	}
-	
-
-	glUnmapBuffer( GL_SHADER_STORAGE_BUFFER );
-
-
-#ifdef ALLOW_OPENCL_PS2_TEST_CLUT
-	// copy out the clut
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 8, ssbo_clut);
-	pBuf32 = (u32*) glMapBuffer ( GL_SHADER_STORAGE_BUFFER, GL_READ_ONLY );
-	for ( iIdx = 0; iIdx < 512; iIdx++ )
+	else
 	{
-		InternalCLUT [ iIdx ] = (u16) pBuf32 [ iIdx ];
+		cout << "\nhps2x64: GPU: VULKAN: ALERT: Attempting VRAM from GPU to CPU when VULKAN is NOT loaded.\n";
 	}
-	glUnmapBuffer( GL_SHADER_STORAGE_BUFFER );
-
-
-	// copy out cbpx
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 10, ssbo_cbpx);
-
-	pBuf32 = (u32*) glMapBuffer ( GL_SHADER_STORAGE_BUFFER, GL_READ_ONLY );
-
-	CBPX[0] = pBuf32 [0];
-	CBPX[1] = pBuf32 [1];
-	
-
-	glUnmapBuffer( GL_SHADER_STORAGE_BUFFER );
-
-	DisplayOutput_Window->OpenGL_ReleaseWindow ();
-#endif
 
 #endif
 }
@@ -7846,11 +8153,11 @@ void GPU::Path1_WriteBlock ( u64* pMemory64, u32 Address, u32 Count )
 #ifdef ENABLE_PATH_PROGRESS_ALERT
 	if ( !_GPU->EndOfPacket [ 3 ] )
 	{
-		cout << "\nhps2x64: ALERT: PATH 1 TRANSFER WHILE GPU PATH 3 PACKET TRANSFER IN PROGRESS! IMT=" << _GPU->GIFRegs.MODE.IMT;
+		cout << "\nhps2x64: ALERT: PATH 1 TRANSFER WHILE GPU PATH 3 PACKET TRANSFER IN PROGRESS! IMT=" << _GPU->GIFRegs.MODE.IMT << " FLG1=" << _GPU->GIFTag0[1].FLG << " FLG3=" << _GPU->GIFTag0[3].FLG;
 	}
 	if ( !_GPU->EndOfPacket [ 2 ] )
 	{
-		cout << "\nhps2x64: ALERT: PATH 1 TRANSFER WHILE GPU PATH 2 PACKET TRANSFER IN PROGRESS!";
+		cout << "\nhps2x64: ALERT: PATH 1 TRANSFER WHILE GPU PATH 2 PACKET TRANSFER IN PROGRESS!" << " FLG1=" << _GPU->GIFTag0[1].FLG << " FLG2=" << _GPU->GIFTag0[2].FLG;
 	}
 #endif
 	
@@ -8229,11 +8536,11 @@ void GPU::Path2_WriteBlock ( u32* Data, u32 WordCount )
 	// check if transfering while path 1 or path 3 packet is in progress
 	if ( !_GPU->EndOfPacket [ 3 ] )
 	{
-		cout << "\nhps2x64: ALERT: PATH 2 TRANSFER WHILE GPU PATH 3 PACKET TRANSFER IN PROGRESS! IMT=" << _GPU->GIFRegs.MODE.IMT;
+		cout << "\nhps2x64: ALERT: PATH 2 TRANSFER WHILE GPU PATH 3 PACKET TRANSFER IN PROGRESS! IMT=" << _GPU->GIFRegs.MODE.IMT << " FLG2=" << _GPU->GIFTag0[2].FLG << " FLG3=" << _GPU->GIFTag0[3].FLG;
 	}
 	if ( !_GPU->EndOfPacket [ 1 ] )
 	{
-		cout << "\nhps2x64: ALERT: PATH 2 TRANSFER WHILE GPU PATH 1 PACKET TRANSFER IN PROGRESS!";
+		cout << "\nhps2x64: ALERT: PATH 2 TRANSFER WHILE GPU PATH 1 PACKET TRANSFER IN PROGRESS!" << " FLG1=" << _GPU->GIFTag0[1].FLG << " FLG2=" << _GPU->GIFTag0[2].FLG;
 	}
 #endif
 
@@ -8501,7 +8808,8 @@ void GPU::SetDrawVars ( u64 *inputdata_ptr, u32 Coord0, u32 Coord1, u32 Coord2 )
 	TEX0_t *pTEX0 = TEXX;
 	TEX1_t *pTEX1 = &GPURegsGp.TEX1_1;
 
-	
+	u32 *inputdata_ptr32;
+
 	// get context
 	if ( GPURegsGp.PRMODECONT & 1 )
 	{
@@ -8535,7 +8843,111 @@ void GPU::SetDrawVars ( u64 *inputdata_ptr, u32 Coord0, u32 Coord1, u32 Coord2 )
 
 		ullPRIM  = ( ( GPURegsGp.PRIM.Value & 7 ) | ( GPURegsGp.PRMODE.Value & ~7 ) ) & 0x7ff;
 	}
-	
+
+
+#ifdef ALLOW_OPENCL_PS2_SETDRAWVARS
+
+	if (bEnable_OpenCL)
+	{
+
+#ifndef ALLOW_OPENCL_PS2_ALL_PRIMITIVES
+
+		if (0
+
+#ifdef ALLOW_OPENCL_PS2_PIXEL_COLOR
+			|| (((ullPRIM & 0x7) == 0x0) && (!TextureMapped))
+#endif
+
+#ifdef ALLOW_OPENCL_PS2_LINE_COLOR
+			|| (((ullPRIM & 0x7) >= 0x1) && ((ullPRIM & 0x7) <= 0x2) && (!TextureMapped))
+#endif
+
+#ifdef ALLOW_OPENCL_PS2_RECTANGLE
+			|| (((ullPRIM & 0x7) == 0x6) && (!TextureMapped))
+#endif
+
+#ifdef ALLOW_OPENCL_PS2_SPRITE
+			|| (((ullPRIM & 0x7) == 0x6) && (TextureMapped))
+#endif
+
+#ifdef ALLOW_OPENCL_PS2_TRIANGLE_COLOR
+			|| (((ullPRIM & 0x7) >= 0x3) && ((ullPRIM & 0x7) <= 0x5) && (!TextureMapped))
+#endif
+
+#ifdef ALLOW_OPENCL_PS2_TRIANGLE_TEXTURE
+			|| (((ullPRIM & 0x7) >= 0x3) && ((ullPRIM & 0x7) <= 0x5) && (TextureMapped))
+#endif
+			)
+
+#endif	// end #ifndef ALLOW_OPENCL_PS2_ALL_PRIMITIVES
+		{
+			inputdata_ptr32 = &((u32*)pHwInputBuffer32)[(ulHwInputBuffer_WriteIndex & c_ulHwInputBuffer_Mask) << c_ulHwInputBuffer_Shift];
+
+			inputdata_ptr32[0] = (u32)ullPRIM;
+			inputdata_ptr32[1] = (u32)Frame[Ctx].Value;
+			((u64*)inputdata_ptr32)[1] = Scissor[Ctx].Value;
+
+			inputdata_ptr32[4] = (u32)xyz[Coord0].Value;
+			inputdata_ptr32[5] = (u32)xyz[Coord1].Value;
+			inputdata_ptr32[6] = (u32)xyz[Coord2].Value;
+			inputdata_ptr32[7] = Offset[Ctx].OFX;
+			inputdata_ptr32[8] = (u32)xyz[Coord0].Z;
+			inputdata_ptr32[9] = (u32)xyz[Coord1].Z;
+			inputdata_ptr32[10] = (u32)xyz[Coord2].Z;
+			inputdata_ptr32[11] = Offset[Ctx].OFY;
+
+			inputdata_ptr32[12] = (u32)rgbaq[Coord0].Value;
+			inputdata_ptr32[13] = (u32)rgbaq[Coord1].Value;
+			inputdata_ptr32[14] = (u32)rgbaq[Coord2].Value;
+			inputdata_ptr32[15] = (u32)ZBuf[Ctx].Value;
+
+			if (Fst)
+			{
+				// uv coords (FST=1) //
+				inputdata_ptr32[16] = (u32)uv[Coord0].Value;
+				inputdata_ptr32[17] = (u32)uv[Coord1].Value;
+				inputdata_ptr32[18] = (u32)uv[Coord2].Value;
+			}
+			else
+			{
+				// st coords (FST=0) //
+				inputdata_ptr32[16] = st[Coord0].S;
+				inputdata_ptr32[17] = st[Coord1].S;
+				inputdata_ptr32[18] = st[Coord2].S;
+			}
+
+			// tex0/2 lower
+			inputdata_ptr32[19] = (u32)TEXX[Ctx].Value;
+
+			inputdata_ptr32[20] = st[Coord0].T;
+			inputdata_ptr32[21] = st[Coord1].T;
+			inputdata_ptr32[22] = st[Coord2].T;
+			// tex0/2 upper
+			inputdata_ptr32[23] = (u32)(TEXX[Ctx].Value >> 32);
+
+			inputdata_ptr32[24] = (u32)rgbaq[Coord0].Q;
+			inputdata_ptr32[25] = (u32)rgbaq[Coord1].Q;
+			inputdata_ptr32[26] = (u32)rgbaq[Coord2].Q;
+			//inputdata_ptr32[27] = GPURegsGp.PABE;
+
+			inputdata_ptr32[28] = (u32)f[Coord0].F;
+			inputdata_ptr32[29] = (u32)f[Coord1].F;
+			inputdata_ptr32[30] = (u32)f[Coord2].F;
+			//inputdata_ptr32[31] = GPURegsGp.FOGCOL;
+
+			ulHwInputBuffer_WriteIndex++;
+		}
+
+		// done if sending to hardware gpu
+		return;
+
+	}	// end if (bEnable_OpenCL)
+
+#endif	// end #ifdef ALLOW_OPENCL_PS2_SETDRAWVARS
+
+
+
+
 #if defined INLINE_DEBUG_SETDRAWVARS || defined INLINE_DEBUG_PRIMITIVE
 	debug << " Context#" << Ctx << " Texture=" << TextureMapped;
 #endif
@@ -8764,6 +9176,12 @@ void GPU::SetDrawVars ( u64 *inputdata_ptr, u32 Coord0, u32 Coord1, u32 Coord2 )
 	zbuf32 = & ( RAM32 [ ZBufferStartOffset32 ] );
 	//zbuf16 = (u16*) zbuf32;
 
+
+
+
+	
+
+
 	if (iDrawVectorSize == 4)
 	{
 
@@ -8854,6 +9272,9 @@ void GPU::SetDrawVars_Line ( u64 *inputdata_ptr, u32 Coord0, u32 Coord1, u32 Coo
 #endif
 
 	u32 lContext;
+	u64 ullPRIM;
+
+	u32* inputdata_ptr32;
 
 	// 0: SCISSOR
 	// 1: XYOFFSET
@@ -8891,18 +9312,122 @@ void GPU::SetDrawVars_Line ( u64 *inputdata_ptr, u32 Coord0, u32 Coord1, u32 Coo
 	if ( GPURegsGp.PRMODECONT & 1 )
 	{
 		// set PRIM
-		inputdata_ptr [ 15 ] = GPURegsGp.PRIM.Value;
+		//inputdata_ptr [ 15 ] = GPURegsGp.PRIM.Value;
+		ullPRIM = GPURegsGp.PRIM.Value;
 	}
 	else
 	{
 		// set PRMODE
-		inputdata_ptr [ 15 ] = ( GPURegsGp.PRIM.Value & 0x7 ) | ( GPURegsGp.PRMODE.Value & ~0x7 );
+		//inputdata_ptr [ 15 ] = ( GPURegsGp.PRIM.Value & 0x7 ) | ( GPURegsGp.PRMODE.Value & ~0x7 );
+		ullPRIM = (GPURegsGp.PRIM.Value & 0x7) | (GPURegsGp.PRMODE.Value & ~0x7);
 	}
 	
-	lContext = ( inputdata_ptr [ 15 ] >> 9 ) & 1;
-	
+	lContext = (ullPRIM >> 9 ) & 1;
+	Fst = (ullPRIM >> 8) & 1;
+
 	if ( !lContext )
 	{
+#ifdef ALLOW_OPENCL_PS2_SETDRAWVARS_LINE
+
+		if (bEnable_OpenCL)
+		{
+
+#ifndef ALLOW_OPENCL_PS2_ALL_PRIMITIVES
+
+			if (0
+
+#ifdef ALLOW_OPENCL_PS2_PIXEL_COLOR
+				|| (((ullPRIM & 0x7) == 0x0) && (!TextureMapped))
+#endif
+
+#ifdef ALLOW_OPENCL_PS2_LINE_COLOR
+				|| (((ullPRIM & 0x7) >= 0x1) && ((ullPRIM & 0x7) <= 0x2) && (!TextureMapped))
+#endif
+
+#ifdef ALLOW_OPENCL_PS2_RECTANGLE
+				|| (((ullPRIM & 0x7) == 0x6) && (!TextureMapped))
+#endif
+
+#ifdef ALLOW_OPENCL_PS2_SPRITE
+				|| (((ullPRIM & 0x7) == 0x6) && (TextureMapped))
+#endif
+
+#ifdef ALLOW_OPENCL_PS2_TRIANGLE_COLOR
+				|| (((ullPRIM & 0x7) >= 0x3) && ((ullPRIM & 0x7) <= 0x5) && (!TextureMapped))
+#endif
+
+#ifdef ALLOW_OPENCL_PS2_TRIANGLE_TEXTURE
+				|| (((ullPRIM & 0x7) >= 0x3) && ((ullPRIM & 0x7) <= 0x5) && (TextureMapped))
+#endif
+				)
+
+#endif	// end #ifndef ALLOW_OPENCL_PS2_ALL_PRIMITIVES
+			{
+				inputdata_ptr32 = &((u32*)pHwInputBuffer32)[(ulHwInputBuffer_WriteIndex & c_ulHwInputBuffer_Mask) << c_ulHwInputBuffer_Shift];
+
+				inputdata_ptr32[0] = (u32)ullPRIM;
+				inputdata_ptr32[1] = (u32)GPURegsGp.FRAME_1.Value;
+				((u64*)inputdata_ptr32)[1] = GPURegsGp.SCISSOR_1.Value;
+
+				inputdata_ptr32[4] = (u32)xyz[Coord0].Value;
+				inputdata_ptr32[5] = (u32)xyz[Coord1].Value;
+				inputdata_ptr32[6] = (u32)xyz[Coord2].Value;
+				inputdata_ptr32[7] = GPURegsGp.XYOFFSET_1.OFX;
+				inputdata_ptr32[8] = (u32)xyz[Coord0].Z;
+				inputdata_ptr32[9] = (u32)xyz[Coord1].Z;
+				inputdata_ptr32[10] = (u32)xyz[Coord2].Z;
+				inputdata_ptr32[11] = GPURegsGp.XYOFFSET_1.OFY;
+
+				inputdata_ptr32[12] = (u32)rgbaq[Coord0].Value;
+				inputdata_ptr32[13] = (u32)rgbaq[Coord1].Value;
+				inputdata_ptr32[14] = (u32)rgbaq[Coord2].Value;
+				inputdata_ptr32[15] = (u32)GPURegsGp.ZBUF_1.Value;
+
+				if (Fst)
+				{
+					// uv coords (FST=1) //
+					inputdata_ptr32[16] = (u32)uv[Coord0].Value;
+					inputdata_ptr32[17] = (u32)uv[Coord1].Value;
+					inputdata_ptr32[18] = (u32)uv[Coord2].Value;
+				}
+				else
+				{
+					// st coords (FST=0) //
+					inputdata_ptr32[16] = st[Coord0].S;
+					inputdata_ptr32[17] = st[Coord1].S;
+					inputdata_ptr32[18] = st[Coord2].S;
+				}
+
+				// tex0/2 lower
+				inputdata_ptr32[19] = (u32)TEXX[0].Value;
+
+				inputdata_ptr32[20] = st[Coord0].T;
+				inputdata_ptr32[21] = st[Coord1].T;
+				inputdata_ptr32[22] = st[Coord2].T;
+				// tex0/2 upper
+				inputdata_ptr32[23] = (u32)(TEXX[0].Value >> 32);
+
+				inputdata_ptr32[24] = (u32)rgbaq[Coord0].Q;
+				inputdata_ptr32[25] = (u32)rgbaq[Coord1].Q;
+				inputdata_ptr32[26] = (u32)rgbaq[Coord2].Q;
+				//inputdata_ptr32[27] = GPURegsGp.PABE;
+
+				inputdata_ptr32[28] = (u32)f[Coord0].F;
+				inputdata_ptr32[29] = (u32)f[Coord1].F;
+				inputdata_ptr32[30] = (u32)f[Coord2].F;
+				//inputdata_ptr32[31] = GPURegsGp.FOGCOL;
+
+				ulHwInputBuffer_WriteIndex++;
+
+				// done if sending to hardware gpu
+				return;
+			}
+
+
+		}	// end if (bEnable_OpenCL)
+
+#endif	// end #ifdef ALLOW_OPENCL_PS2_SETDRAWVARS_LINE
+
 		// set SCISSOR
 		inputdata_ptr [ 0 ] = GPURegsGp.SCISSOR_1.Value;
 		
@@ -8932,10 +9457,114 @@ void GPU::SetDrawVars_Line ( u64 *inputdata_ptr, u32 Coord0, u32 Coord1, u32 Coo
 		
 		// set TEX0
 		//inputdata_ptr [ 13 ] = TEXX [ 0 ].Value;
-		
+
+
 	}
 	else
 	{
+#ifdef ALLOW_OPENCL_PS2_SETDRAWVARS_LINE
+
+		if (bEnable_OpenCL)
+		{
+
+#ifndef ALLOW_OPENCL_PS2_ALL_PRIMITIVES
+
+			if (0
+
+#ifdef ALLOW_OPENCL_PS2_PIXEL_COLOR
+				|| (((ullPRIM & 0x7) == 0x0) && (!TextureMapped))
+#endif
+
+#ifdef ALLOW_OPENCL_PS2_LINE_COLOR
+				|| (((ullPRIM & 0x7) >= 0x1) && ((ullPRIM & 0x7) <= 0x2) && (!TextureMapped))
+#endif
+
+#ifdef ALLOW_OPENCL_PS2_RECTANGLE
+				|| (((ullPRIM & 0x7) == 0x6) && (!TextureMapped))
+#endif
+
+#ifdef ALLOW_OPENCL_PS2_SPRITE
+				|| (((ullPRIM & 0x7) == 0x6) && (TextureMapped))
+#endif
+
+#ifdef ALLOW_OPENCL_PS2_TRIANGLE_COLOR
+				|| (((ullPRIM & 0x7) >= 0x3) && ((ullPRIM & 0x7) <= 0x5) && (!TextureMapped))
+#endif
+
+#ifdef ALLOW_OPENCL_PS2_TRIANGLE_TEXTURE
+				|| (((ullPRIM & 0x7) >= 0x3) && ((ullPRIM & 0x7) <= 0x5) && (TextureMapped))
+#endif
+				)
+
+#endif	// end #ifndef ALLOW_OPENCL_PS2_ALL_PRIMITIVES
+			{
+				inputdata_ptr32 = &((u32*)pHwInputBuffer32)[(ulHwInputBuffer_WriteIndex & c_ulHwInputBuffer_Mask) << c_ulHwInputBuffer_Shift];
+
+				inputdata_ptr32[0] = (u32)ullPRIM;
+				inputdata_ptr32[1] = (u32)GPURegsGp.FRAME_2.Value;
+				((u64*)inputdata_ptr32)[1] = GPURegsGp.SCISSOR_2.Value;
+
+				inputdata_ptr32[4] = (u32)xyz[Coord0].Value;
+				inputdata_ptr32[5] = (u32)xyz[Coord1].Value;
+				inputdata_ptr32[6] = (u32)xyz[Coord2].Value;
+				inputdata_ptr32[7] = GPURegsGp.XYOFFSET_2.OFX;
+				inputdata_ptr32[8] = (u32)xyz[Coord0].Z;
+				inputdata_ptr32[9] = (u32)xyz[Coord1].Z;
+				inputdata_ptr32[10] = (u32)xyz[Coord2].Z;
+				inputdata_ptr32[11] = GPURegsGp.XYOFFSET_2.OFY;
+
+				inputdata_ptr32[12] = (u32)rgbaq[Coord0].Value;
+				inputdata_ptr32[13] = (u32)rgbaq[Coord1].Value;
+				inputdata_ptr32[14] = (u32)rgbaq[Coord2].Value;
+				inputdata_ptr32[15] = (u32)GPURegsGp.ZBUF_2.Value;
+
+				if (Fst)
+				{
+					// uv coords (FST=1) //
+					inputdata_ptr32[16] = (u32)uv[Coord0].Value;
+					inputdata_ptr32[17] = (u32)uv[Coord1].Value;
+					inputdata_ptr32[18] = (u32)uv[Coord2].Value;
+				}
+				else
+				{
+					// st coords (FST=0) //
+					inputdata_ptr32[16] = st[Coord0].S;
+					inputdata_ptr32[17] = st[Coord1].S;
+					inputdata_ptr32[18] = st[Coord2].S;
+				}
+
+				// tex0/2 lower
+				inputdata_ptr32[19] = (u32)TEXX[1].Value;
+
+				inputdata_ptr32[20] = st[Coord0].T;
+				inputdata_ptr32[21] = st[Coord1].T;
+				inputdata_ptr32[22] = st[Coord2].T;
+				// tex0/2 upper
+				inputdata_ptr32[23] = (u32)(TEXX[1].Value >> 32);
+
+				inputdata_ptr32[24] = (u32)rgbaq[Coord0].Q;
+				inputdata_ptr32[25] = (u32)rgbaq[Coord1].Q;
+				inputdata_ptr32[26] = (u32)rgbaq[Coord2].Q;
+				//inputdata_ptr32[27] = GPURegsGp.PABE;
+
+				inputdata_ptr32[28] = (u32)f[Coord0].F;
+				inputdata_ptr32[29] = (u32)f[Coord1].F;
+				inputdata_ptr32[30] = (u32)f[Coord2].F;
+				//inputdata_ptr32[31] = GPURegsGp.FOGCOL;
+
+				ulHwInputBuffer_WriteIndex++;
+
+				// done if sending to hardware gpu
+				return;
+			}
+
+
+		}	// end if (bEnable_OpenCL)
+
+#endif	// end #ifdef ALLOW_OPENCL_PS2_SETDRAWVARS_LINE
+
+
+
 		// set SCISSOR
 		inputdata_ptr [ 0 ] = GPURegsGp.SCISSOR_2.Value;
 		
@@ -8978,7 +9607,8 @@ void GPU::SetDrawVars_Line ( u64 *inputdata_ptr, u32 Coord0, u32 Coord1, u32 Coo
 	
 	// set DIMX
 	//inputdata_ptr [ 10 ] = GPURegsGp.DIMX;
-	
+
+	inputdata_ptr[15] = ullPRIM;
 	
 	inputdata_ptr [ 16 - 14 ] = rgbaq [ Coord0 ].Value;
 	inputdata_ptr [ 17 - 14 ] = xyz [ Coord0 ].Value;
@@ -9683,38 +10313,13 @@ void GPU::DrawPoint ( u32 Coord0 )
 	debug << "; DrawPoint";
 #endif
 
-	// get common variables needed to draw object
-	//SetDrawVars ();
-	SetDrawVars ( & pHwInputBuffer64 [ ( ulHwInputBuffer_WriteIndex & c_ulHwInputBuffer_Mask ) << c_ulHwInputBuffer_Shift ], Coord0, 1, 2 );
+	u64 drawvars_ptr[16];
 
-	// check for some important conditions
-	if ( Window_XRight < Window_XLeft )
-	{
-#ifdef VERBOSE_POINT
-		cout << "\nhps2x64 ALERT: GPU: Window_XRight < Window_XLeft.\n";
-#endif
-#if defined INLINE_DEBUG_POINT || defined INLINE_DEBUG_PRIMITIVE
-		debug << "\r\nhps2x64 ALERT: GPU: Window_XRight < Window_XLeft.\n";
-#endif
-		return;
-	}
-	
-	if ( Window_YBottom < Window_YTop )
-	{
-#ifdef VERBOSE_POINT
-		cout << "\nhps2x64 ALERT: GPU: Window_YBottom < Window_YTop.\n";
-#endif
-#if defined INLINE_DEBUG_POINT || defined INLINE_DEBUG_PRIMITIVE
-		debug << "\r\nhps2x64 ALERT: GPU: Window_YBottom < Window_YTop.\n";
-#endif
-		return;
-	}
 
 
 #ifdef USE_TEMPLATES_PS2_POINT
 
 	//u64 *inputdata_ptr;
-	u64 drawvars_ptr [ 16 ];
 	u64 NumPixels;
 
 	//inputdata_ptr = & ( inputdata [ ( ulInputBuffer_WriteIndex & c_ulInputBuffer_Mask ) << c_ulInputBuffer_Shift ] );
@@ -9722,9 +10327,15 @@ void GPU::DrawPoint ( u32 Coord0 )
 	
 	//SetDrawVars_Line ( inputdata_ptr, Coord0, 0, 0 );
 	SetDrawVars_Line ( drawvars_ptr, Coord0, 0, 0 );
-	
-	//Select_RenderPoint_t ( inputdata_ptr, 0 );
-	Select_RenderPoint_t ( drawvars_ptr, GPU::ulThreadedGPU );
+
+
+#ifdef ALLOW_OPENCL_PS2_PIXEL_COLOR
+	if (!bEnable_OpenCL)
+#endif
+	{
+		//Select_RenderPoint_t ( inputdata_ptr, 0 );
+		Select_RenderPoint_t ( drawvars_ptr, GPU::ulThreadedGPU );
+	}
 	
 
 	//if ( BusyUntil_Cycle < *_DebugCycleCount )
@@ -9734,21 +10345,87 @@ void GPU::DrawPoint ( u32 Coord0 )
 
 #else
 
-	
-	// make sure that if multi-threading, that the threads are idle for now (until this part is multi-threaded)
-	/*
-	if ( ulNumberOfThreads )
-	{
-		// for now, wait to finish
-		//while ( ulInputBuffer_Count );
-		Finish ();
-	}
-	*/
-	
-	// draw single-color point //
-	RenderPoint_DS ( Coord0 );
 
+	// get common variables needed to draw object
+	//SetDrawVars ( & pHwInputBuffer64 [ ( ulHwInputBuffer_WriteIndex & c_ulHwInputBuffer_Mask ) << c_ulHwInputBuffer_Shift ], Coord0, 1, 2 );
+	SetDrawVars(drawvars_ptr, Coord0, 1, 2);
+
+	// check for some important conditions
+	if (Window_XRight < Window_XLeft)
+	{
+#ifdef VERBOSE_POINT
+		cout << "\nhps2x64 ALERT: GPU: Window_XRight < Window_XLeft.\n";
 #endif
+#if defined INLINE_DEBUG_POINT || defined INLINE_DEBUG_PRIMITIVE
+		debug << "\r\nhps2x64 ALERT: GPU: Window_XRight < Window_XLeft.\n";
+#endif
+		return;
+	}
+
+	if (Window_YBottom < Window_YTop)
+	{
+#ifdef VERBOSE_POINT
+		cout << "\nhps2x64 ALERT: GPU: Window_YBottom < Window_YTop.\n";
+#endif
+#if defined INLINE_DEBUG_POINT || defined INLINE_DEBUG_PRIMITIVE
+		debug << "\r\nhps2x64 ALERT: GPU: Window_YBottom < Window_YTop.\n";
+#endif
+		return;
+}
+
+	
+#ifdef ALLOW_OPENCL_PS2_PIXEL_COLOR
+	if (!bEnable_OpenCL)
+#endif
+	{
+
+		// draw single-color point //
+		RenderPoint_DS(Coord0);
+
+	}
+#ifdef ALLOW_OPENCL_PS2_PIXEL_COLOR
+	else
+	{
+
+#ifdef TEST_OPENCL_PS2_PIXEL_COLOR
+
+		// send command
+		Copy_VRAM_toGPU();
+
+#ifndef TEST_OPENCL_PS2_VARIABLE
+		Copy_VARS_toGPU();
+#endif
+
+		GPU::Flush();
+		Copy_VRAM_toCPU();
+
+#ifdef VALIDATE_OPENCL_PS2_PIXEL_COLOR
+		cout << "\nDraw-Pixel-Color\n";
+		cout << "\nFrameBufPixFmt=" << PixelFormat_Names[FrameBuffer_PixelFormat];
+		cout << hex << " FrameBufPtr32/64=" << (FrameBufferStartOffset32 >> 6);
+		cout << " ATE=" << TEST_X.ATE;
+		cout << " ATST=" << TEST_X.ATST;
+		cout << " AREF=" << hex << TEST_X.AREF;
+		cout << " AFAIL=" << TEST_X.AFAIL;
+		cout << " PABE=" << hex << GPURegsGp.PABE;
+		cout << " ABE/AA1=" << hex << Alpha;
+		cout << "\nALPHA_FIX=" << hex << ALPHA_X.FIX;
+		cout << " ALPHA_A=" << hex << ALPHA_X.A;
+		cout << " ALPHA_B=" << hex << ALPHA_X.B;
+		cout << " ALPHA_C=" << hex << ALPHA_X.C;
+		cout << " ALPHA_D=" << hex << ALPHA_X.D;
+
+
+#endif	// end #ifdef VALIDATE_OPENCL_PS2_PIXEL_COLOR
+
+
+#endif	// end #ifdef TEST_OPENCL_PS2_PIXEL_COLOR
+
+	}
+#endif	// end #ifdef ALLOW_OPENCL_PS2_PIXEL_COLOR
+
+#endif	// end #ifdef USE_TEMPLATES_PS2_POINT
+
 }
 
 
@@ -9772,30 +10449,24 @@ void GPU::DrawLine ( u32 Coord0, u32 Coord1 )
 	//SetDrawVars_Line ( inputdata_ptr, Coord0, Coord1, 0 );
 	SetDrawVars_Line ( drawvars_ptr, Coord0, Coord1, 0 );
 
-	/*
-	if ( _GPU->ulNumberOfThreads )
-	{
 
-		// send
-		ulInputBuffer_WriteIndex++;
-		//x64ThreadSafe::Utilities::Lock_ExchangeAdd64 ( (long long&) ulInputBuffer_WriteIndex, 1 );
-	}
-	else
+#ifdef ALLOW_OPENCL_PS2_LINE_COLOR
+	if (!bEnable_OpenCL)
+#endif
 	{
-	*/
 
 #if defined INLINE_DEBUG_LINE || defined INLINE_DEBUG_PRIMITIVE
-	debug << " START-DRAW-LINE2";
+		debug << " START-DRAW-LINE2";
 #endif
 
 		//NumPixels = Select_RenderLine_t ( inputdata_ptr, 0 );
-		NumPixels = Select_RenderLine_t ( drawvars_ptr, GPU::ulThreadedGPU );
+		NumPixels = Select_RenderLine_t(drawvars_ptr, GPU::ulThreadedGPU);
 
 
 #if defined INLINE_DEBUG_LINE || defined INLINE_DEBUG_PRIMITIVE
-	debug << " END-DRAW-LINE2";
+		debug << " END-DRAW-LINE2";
 #endif
-
+	}
 		
 	/*
 		if ( BusyUntil_Cycle < *_DebugCycleCount )
@@ -9836,27 +10507,73 @@ void GPU::DrawLine ( u32 Coord0, u32 Coord1 )
 	}
 
 
-
-	
-	// check if object is shaded
-	switch ( Gradient )
+#ifdef ALLOW_OPENCL_PS2_LINE_COLOR
+	if (!bEnable_OpenCL)
+#endif
 	{
+
+		// check if object is shaded
+		switch (Gradient)
+		{
 		case 0:
 			// draw single-color triangle //
-			//RenderLine_Mono_DS ( Coord0, Coord1 );
+			RenderLine_Mono_DS ( Coord0, Coord1 );
 			//RenderLine_Mono_DSx4(Coord0, Coord1);
-			RenderLine_Mono_DSx8(Coord0, Coord1);
+			//RenderLine_Mono_DSx8(Coord0, Coord1);
 			break;
-			
+
 		case 1:
 			// draw gradient triangle //
-			//RenderLine_Gradient_DS ( Coord0, Coord1 );
+			RenderLine_Gradient_DS ( Coord0, Coord1 );
 			//RenderLine_Gradient_DSx4(Coord0, Coord1);
-			RenderLine_Gradient_DSx8(Coord0, Coord1);
+			//RenderLine_Gradient_DSx8(Coord0, Coord1);
 			break;
-	}
+		}
 
+	}
+#ifdef ALLOW_OPENCL_PS2_LINE_COLOR
+	else
+	{
+
+#ifdef TEST_OPENCL_PS2_LINE_COLOR
+
+		// send command
+		Copy_VRAM_toGPU();
+
+#ifndef TEST_OPENCL_PS2_VARIABLE
+		Copy_VARS_toGPU();
 #endif
+
+		GPU::Flush();
+		Copy_VRAM_toCPU();
+
+#ifdef VALIDATE_OPENCL_PS2_LINE_COLOR
+		cout << "\nDraw-Line-Color\n";
+		cout << "\nFrameBufPixFmt=" << PixelFormat_Names[FrameBuffer_PixelFormat];
+		cout << hex << " FrameBufPtr32/64=" << (FrameBufferStartOffset32 >> 6);
+		cout << " ATE=" << TEST_X.ATE;
+		cout << " ATST=" << TEST_X.ATST;
+		cout << " AREF=" << hex << TEST_X.AREF;
+		cout << " AFAIL=" << TEST_X.AFAIL;
+		cout << " PABE=" << hex << GPURegsGp.PABE;
+		cout << " ABE/AA1=" << hex << Alpha;
+		cout << "\nALPHA_FIX=" << hex << ALPHA_X.FIX;
+		cout << " ALPHA_A=" << hex << ALPHA_X.A;
+		cout << " ALPHA_B=" << hex << ALPHA_X.B;
+		cout << " ALPHA_C=" << hex << ALPHA_X.C;
+		cout << " ALPHA_D=" << hex << ALPHA_X.D;
+
+
+#endif	// end #ifdef VALIDATE_OPENCL_PS2_LINE_COLOR
+
+
+#endif	// end #ifdef TEST_OPENCL_PS2_LINE_COLOR
+
+	}	// end if else (!bEnable_OpenCL)
+
+#endif	// end #ifdef ALLOW_OPENCL_PS2_LINE_COLOR
+
+#endif	// end #ifdef USE_TEMPLATES_PS2_LINE
 
 }
 
@@ -9888,25 +10605,18 @@ void GPU::DrawTriangle ( u32 Coord0, u32 Coord1, u32 Coord2 )
 	//SetDrawVars_Line ( inputdata_ptr, Coord0, Coord1, Coord2 );
 	SetDrawVars_Line ( drawvars_ptr, Coord0, Coord1, Coord2 );
 
-	/*
-	if ( _GPU->ulNumberOfThreads )
+#ifdef ALLOW_OPENCL_PS2_TRIANGLE
+	if (!bEnable_OpenCL)
+#endif
 	{
-
-		// send
-		ulInputBuffer_WriteIndex++;
-		//x64ThreadSafe::Utilities::Lock_ExchangeAdd64 ( (long long&) ulInputBuffer_WriteIndex, 1 );
-	}
-	else
-	{
-	*/
-
 #if defined INLINE_DEBUG_TRIANGLE || defined INLINE_DEBUG_PRIMITIVE
-	debug << "->RenderTriangle";
+		debug << "->RenderTriangle";
 #endif
 
 		//NumPixels = Select_RenderTriangle_t ( inputdata_ptr, 0 );
-		NumPixels = Select_RenderTriangle_t ( drawvars_ptr, GPU::ulThreadedGPU );
-		
+		NumPixels = Select_RenderTriangle_t(drawvars_ptr, GPU::ulThreadedGPU);
+
+	}
 		
 	/*
 		if ( BusyUntil_Cycle < *_DebugCycleCount )
@@ -9955,40 +10665,205 @@ void GPU::DrawTriangle ( u32 Coord0, u32 Coord1, u32 Coord2 )
 	switch ( TextureMapped )
 	{
 		case 0:
-		
-			
-			// check if this is single-color or gradient
-			if ( Gradient )
+
+
+#ifdef ALLOW_OPENCL_PS2_TRIANGLE_COLOR
+			if (!bEnable_OpenCL)
+#endif
 			{
-				//DrawTriangle_Gradient32_DS ( Coord0, Coord1, Coord2 );
-				DrawTriangle_Gradient32_DSx8(Coord0, Coord1, Coord2);
+
+				// check if this is single-color or gradient
+				if (Gradient)
+				{
+					DrawTriangle_Gradient32_DS(Coord0, Coord1, Coord2);
+					//DrawTriangle_Gradient32_DSx8(Coord0, Coord1, Coord2);
+
+				}
+				else
+				{
+
+
+					// draw single-color triangle //
+					DrawTriangle_Mono32_DS(Coord0, Coord1, Coord2);
+					//DrawTriangle_Mono32_DSx8(Coord0, Coord1, Coord2);
+
+				}
 
 			}
+#ifdef ALLOW_OPENCL_PS2_TRIANGLE_COLOR
 			else
 			{
-			
 
-				// draw single-color triangle //
-				//DrawTriangle_Mono32_DS ( Coord0, Coord1, Coord2 );
-				DrawTriangle_Mono32_DSx8(Coord0, Coord1, Coord2);
+#ifdef TEST_OPENCL_PS2_TRIANGLE_COLOR
 
-			}
-			
+				// send command
+				Copy_VRAM_toGPU();
+
+#ifndef TEST_OPENCL_PS2_VARIABLE
+				Copy_VARS_toGPU();
+#endif
+
+				GPU::Flush();
+				Copy_VRAM_toCPU();
+
+#ifdef VALIDATE_OPENCL_PS2_TRIANGLE_COLOR
+				cout << "\nDraw-Triangle-Color\n";
+				cout << "\nFrameBufPixFmt=" << PixelFormat_Names[FrameBuffer_PixelFormat];
+				cout << hex << " FrameBufPtr32/64=" << (FrameBufferStartOffset32 >> 6);
+				cout << " ATE=" << TEST_X.ATE;
+				cout << " ATST=" << TEST_X.ATST;
+				cout << " AREF=" << hex << TEST_X.AREF;
+				cout << " AFAIL=" << TEST_X.AFAIL;
+				cout << " PABE=" << hex << GPURegsGp.PABE;
+				cout << " ABE/AA1=" << hex << Alpha;
+				cout << "\nALPHA_FIX=" << hex << ALPHA_X.FIX;
+				cout << " ALPHA_A=" << hex << ALPHA_X.A;
+				cout << " ALPHA_B=" << hex << ALPHA_X.B;
+				cout << " ALPHA_C=" << hex << ALPHA_X.C;
+				cout << " ALPHA_D=" << hex << ALPHA_X.D;
+
+
+#endif	// end #ifdef TEST_OPENCL_PS2_TRIANGLE_COLOR
+
+
+#endif	// end #ifdef TEST_OPENCL_PS2_TRIANGLE_COLOR
+
+			}	// end if else (!bEnable_OpenCL)
+
+#endif	// end #ifdef ALLOW_OPENCL_PS2_TRIANGLE_COLOR
+
+
 			break;
 			
 		case 1:
 
-			if ( Gradient )
+#ifdef ALLOW_OPENCL_PS2_TRIANGLE_TEXTURE
+			if (!bEnable_OpenCL)
+#endif
 			{
-				//DrawTriangle_GradientTexture32_DS ( Coord0, Coord1, Coord2 );
-				DrawTriangle_GradientTexture32_DSx8(Coord0, Coord1, Coord2);
+
+				if (Gradient)
+				{
+					DrawTriangle_GradientTexture32_DS(Coord0, Coord1, Coord2);
+					//DrawTriangle_GradientTexture32_DSx8(Coord0, Coord1, Coord2);
+				}
+				else
+				{
+					// draw texture-mapped triangle //
+					DrawTriangle_Texture32_DS(Coord0, Coord1, Coord2);
+					//DrawTriangle_Texture32_DSx8(Coord0, Coord1, Coord2);
+				}
+
 			}
+#ifdef ALLOW_OPENCL_PS2_TRIANGLE_TEXTURE
 			else
 			{
-				// draw texture-mapped triangle //
-				//DrawTriangle_Texture32_DS ( Coord0, Coord1, Coord2 );
-				DrawTriangle_Texture32_DSx8(Coord0, Coord1, Coord2);
-			}
+
+#ifdef TEST_OPENCL_PS2_TRIANGLE_TEXTURE
+
+				// send command
+				Copy_VRAM_toGPU();
+
+#ifndef TEST_OPENCL_PS2_VARIABLE
+				Copy_VARS_toGPU();
+#endif
+
+				Copy_CLUT_toGPU();
+				GPU::Flush();
+				Copy_VRAM_toCPU();
+
+#ifdef VALIDATE_OPENCL_PS2_TRIANGLE_TEXTURE
+
+				cout << "\nDraw-Triangle-Texture\n";
+				cout << "\nFrameBufPixFmt=" << PixelFormat_Names[FrameBuffer_PixelFormat];
+				cout << hex << " FrameBufPtr32/64=" << (FrameBufferStartOffset32 >> 6);
+				cout << hex << " ZBufPtr32/64=" << (ZBufferStartOffset32 >> 6);
+				cout << PixelFormat_Names[ZBuffer_PixelFormat];
+				cout << " ZFlags=" << ZBUF_X.Value;
+				cout << hex << "\nTexBufPtr32/64=" << (TEXX[Ctx].TBP0);
+				//cout << dec << "; TexWidth=" << TexWidth << " TexHeight=" << TexHeight;
+				//cout << dec << "; TexBufWidth=" << (TEX0[Ctx].TBW0 << 6);
+				cout << " TexPixFmt=" << PixelFormat_Names[TEXX[Ctx].PSM];
+				cout << " TexWidth=" << dec << (1 << TEXX[Ctx].TW);
+				cout << " TexHeight=" << (1 << TEXX[Ctx].TH);
+				cout << " Clamp_ModeX=" << Clamp_ModeX << " Clamp_ModeY=" << Clamp_ModeY;
+				cout << hex << "\nCLUTBufPtr32/64=" << TEXX[Ctx].CBP;
+				cout << " CLUTPixFmt=" << PixelFormat_Names[TEXX[Ctx].CPSM];
+				cout << dec << " CLUTOffset/16=" << TEXX[Ctx].CSA;
+				cout << " CSM=" << TEXX[Ctx].CSM;
+				cout << "\nTFX=" << TEXX[Ctx].TFX;
+				cout << " TCC=" << TEXX[Ctx].TCC;
+				cout << " ATE=" << TEST_X.ATE;
+				cout << " ATST=" << TEST_X.ATST;
+				cout << " AREF=" << hex << TEST_X.AREF;
+				cout << " AFAIL=" << TEST_X.AFAIL;
+				cout << " FST=" << Fst;
+				cout << "\nTEXA_AEM=" << GPURegsGp.TEXA.AEM;
+				cout << " TEXA_TA0=" << hex << GPURegsGp.TEXA.TA0;
+				cout << " TEXA_TA1=" << hex << GPURegsGp.TEXA.TA1;
+				cout << " PABE=" << hex << GPURegsGp.PABE;
+				cout << " ABE/AA1=" << hex << Alpha;
+				cout << "\nALPHA_FIX=" << hex << ALPHA_X.FIX;
+				cout << " ALPHA_A=" << hex << ALPHA_X.A;
+				cout << " ALPHA_B=" << hex << ALPHA_X.B;
+				cout << " ALPHA_C=" << hex << ALPHA_X.C;
+				cout << " ALPHA_D=" << hex << ALPHA_X.D;
+				cout << "\n";
+				for (int i = 0; i < 25; i++)
+				{
+					cout << " i#" << dec << i << " zp=" << hex << p_ulHwPixelOutBuffer32[(i << 2) + 0] << " dp=" << hex << p_ulHwPixelOutBuffer32[(i << 2) + 1] << " zs=" << p_ulHwPixelOutBuffer32[(i << 2) + 2] << " en=" << p_ulHwPixelOutBuffer32[(i << 2) + 3];
+				}
+				/*
+				cout << "\nx0=" << hex << p_ulHwPixelOutBuffer32[1];
+				cout << "\nx1=" << hex << p_ulHwPixelOutBuffer32[2];
+				cout << "\nx2=" << hex << p_ulHwPixelOutBuffer32[3];
+				cout << "\ny0=" << hex << p_ulHwPixelOutBuffer32[4];
+				cout << "\ny1=" << hex << p_ulHwPixelOutBuffer32[5];
+				cout << "\ny2=" << hex << p_ulHwPixelOutBuffer32[6];
+				cout << "\nxleft0=" << hex << p_ulHwPixelOutBuffer32[7];
+				cout << "\nxright0=" << hex << p_ulHwPixelOutBuffer32[8];
+				cout << "\ndxleft0=" << hex << p_ulHwPixelOutBuffer32[9];
+				cout << "\ndxright0=" << hex << p_ulHwPixelOutBuffer32[10];
+				cout << "\nStartY0=" << hex << p_ulHwPixelOutBuffer32[11];
+				cout << "\nEndY0=" << hex << p_ulHwPixelOutBuffer32[12];
+
+				cout << "\nxleft1=" << hex << p_ulHwPixelOutBuffer32[16];
+				cout << "\nxright1=" << hex << p_ulHwPixelOutBuffer32[17];
+				cout << "\ndxleft1=" << hex << p_ulHwPixelOutBuffer32[18];
+				cout << "\ndxright1=" << hex << p_ulHwPixelOutBuffer32[19];
+				cout << "\nStartY1=" << hex << p_ulHwPixelOutBuffer32[20];
+				cout << "\nEndY1=" << hex << p_ulHwPixelOutBuffer32[21];
+				*/
+
+				/*
+				cout << "\nLine=" << dec << p_ulHwPixelOutBuffer32[31];
+				cout << "\nx0=" << dec << p_ulHwPixelOutBuffer32[32];
+				cout << "\ntx0=" << dec << p_ulHwPixelOutBuffer32[33];
+				cout << "\nty0=" << dec << p_ulHwPixelOutBuffer32[34];
+				cout << "\npix0=" << hex << p_ulHwPixelOutBuffer32[35];
+				cout << "\nx1=" << dec << p_ulHwPixelOutBuffer32[36];
+				cout << "\ntx1=" << dec << p_ulHwPixelOutBuffer32[37];
+				cout << "\nty1=" << dec << p_ulHwPixelOutBuffer32[38];
+				cout << "\npix1=" << hex << p_ulHwPixelOutBuffer32[39];
+				cout << "\nx2=" << dec << p_ulHwPixelOutBuffer32[40];
+				cout << "\ntx2=" << dec << p_ulHwPixelOutBuffer32[41];
+				cout << "\nty2=" << dec << p_ulHwPixelOutBuffer32[42];
+				cout << "\npix2=" << hex << p_ulHwPixelOutBuffer32[43];
+				cout << "\nx3=" << dec << p_ulHwPixelOutBuffer32[44];
+				cout << "\ntx3=" << dec << p_ulHwPixelOutBuffer32[45];
+				cout << "\nty3=" << dec << p_ulHwPixelOutBuffer32[46];
+				cout << "\npix3=" << hex << p_ulHwPixelOutBuffer32[47];
+				*/
+
+
+#endif	// end #ifdef TEST_OPENCL_PS2_TRIANGLE_TEXTURE
+
+
+#endif	// end #ifdef TEST_OPENCL_PS2_TRIANGLE_TEXTURE
+
+			}	// end if else (!bEnable_OpenCL)
+
+#endif	// end #ifdef ALLOW_OPENCL_PS2_TRIANGLE_TEXTURE
 
 			break;
 	}
@@ -10024,20 +10899,15 @@ void GPU::DrawSprite ( u32 Coord0, u32 Coord1 )
 
 	SetDrawVars_Line ( drawvars_ptr, Coord0, Coord1, 0 );
 
-	/*
-	if ( _GPU->ulNumberOfThreads )
-	{
 
-		// send
-		ulInputBuffer_WriteIndex++;
-		//x64ThreadSafe::Utilities::Lock_ExchangeAdd64 ( (long long&) ulInputBuffer_WriteIndex, 1 );
-	}
-	else
+#ifdef ALLOW_OPENCL_PS2_RECTANGLE
+	if (!bEnable_OpenCL)
+#endif
 	{
-	*/
-			//NumPixels = Select_RenderSprite_t ( inputdata_ptr, 0 );
-			NumPixels = Select_RenderSprite_t ( drawvars_ptr, GPU::ulThreadedGPU );
-			
+		//NumPixels = Select_RenderSprite_t ( inputdata_ptr, 0 );
+		NumPixels = Select_RenderSprite_t(drawvars_ptr, GPU::ulThreadedGPU);
+	}
+
 			
 	/*
 			if ( BusyUntil_Cycle < *_DebugCycleCount )
@@ -10083,15 +10953,170 @@ void GPU::DrawSprite ( u32 Coord0, u32 Coord1 )
 
 	
 	// check if object is texture mapped
-	switch ( TextureMapped )
+	switch (TextureMapped)
 	{
-		case 0:
+	case 0:
 
-			// draw single-color rectangle //
+		// draw single-color rectangle //
+
+#ifdef ALLOW_OPENCL_PS2_RECTANGLE
+		if (!bEnable_OpenCL)
+#endif
+		{
+			RenderRectangle_DS(Coord0, Coord1);
+			//RenderRectangle_DSx8(Coord0, Coord1);
+		}
+#ifdef ALLOW_OPENCL_PS2_RECTANGLE
+		else
+		{
+
+#ifdef TEST_OPENCL_PS2_RECTANGLE
+
+			// output the inputs sent
+			//for (int i = 0; i < 16; i++)
+			//{
+			//	cout << "\nInput#" << dec << i << ": " << hex << inputdata_ptr[i];
+			//}
 
 
-			//RenderRectangle_DS ( Coord0, Coord1 );
-			RenderRectangle_DSx8(Coord0, Coord1);
+			// send command
+			Copy_VRAM_toGPU();
+
+#ifndef TEST_OPENCL_PS2_VARIABLE
+			Copy_VARS_toGPU();
+#endif
+
+			GPU::Flush();
+			Copy_VRAM_toCPU();
+
+#ifdef VALIDATE_OPENCL_PS2_RECTANGLE
+			pTest = &GPURegsGp.TEST_1;
+			ALPHA_t* pAlpha = &GPURegsGp.ALPHA_1;
+			// get test value
+			TEST_X.Value = pTest[Ctx].Value;
+			ALPHA_X.Value = pAlpha[Ctx].Value;
+
+			pTest = &(pTest[Ctx]);
+
+			cout << "\nDraw-Rectangle\n";
+			cout << "\nFrameBufPixFmt=" << PixelFormat_Names[FrameBuffer_PixelFormat];
+			cout << hex << " FrameBufPtr32/64=" << (FrameBufferStartOffset32 >> 6);
+			cout << hex << " ZBufPtr32/64=" << (ZBufferStartOffset32 >> 6);
+			cout << PixelFormat_Names[ZBuffer_PixelFormat];
+			cout << " ZFlags=" << ZBUF_X.Value;
+			cout << " TEST=" << hex << TEST_X.Value;
+			cout << " ATE=" << TEST_X.ATE;
+			cout << " ATST=" << TEST_X.ATST;
+			cout << " AREF=" << hex << TEST_X.AREF;
+			cout << " AFAIL=" << TEST_X.AFAIL;
+			cout << " PABE=" << hex << GPURegsGp.PABE;
+			cout << " ABE/AA1=" << hex << Alpha;
+			cout << "\nALPHA_FIX=" << hex << ALPHA_X.FIX;
+			cout << " ALPHA_A=" << hex << ALPHA_X.A;
+			cout << " ALPHA_B=" << hex << ALPHA_X.B;
+			cout << " ALPHA_C=" << hex << ALPHA_X.C;
+			cout << " ALPHA_D=" << hex << ALPHA_X.D;
+			cout << "\nWindow_YTop=" << dec << Window_YTop;
+			cout << " Window_YBottom=" << dec << Window_YBottom;
+
+			// output the checkpoint stats
+			/*
+			for (int i = 0; i < 4; i++)
+			{
+				cout << "\nCheckPoint#" << dec << i << ": " << hex << p_ulHwPixelOutBuffer32[i];
+			}
+
+			cout << "\nStartX: " << dec << p_ulHwPixelOutBuffer32[4];
+			cout << "\nEndX: " << dec << p_ulHwPixelOutBuffer32[5];
+			cout << "\nStartY: " << dec << p_ulHwPixelOutBuffer32[6];
+			cout << "\nEndY: " << dec << p_ulHwPixelOutBuffer32[7];
+
+			cout << "\nFBP: " << hex << p_ulHwPixelOutBuffer32[8];
+			cout << "\nFBW: " << dec << p_ulHwPixelOutBuffer32[9];
+			cout << "\nFPSM: " << hex << p_ulHwPixelOutBuffer32[10];
+			cout << "\nDRAWPSM: " << hex << p_ulHwPixelOutBuffer32[11];
+			cout << "\nZ0: " << hex << p_ulHwPixelOutBuffer32[12];
+			cout << "\nBGR32: " << hex << p_ulHwPixelOutBuffer32[13];
+			cout << "\nCheckpoint#4: " << hex << p_ulHwPixelOutBuffer32[14];
+			cout << "\nCheckpoint#5: " << hex << p_ulHwPixelOutBuffer32[15];
+			for (int i = 0; i < 16; i++)
+			{
+				cout << "\nValidate#" << i << ": " << p_ulHwPixelOutBuffer32[16 + i];
+			}
+
+			cout << "\nDrawArea_TopLeftX: " << dec << p_ulHwPixelOutBuffer32[20];
+			cout << "\nDrawArea_TopLeftY: " << dec << p_ulHwPixelOutBuffer32[21];
+			cout << "\nDrawArea_BottomRightX: " << dec << p_ulHwPixelOutBuffer32[22];
+			cout << "\nDrawArea_BottomRightY: " << dec << p_ulHwPixelOutBuffer32[23];
+			cout << "\nvx.x: " << dec << p_ulHwPixelOutBuffer32[24];
+			cout << "\nvx.y: " << dec << p_ulHwPixelOutBuffer32[25];
+			cout << "\nvy.x: " << dec << p_ulHwPixelOutBuffer32[26];
+			cout << "\nvy.y: " << dec << p_ulHwPixelOutBuffer32[27];
+			*/
+
+			//cout << "\nsw: " << dec << p_ulHwPixelOutBuffer32[20];
+			//cout << "\nivWindowCurY0: " << dec << p_ulHwPixelOutBuffer32[21];
+			//cout << "\nivWindowCurY1: " << dec << p_ulHwPixelOutBuffer32[22];
+			//cout << "\nfsh: " << dec << p_ulHwPixelOutBuffer32[23];
+
+			//for (int i = 0; i < 4; i++)
+			//{
+			//	cout << "\nsh#" << dec << i << ": " << dec << p_ulHwPixelOutBuffer32[i+8];
+			//}
+			//for (int i = 0; i < 4; i++)
+			//{
+			//	cout << "\ncount#" << dec << i << ": " << dec << p_ulHwPixelOutBuffer32[i + 12];
+			//}
+			//for (int i = 0; i < 4; i++)
+			//{
+			//	cout << "\nyid#" << dec << i << ": " << dec << p_ulHwPixelOutBuffer32[i + 16];
+			//}
+			//for (int i = 0; i < 4; i++)
+			//{
+			//	cout << "\nivDrawRangeY0#" << dec << i << ": " << dec << p_ulHwPixelOutBuffer32[i + 24];
+			//}
+			//for (int i = 0; i < 4; i++)
+			//{
+			//	cout << "\nivDrawRangeY1#" << dec << i << ": " << dec << p_ulHwPixelOutBuffer32[i + 28];
+			//}
+
+			/*
+			for (int i = 0; i < 512; i++)
+			{
+				u32 calc = (p_ulHwPixelOutBuffer32[8] + CvtAddrPix32(p_ulHwPixelOutBuffer32[32 + (i << 2)], p_ulHwPixelOutBuffer32[33 + (i << 2)], p_ulHwPixelOutBuffer32[9]));
+				u32 ofst = p_ulHwPixelOutBuffer32[35 + (i << 2)];
+
+				if (calc != ofst)
+				{
+					cout << "\nPixel#" << dec << i << " X: " << dec << p_ulHwPixelOutBuffer32[32 + (i << 2)];
+					cout << "\nPixel#" << dec << i << " Y: " << dec << p_ulHwPixelOutBuffer32[33 + (i << 2)];
+					cout << "\nPixel#" << dec << i << " RGB: " << hex << p_ulHwPixelOutBuffer32[34 + (i << 2)];
+					cout << "\nPixel#" << dec << i << " OFST: " << hex << p_ulHwPixelOutBuffer32[35 + (i << 2)];
+					cout << "\nPixel#" << dec << i << " CALC: " << hex << (p_ulHwPixelOutBuffer32[8] + CvtAddrPix32(p_ulHwPixelOutBuffer32[32 + (i << 2)], p_ulHwPixelOutBuffer32[33 + (i << 2)], p_ulHwPixelOutBuffer32[9]));
+					break;
+				}
+			}
+			*/
+
+			//cout << "\nEnable0: " << dec << p_ulHwPixelOutBuffer32[32 + 0];
+			//cout << "\nEnable1: " << dec << p_ulHwPixelOutBuffer32[33 + 0];
+			//cout << "\nEnable2: " << hex << p_ulHwPixelOutBuffer32[34 + 0];
+			//cout << "\nEnable3: " << hex << p_ulHwPixelOutBuffer32[35 + 0];
+
+			// output the validated inputs
+			//cout << "\nIndex#" << dec << p_ulHwPixelOutBuffer32[0];
+			//for (int i = 0; i < 16; i++)
+			//{
+			//	cout << "\nValidate#" << dec << i << ": " << hex << p_ulHwPixelOutBuffer32[i+1];
+			//}
+
+#endif	// end #ifdef VALIDATE_OPENCL_PS2_RECTANGLE
+
+#endif	// end #ifdef TEST_OPENCL_PS2_RECTANGLE
+
+			}	// end if else (!bEnable_OpenCL)
+
+#endif	// end #ifdef ALLOW_OPENCL_PS2_RECTANGLE
 
 			break;
 			
@@ -10100,9 +11125,287 @@ void GPU::DrawSprite ( u32 Coord0, u32 Coord1 )
 			// draw texture-mapped sprite //
 			
 
-			//RenderSprite_DS ( Coord0, Coord1 );
-			RenderSprite_DSx8(Coord0, Coord1);
+#ifdef ALLOW_OPENCL_PS2_SPRITE
+			if (!bEnable_OpenCL)
+#endif
+			{
+				//cout << "\nDraw-Sprite\n";
+				RenderSprite_DS(Coord0, Coord1);
+				//RenderSprite_DSx8(Coord0, Coord1);
+			}
+#ifdef ALLOW_OPENCL_PS2_SPRITE
+			else
+			{
 
+#ifdef TEST_OPENCL_PS2_SPRITE
+
+				// output the inputs sent
+				//for (int i = 0; i < 16; i++)
+				//{
+				//	cout << "\nInput#" << dec << i << ": " << hex << inputdata_ptr[i];
+				//}
+
+
+				// send command
+				Copy_VRAM_toGPU();
+
+#ifndef TEST_OPENCL_PS2_VARIABLE
+				Copy_VARS_toGPU();
+#endif
+
+				Copy_CLUT_toGPU();
+				GPU::Flush();
+				Copy_VRAM_toCPU();
+
+#ifdef VALIDATE_OPENCL_PS2_SPRITE
+				// maybe these should be pointers and static
+				pTest = &GPURegsGp.TEST_1;
+				ALPHA_t* pAlpha = &GPURegsGp.ALPHA_1;
+				// get test value
+				TEST_X.Value = pTest[Ctx].Value;
+				ALPHA_X.Value = pAlpha[Ctx].Value;
+
+				pTest = &(pTest[Ctx]);
+
+
+				cout << "\nDraw-Sprite\n";
+				cout << "\nFrameBufPixFmt=" << PixelFormat_Names[FrameBuffer_PixelFormat];
+				cout << hex << " FrameBufPtr32/64=" << (FrameBufferStartOffset32 >> 6);
+				cout << hex << " ZBufPtr32/64=" << (ZBufferStartOffset32 >> 6);
+				cout << PixelFormat_Names[ZBuffer_PixelFormat];
+				cout << " ZFlags=" << ZBUF_X.Value;
+				cout << hex << "\nTexBufPtr32/64=" << (TEXX[Ctx].TBP0);
+				//cout << dec << "; TexWidth=" << TexWidth << " TexHeight=" << TexHeight;
+				//cout << dec << "; TexBufWidth=" << (TEX0[Ctx].TBW0 << 6);
+				cout << " TexPixFmt=" << PixelFormat_Names[TEXX[Ctx].PSM];
+				cout << " TexWidth=" << dec << ( 1 << TEXX[Ctx].TW );
+				cout << " TexHeight=" << ( 1 << TEXX[Ctx].TH );
+				cout << " Clamp_ModeX=" << Clamp_ModeX << " Clamp_ModeY=" << Clamp_ModeY;
+				cout << hex << "\nCLUTBufPtr32/64=" << TEXX[Ctx].CBP;
+				cout << " CLUTPixFmt=" << PixelFormat_Names[TEXX[Ctx].CPSM];
+				cout << dec << " CLUTOffset/16=" << TEXX[Ctx].CSA;
+				cout << " CSM=" << TEXX[Ctx].CSM;
+				cout << "\nTFX=" << TEXX[Ctx].TFX;
+				cout << " TCC=" << TEXX[Ctx].TCC;
+				cout << " TEST=" << hex << TEST_X.Value;
+				cout << " ATE=" << TEST_X.ATE;
+				cout << " ATST=" << TEST_X.ATST;
+				cout << " AREF=" << hex << TEST_X.AREF;
+				cout << " AFAIL=" << TEST_X.AFAIL;
+				cout << "\nTEXA_AEM=" << GPURegsGp.TEXA.AEM;
+				cout << " TEXA_TA0=" << hex << GPURegsGp.TEXA.TA0;
+				cout << " TEXA_TA1=" << hex << GPURegsGp.TEXA.TA1;
+				cout << " PABE=" << hex << GPURegsGp.PABE;
+				cout << " ABE/AA1=" << hex << Alpha;
+				cout << "\nALPHA_FIX=" << hex << ALPHA_X.FIX;
+				cout << " ALPHA_A=" << hex << ALPHA_X.A;
+				cout << " ALPHA_B=" << hex << ALPHA_X.B;
+				cout << " ALPHA_C=" << hex << ALPHA_X.C;
+				cout << " ALPHA_D=" << hex << ALPHA_X.D;
+				cout << "\nWindow_YTop=" << dec << Window_YTop;
+				cout << " Window_YBottom=" << dec << Window_YBottom;
+				/*
+				cout << "\n";
+				for (int i = 0; i < 256; i++)
+				{
+					cout << " id#" << dec << i << ": ";
+					cout << "tp=" << hex << p_ulHwPixelOutBuffer32[0 + (i << 3)] << " ar=" << p_ulHwPixelOutBuffer32[1 + (i << 3)] << " msk=" << p_ulHwPixelOutBuffer32[2 + (i << 3)] << " sel=" << p_ulHwPixelOutBuffer32[3 + (i << 3)];
+					cout << "zs=" << hex << p_ulHwPixelOutBuffer32[4 + (i << 3)] << " zd=" << p_ulHwPixelOutBuffer32[5 + (i << 3)] << " zeq=" << p_ulHwPixelOutBuffer32[6 + (i << 3)] << " zgr=" << p_ulHwPixelOutBuffer32[7 + (i << 3)];
+				}
+				/*
+				cout << "\ntest1: " << hex << ((p_ulHwPixelOutBuffer32[1+24]<<1)+CvtAddrZBuf16S(p_ulHwPixelOutBuffer32[5 + 24], p_ulHwPixelOutBuffer32[6 + 24]+ p_ulHwPixelOutBuffer32[7 + 24], p_ulHwPixelOutBuffer32[2 + 24]));
+				cout << "\ntest2: " << hex << (p_ulHwPixelOutBuffer32[0 + 24]+CvtAddrPix32(p_ulHwPixelOutBuffer32[5 + 24], p_ulHwPixelOutBuffer32[6 + 24]+ p_ulHwPixelOutBuffer32[7 + 24], p_ulHwPixelOutBuffer32[2 + 24]));
+				cout << "\n";
+				for (int i = 24; i < 31; i++)
+				{
+					cout << " zo#" << dec << i << ": " << hex << p_ulHwPixelOutBuffer32[i + 32];
+				}
+				cout << "\n";
+				for (int i = 24; i < 31; i++)
+				{
+					cout << " do#" << dec << i << ": " << hex << p_ulHwPixelOutBuffer32[i + 512];
+				}
+				*/
+				/*
+				cout << "\nyid: " << dec << p_ulHwPixelOutBuffer32[0];
+				cout << "\nDrawRangeTop: " << dec << p_ulHwPixelOutBuffer32[1];
+				cout << "\nDrawRangeBottom: " << dec << p_ulHwPixelOutBuffer32[2];
+				cout << "\nStartY: " << dec << p_ulHwPixelOutBuffer32[3];
+				cout << "\nEndY: " << dec << p_ulHwPixelOutBuffer32[4];
+				cout << "\nh: " << dec << p_ulHwPixelOutBuffer32[5];
+				cout << "\nsh: " << dec << p_ulHwPixelOutBuffer32[6];
+				cout << "\nyid: " << dec << p_ulHwPixelOutBuffer32[8];
+				cout << "\nDrawRangeTop: " << dec << p_ulHwPixelOutBuffer32[9];
+				cout << "\nDrawRangeBottom: " << dec << p_ulHwPixelOutBuffer32[10];
+				cout << "\nStartY: " << dec << p_ulHwPixelOutBuffer32[11];
+				cout << "\nEndY: " << dec << p_ulHwPixelOutBuffer32[12];
+				cout << "\nh: " << dec << p_ulHwPixelOutBuffer32[13];
+				cout << "\nsh: " << dec << p_ulHwPixelOutBuffer32[14];
+				cout << "\nyid: " << dec << p_ulHwPixelOutBuffer32[16];
+				cout << "\nDrawRangeTop: " << dec << p_ulHwPixelOutBuffer32[17];
+				cout << "\nDrawRangeBottom: " << dec << p_ulHwPixelOutBuffer32[18];
+				cout << "\nStartY: " << dec << p_ulHwPixelOutBuffer32[19];
+				cout << "\nEndY: " << dec << p_ulHwPixelOutBuffer32[20];
+				cout << "\nh: " << dec << p_ulHwPixelOutBuffer32[21];
+				cout << "\nsh: " << dec << p_ulHwPixelOutBuffer32[22];
+				cout << "\nyid: " << dec << p_ulHwPixelOutBuffer32[24];
+				cout << "\nDrawRangeTop: " << dec << p_ulHwPixelOutBuffer32[25];
+				cout << "\nDrawRangeBottom: " << dec << p_ulHwPixelOutBuffer32[26];
+				cout << "\nStartY: " << dec << p_ulHwPixelOutBuffer32[27];
+				cout << "\nEndY: " << dec << p_ulHwPixelOutBuffer32[28];
+				cout << "\nh: " << dec << p_ulHwPixelOutBuffer32[29];
+				cout << "\nsh: " << dec << p_ulHwPixelOutBuffer32[30];
+				cout << "\n";
+				for (int i = 0; i < 400; i++)
+				{
+					cout << " ty#" << dec << i << ": " << dec << p_ulHwPixelOutBuffer32[i + 32];
+				}
+				cout << "\n";
+				for (int i = 0; i < 400; i++)
+				{
+					cout << " os#" << dec << i << ": " << dec << p_ulHwPixelOutBuffer32[i + 512];
+				}
+				*/
+
+				//cout << "\n";
+				//for (int i = 0; i < 16; i++)
+				//{
+				//	cout << " c#" << dec << i << ": " << hex << p_ulHwPixelOutBuffer32[i + 64];
+				//}
+				//cout << "\n";
+				//for (int i = 0; i < 16; i++)
+				//{
+				//	cout << " wbc#" << dec << i << ": " << hex << p_uHwClutData32[i];
+				//}
+
+				// variable data
+				/*
+				cout << "\n";
+				for (int i = 0; i < 256; i++)
+				{
+					cout << " var#" << dec << i << ": " << hex << p_ulHwPixelOutBuffer32[i + 1024];
+				}
+
+				// spill data
+				cout << "\nSpill:";
+				for (int i = 0; i < 1024; i++)
+				{
+					//if (p_ulHwPixelOutBuffer32[i + 2048])
+					{
+						cout << " sp#" << dec << i << ": " << dec << p_ulHwPixelOutBuffer32[i + 2048];
+					}
+				}
+				*/
+
+				/*
+				cout << "\nTEXPSM: " << hex << p_ulHwPixelOutBuffer32[0];
+				cout << "\nTPSM: " << hex << p_ulHwPixelOutBuffer32[1];
+				cout << "\nAEM: " << hex << p_ulHwPixelOutBuffer32[2];
+				cout << "\nTEXA_0: " << hex << p_ulHwPixelOutBuffer32[3];
+
+				cout << "\nTFX: " << hex << p_ulHwPixelOutBuffer32[4];
+				cout << "\nTCC: " << hex << p_ulHwPixelOutBuffer32[5];
+				cout << "\nFBA: " << hex << p_ulHwPixelOutBuffer32[6];
+				cout << "\nFBMSK: " << hex << p_ulHwPixelOutBuffer32[7];
+				cout << "\nPABE: " << hex << p_ulHwPixelOutBuffer32[8];
+				cout << "\nABE: " << hex << p_ulHwPixelOutBuffer32[9];
+				cout << "\nALPHA_A: " << hex << p_ulHwPixelOutBuffer32[10];
+				cout << "\nALPHA_B: " << hex << p_ulHwPixelOutBuffer32[11];
+				cout << "\nALPHA_C: " << hex << p_ulHwPixelOutBuffer32[12];
+				cout << "\nALPHA_D: " << hex << p_ulHwPixelOutBuffer32[13];
+				cout << "\nALPHA_FIX: " << hex << p_ulHwPixelOutBuffer32[14];
+				cout << "\nCOLCLAMP: " << hex << p_ulHwPixelOutBuffer32[15];
+
+				cout << "\nStartX: " << dec << p_ulHwPixelOutBuffer32[16];
+				cout << "\nStartY: " << dec << p_ulHwPixelOutBuffer32[17];
+				cout << "\nEndX: " << dec << p_ulHwPixelOutBuffer32[18];
+				cout << "\nEndY: " << dec << p_ulHwPixelOutBuffer32[19];
+
+				for (int i = 0; i < 16; i += 4)
+				{
+					cout << "\nTPixel#0" << ": " << hex << p_ulHwPixelOutBuffer32[32 + (i<<1)];
+					cout << "\nEnable#0" << ": " << hex << p_ulHwPixelOutBuffer32[36 + (i << 1)];
+					cout << "\nTPixel#1" << ": " << hex << p_ulHwPixelOutBuffer32[33 + (i << 1)];
+					cout << "\nEnable#1" << ": " << hex << p_ulHwPixelOutBuffer32[37 + (i << 1)];
+					cout << "\nTPixel#2" << ": " << hex << p_ulHwPixelOutBuffer32[34 + (i << 1)];
+					cout << "\nEnable#2" << ": " << hex << p_ulHwPixelOutBuffer32[38 + (i << 1)];
+					cout << "\nTPixel#3" << ": " << hex << p_ulHwPixelOutBuffer32[35 + (i << 1)];
+					cout << "\nEnable#3" << ": " << hex << p_ulHwPixelOutBuffer32[39 + (i << 1)];
+				}
+				*/
+
+				/*
+				cout << "\nDrawArea_TopLeftX: " << dec << p_ulHwPixelOutBuffer32[20];
+				cout << "\nDrawArea_TopLeftY: " << dec << p_ulHwPixelOutBuffer32[21];
+				cout << "\nDrawArea_BottomRightX: " << dec << p_ulHwPixelOutBuffer32[22];
+				cout << "\nDrawArea_BottomRightY: " << dec << p_ulHwPixelOutBuffer32[23];
+				cout << "\nvx.x: " << dec << p_ulHwPixelOutBuffer32[24];
+				cout << "\nvx.y: " << dec << p_ulHwPixelOutBuffer32[25];
+				cout << "\nvy.x: " << dec << p_ulHwPixelOutBuffer32[26];
+				cout << "\nvy.y: " << dec << p_ulHwPixelOutBuffer32[27];
+
+				//cout << "\nsw: " << dec << p_ulHwPixelOutBuffer32[20];
+				//cout << "\nivWindowCurY0: " << dec << p_ulHwPixelOutBuffer32[21];
+				//cout << "\nivWindowCurY1: " << dec << p_ulHwPixelOutBuffer32[22];
+				//cout << "\nfsh: " << dec << p_ulHwPixelOutBuffer32[23];
+
+				//for (int i = 0; i < 4; i++)
+				//{
+				//	cout << "\nsh#" << dec << i << ": " << dec << p_ulHwPixelOutBuffer32[i+8];
+				//}
+				//for (int i = 0; i < 4; i++)
+				//{
+				//	cout << "\ncount#" << dec << i << ": " << dec << p_ulHwPixelOutBuffer32[i + 12];
+				//}
+				//for (int i = 0; i < 4; i++)
+				//{
+				//	cout << "\nyid#" << dec << i << ": " << dec << p_ulHwPixelOutBuffer32[i + 16];
+				//}
+				//for (int i = 0; i < 4; i++)
+				//{
+				//	cout << "\nivDrawRangeY0#" << dec << i << ": " << dec << p_ulHwPixelOutBuffer32[i + 24];
+				//}
+				//for (int i = 0; i < 4; i++)
+				//{
+				//	cout << "\nivDrawRangeY1#" << dec << i << ": " << dec << p_ulHwPixelOutBuffer32[i + 28];
+				//}
+
+				for (int i = 0; i < 512; i++)
+				{
+					u32 calc = (p_ulHwPixelOutBuffer32[8] + CvtAddrPix32(p_ulHwPixelOutBuffer32[32 + (i << 2)], p_ulHwPixelOutBuffer32[33 + (i << 2)], p_ulHwPixelOutBuffer32[9]));
+					u32 ofst = p_ulHwPixelOutBuffer32[35 + (i << 2)];
+
+					if (calc != ofst)
+					{
+						cout << "\nPixel#" << dec << i << " X: " << dec << p_ulHwPixelOutBuffer32[32 + (i << 2)];
+						cout << "\nPixel#" << dec << i << " Y: " << dec << p_ulHwPixelOutBuffer32[33 + (i << 2)];
+						cout << "\nPixel#" << dec << i << " RGB: " << hex << p_ulHwPixelOutBuffer32[34 + (i << 2)];
+						cout << "\nPixel#" << dec << i << " OFST: " << hex << p_ulHwPixelOutBuffer32[35 + (i << 2)];
+						cout << "\nPixel#" << dec << i << " CALC: " << hex << (p_ulHwPixelOutBuffer32[8] + CvtAddrPix32(p_ulHwPixelOutBuffer32[32 + (i << 2)], p_ulHwPixelOutBuffer32[33 + (i << 2)], p_ulHwPixelOutBuffer32[9]));
+						break;
+					}
+				}
+
+				//cout << "\nEnable0: " << dec << p_ulHwPixelOutBuffer32[32 + 0];
+				//cout << "\nEnable1: " << dec << p_ulHwPixelOutBuffer32[33 + 0];
+				//cout << "\nEnable2: " << hex << p_ulHwPixelOutBuffer32[34 + 0];
+				//cout << "\nEnable3: " << hex << p_ulHwPixelOutBuffer32[35 + 0];
+
+				// output the validated inputs
+				//cout << "\nIndex#" << dec << p_ulHwPixelOutBuffer32[0];
+				//for (int i = 0; i < 16; i++)
+				//{
+				//	cout << "\nValidate#" << dec << i << ": " << hex << p_ulHwPixelOutBuffer32[i+1];
+				//}
+				*/
+
+#endif	// end #ifdef VALIDATE_OPENCL_PS2_SPRITE
+
+#endif	// end #ifdef TEST_OPENCL_PS2_SPRITE
+
+			}	// end if else (!bEnable_OpenCL)
+
+#endif	// end #ifdef ALLOW_OPENCL_PS2_SPRITE
 
 			break;
 	}
@@ -11805,7 +13108,6 @@ void GPU::RenderRectangle_DS ( u32 Coord0, u32 Coord1 )
 		debug << hex << " bgr=" << bgr;
 		debug << " FrameBufPixFmt=" << PixelFormat_Names [ FrameBuffer_PixelFormat ];
 		debug << hex << "; FrameBufPtr32/64=" << ( FrameBufferStartOffset32 >> 6 );
-		debug << " FrameBufPixFmt=" << PixelFormat_Names [ FrameBuffer_PixelFormat ];
 		debug << " Alpha=" << Alpha;
 		debug << " uA=" << uA;
 		debug << " uB=" << uB;
@@ -35149,7 +36451,7 @@ void GPU::TransferDataLocal_DS ()
 	u32 ulPageWidthDst, ulPageHeightDst;
 	u32 ulBufWidthSrc, ulBufWidthDst;
 
-	u64 *inputdata_ptr;
+	u32 *inputdata_ptr;
 	
 	u32 XferXCount = 0;
 	
@@ -35162,7 +36464,7 @@ void GPU::TransferDataLocal_DS ()
 		cout << "\nhps2x64: ALERT: GPU: Performing local->local transmission while not activated";
 		
 #ifdef INLINE_DEBUG_TRANSFER_LOCAL
-		cout << "\r\nhps2x64: ALERT: GPU: Performing local->local transmission while not activated";
+		debug << "\r\nhps2x64: ALERT: GPU: Performing local->local transmission while not activated";
 #endif
 	}
 	
@@ -35187,13 +36489,106 @@ void GPU::TransferDataLocal_DS ()
 	if ( !XferWidth || !XferHeight ) return;
 	
 	
-#ifdef ALLOW_OPENCL_PS2_TRANSFERIN
-	// check for new transfer
-	//if ( !XferX && !XferY )
-	//{
-		//cout << "\nhps2x64: GPU: HW: TRANSFER DATA MOVE!!!*** DPSM=" << hex << GPURegsGp.BITBLTBUF.DPSM << " SPSM=" << GPURegsGp.BITBLTBUF.SPSM;
-	//}
+#ifdef VERBOSE_TRANSFER_LOCAL
+	cout << "\nhps2x64: GPU: HW: TRANSFER DATA MOVE!!!*** DPSM=" << hex << GPURegsGp.BITBLTBUF.DPSM << " SPSM=" << GPURegsGp.BITBLTBUF.SPSM;
 #endif
+
+
+#ifdef ALLOW_OPENCL_PS2_TRANSFERMOVE
+	// check if using gpu
+	if (bEnable_OpenCL)
+	{
+		//inputdata_ptr = & pHwInputBuffer64 [ ( ulHwInputBuffer_WriteIndex & c_ulHwInputBuffer_Mask ) << c_ulHwInputBuffer_Shift ];
+		inputdata_ptr = &((u32*)pHwInputBuffer32)[(ulHwInputBuffer_WriteIndex & c_ulHwInputBuffer_Mask) << c_ulHwInputBuffer_Shift];
+
+		// set total pixel count
+		//inputdata_ptr [ 11 ] = w * h;
+
+	// transfer in command
+		inputdata_ptr[0] = 0xf1000000;
+
+
+		// new transfer command //
+
+		//inputdata_ptr [ 0 ] = GPURegsGp.BITBLTBUF.Value;
+		//inputdata_ptr [ 1 ] = GPURegsGp.TRXPOS.Value;
+		//inputdata_ptr [ 2 ] = GPURegsGp.TRXREG.Value;
+		//inputdata_ptr [ 3 ] = CurrentPath;
+		//inputdata_ptr [ 4 ] = WordCount32;
+		//inputdata_ptr [ 4 ] = iPixelCount24;
+
+		// offset to the data is zero
+		inputdata_ptr[1] = 0;
+
+		((u64*)inputdata_ptr)[1] = GPURegsGp.BITBLTBUF.Value;
+
+		// set the total transfer count
+		inputdata_ptr[4] = 0;
+		inputdata_ptr[5] = XferWidth * XferHeight;
+
+		inputdata_ptr[8] = XferSrcX;
+		inputdata_ptr[9] = XferSrcY;
+		inputdata_ptr[10] = XferDstX;
+		inputdata_ptr[11] = XferDstY;
+
+		inputdata_ptr[12] = XferWidth;
+		inputdata_ptr[13] = XferHeight;
+
+		inputdata_ptr[14] = XferSrcBufWidth;
+		inputdata_ptr[15] = XferSrcOffset32;
+		inputdata_ptr[16] = XferDstBufWidth;
+		inputdata_ptr[17] = XferDstOffset32;
+
+		// padding to match up with transfer-in command format, these should be zero
+		inputdata_ptr[18] = 0;
+		inputdata_ptr[19] = 0;
+
+
+		// new command filled in
+		// send the command to the other thread
+		// *** todo ***
+		ulHwInputBuffer_WriteIndex++;
+
+
+#ifdef TEST_OPENCL_PS2_TRANSFERMOVE
+
+#ifdef VALIDATE_OPENCL_PS2_TRANSFERMOVE
+		/*
+		// output the inputs sent
+		for (int i = 0; i < 16; i++)
+		{
+			cout << "\nInput#" << dec << i << ": " << hex << inputdata_ptr[i];
+		}
+		*/
+#endif
+
+		// send command
+		Copy_VRAM_toGPU();
+		//FlushToHardware( 0, 1, ullPixelInBuffer_ReadIndex, ullPixelInBuffer_WriteIndex );
+		GPU::Flush();
+		Copy_VRAM_toCPU();
+
+
+#ifdef VALIDATE_OPENCL_PS2_TRANSFERMOVE
+		cout << "\nPS2: GPU: HW: TRANSFER-MOVE: Dst PixelFormat: " << PixelFormat_Names[GPURegsGp.BITBLTBUF.DPSM];
+
+		// output the validated inputs
+		/*
+		cout << "\nIndex#" << dec << p_ulHwPixelOutBuffer32[0];
+		for (int i = 0; i < 16; i++)
+		{
+			cout << "\nValidate#" << dec << i << ": " << hex << p_ulHwPixelOutBuffer32[i+1];
+		}
+		*/
+#endif
+
+#endif	// end #ifdef TEST_OPENCL_PS2_TRANSFERMOVE
+
+		// should be done
+		return;
+	}
+
+#endif	// end #ifdef ALLOW_OPENCL_PS2_TRANSFERMOVE
 
 
 	// if the X specified is greater than buffer width, then modulo
@@ -35282,61 +36677,6 @@ void GPU::TransferDataLocal_DS ()
 			// 32-bit pixels
 
 
-#ifdef ALLOW_OPENCL_PS2_TRANSFERMOVE
-		// check if using gpu
-		if ( bEnable_OpenCL )
-		{
-			inputdata_ptr = & pHwInputBuffer64 [ ( ulHwInputBuffer_WriteIndex & c_ulHwInputBuffer_Mask ) << c_ulHwInputBuffer_Shift ];
-
-				// set total pixel count
-				//inputdata_ptr [ 11 ] = w * h;
-
-
-
-				// new transfer command //
-
-				inputdata_ptr [ 0 ] = GPURegsGp.BITBLTBUF.Value;
-				inputdata_ptr [ 1 ] = GPURegsGp.TRXPOS.Value;
-				inputdata_ptr [ 2 ] = GPURegsGp.TRXREG.Value;
-				inputdata_ptr [ 3 ] = CurrentPath;
-				//inputdata_ptr [ 4 ] = WordCount32;
-				//inputdata_ptr [ 4 ] = iPixelCount24;
-				inputdata_ptr [ 5 ] = XferSrcX;
-				inputdata_ptr [ 6 ] = XferSrcY;
-				inputdata_ptr [ 7 ] = XferDstX;
-				inputdata_ptr [ 8 ] = XferDstY;
-				inputdata_ptr [ 9 ] = XferWidth;
-				inputdata_ptr [ 10 ] = XferHeight;
-				inputdata_ptr [ 11 ] = XferDstBufWidth;
-				inputdata_ptr [ 12 ] = XferDstOffset32;
-				inputdata_ptr [ 13 ] = XferSrcBufWidth;
-				inputdata_ptr [ 14 ] = XferSrcOffset32;
-
-				// transfer in command
-				inputdata_ptr [ 15 ] = 0xf1000000ull;
-
-
-				// new command filled in
-				// send the command to the other thread
-				// *** todo ***
-				ulHwInputBuffer_WriteIndex++;
-
-
-
-
-			// send command
-			//Copy_VRAM_toGPU ();
-			//FlushToHardware( 0, 1, ullPixelInBuffer_ReadIndex, ullPixelInBuffer_WriteIndex );
-			//Copy_VRAM_toCPU ();
-
-			//ullPixelInBuffer_ReadIndex = ullPixelInBuffer_WriteIndex;
-			//ullPixelInBuffer_TargetIndex = ullPixelInBuffer_WriteIndex;
-
-			// should be done
-			return;
-		}
-
-#endif
 
 
 			while ( ( XferY < XferHeight ) && Count )
@@ -36003,15 +37343,57 @@ void GPU::TransferDataOut32_DS ( u32* Data, u32 WordCount32 )
 	
 	// check that there is data to transfer
 	if ( !XferWidth || !XferHeight ) return;
-	
-	
+
+
+#ifdef VERBOSE_TRANSFER_OUT
+	if (!XferX && !XferY)
+	{
+		cout << "\nhps2x64: ALERT: GPU: Transferring data TO memory FROM gpu";
+	}
+#endif
+
+
+#ifdef ALLOW_OPENCL_PS2_TRANSFEROUT
+
+	// check if transfer is just starting
+	if (!XferX && !XferY)
+	{
+		// check if running on hardware renderer
+		if (bEnable_OpenCL)
+		{
+			// run all the gpu commands submitted up to this point
+			GPU::Flush();
+
+			// get a copy of vram for cpu
+			Copy_VRAM_toCPU();
+
+			// wait for commands to finish
+			//vulkan_wait_fence();
+		}
+
+	}
+
+#endif
+
+
 	// if the X specified is greater than buffer width, then modulo
 	//if ( XferSrcX >= XferSrcBufWidth ) XferSrcX %= XferSrcBufWidth;
-	
-	buf32 = & ( RAM32 [ XferSrcOffset32 ] );
-	buf16 = (u16*) buf32;
-	buf8 = (u8*) buf32;
-	
+
+#ifdef ALLOW_OPENCL_PS2_TRANSFEROUT_2
+	if (bEnable_OpenCL)
+	{
+		// if using the compute shader renderer, just point into the gpu memory there and pull directly, no need to copy first
+		buf32 = &(p_uHwOutputData32[XferSrcOffset32]);
+	}
+	else
+#endif
+	{
+		buf32 = &(RAM32[XferSrcOffset32]);
+	}
+
+	buf16 = (u16*)buf32;
+	buf8 = (u8*)buf32;
+
 		if ( ( GPURegsGp.BITBLTBUF.SPSM & 7 ) < 2 )
 		{
 			// 32 or 24 bit pixels //
@@ -36517,15 +37899,18 @@ void GPU::TransferDataIn32_DS ( u32* Data, u32 WordCount32 )
 	
 	u32 Offset;
 
-	u32 ulStartPage, ulPageWidth, ulPageHeight, ulBufWidth;
+	//u32 ulStartPage, ulPageWidth, ulPageHeight, ulBufWidth;
 
-	u64 *inputdata_ptr;
-	u64 *inputdata_ptr2;
+	u32 *inputdata_ptr;
+	u32 *inputdata_ptr2;
 	u32 *inputdata_ptr32;
+
 	int i;
 	int iCount;
 
-	s32 iPixelCount24; 
+	s32 iPixelCount24;
+
+	u64 ullPixelBufStartIdx;
 
 	void *PtrEnd;
 	PtrEnd = RAM8 + c_iRAM_Size;
@@ -36571,6 +37956,7 @@ void GPU::TransferDataIn32_DS ( u32* Data, u32 WordCount32 )
 	
 
 #ifdef ALLOW_OPENCL_PS2_TRANSFERIN
+
 	// check for new transfer
 	if ( !XferX && !XferY )
 	{
@@ -36586,8 +37972,10 @@ void GPU::TransferDataIn32_DS ( u32* Data, u32 WordCount32 )
 		//cout << "\nhps2x64: GPU: TransferIn-Compute: Type=" << PixelFormat_Names [ GPURegsGp.BITBLTBUF.DPSM ] << " XferId=" << dec << XferId << " x=" << XferX << " y=" << XferY << " w=" << XferWidth << " h=" << XferHeight;
 		//}
 	}
-#endif
-	
+
+#endif	// end #ifdef ALLOW_OPENCL_PS2_TRANSFERIN
+
+
 	buf32 = & ( RAM32 [ XferDstOffset32 ] );
 	buf16 = (u16*) buf32;
 	buf8 = (u8*) buf32;
@@ -36602,19 +37990,20 @@ void GPU::TransferDataIn32_DS ( u32* Data, u32 WordCount32 )
 		// check if using gpu
 		if ( bEnable_OpenCL )
 		{
-			inputdata_ptr = & pHwInputBuffer64 [ ( ulHwInputBuffer_WriteIndex & c_ulHwInputBuffer_Mask ) << c_ulHwInputBuffer_Shift ];
+			inputdata_ptr = & ((u32*)pHwInputBuffer32) [ ( ulHwInputBuffer_WriteIndex & c_ulHwInputBuffer_Mask ) << c_ulHwInputBuffer_Shift ];
 
 				// set the id
 				//inputdata_ptr [ 14 ] = XferId;
 
-				// set the start index in pixel input buffer (start index from target index)
-				inputdata_ptr [ 16 ] = ullPixelInBuffer_WriteIndex - ullPixelInBuffer_TargetIndex;
 
 				// set the count of 32-bit words in block
 				//inputdata_ptr [ 4 ] = WordCount32;
 
 				// set total pixel count
 				//inputdata_ptr [ 11 ] = w * h;
+
+			// get index that pixels start at in hardware buffer
+			ullPixelBufStartIdx = ullPixelInBuffer_WriteIndex;
 
 			// copy pixels into buffer
 			iPixelCount24 = 0;
@@ -36659,57 +38048,79 @@ void GPU::TransferDataIn32_DS ( u32* Data, u32 WordCount32 )
 #ifdef ENABLE_HWPIXEL_INPUT
 
 			// check that previous entry
-			inputdata_ptr2 = & pHwInputBuffer64 [ ( (ulHwInputBuffer_WriteIndex-1) & c_ulHwInputBuffer_Mask ) << c_ulHwInputBuffer_Shift ];
+			inputdata_ptr2 = & ((u32*)pHwInputBuffer32) [ ( (ulHwInputBuffer_WriteIndex-1) & c_ulHwInputBuffer_Mask ) << c_ulHwInputBuffer_Shift ];
 
+
+#ifdef ENABLE_OPENCL_MULTIPLE_TRANSFERIN
 			// check if part of previous command or new command
 			if (
 				( ulHwInputBuffer_TargetIndex > (ulHwInputBuffer_WriteIndex-1) )
-				|| ( inputdata_ptr2 [ 14 ] != XferId )
-				|| ( inputdata_ptr2 [ 15 ] != ( 0xf8ull << 24 ) )
+				|| ( inputdata_ptr2 [ 19 ] != XferId )
+				|| ( inputdata_ptr2 [ 0 ] != ( 0xf8ull << 24 ) )
 			)
+#endif
 			{
 				// new transfer command //
 
-				inputdata_ptr [ 0 ] = GPURegsGp.BITBLTBUF.Value;
-				inputdata_ptr [ 1 ] = GPURegsGp.TRXPOS.Value;
-				inputdata_ptr [ 2 ] = GPURegsGp.TRXREG.Value;
-				inputdata_ptr [ 3 ] = CurrentPath;
+				// transfer in command
+				inputdata_ptr[0] = 0xf8000000ull;
+
+				((u64*)inputdata_ptr) [ 1 ] = GPURegsGp.BITBLTBUF.Value;
+
+				//inputdata_ptr [ 2 ] = GPURegsGp.TRXPOS.Value;
+				//inputdata_ptr [ 3 ] = GPURegsGp.TRXREG.Value;
+				inputdata_ptr [ 4 ] = CurrentPath;
 				//inputdata_ptr [ 4 ] = WordCount32;
-				inputdata_ptr [ 4 ] = iPixelCount24;
-				inputdata_ptr [ 5 ] = XferX;
-				inputdata_ptr [ 6 ] = XferY;
-				inputdata_ptr [ 7 ] = XferDstX;
-				inputdata_ptr [ 8 ] = XferDstY;
-				inputdata_ptr [ 9 ] = XferWidth;
-				inputdata_ptr [ 10 ] = XferHeight;
-				inputdata_ptr [ 11 ] = XferDstBufWidth;
-				inputdata_ptr [ 12 ] = XferDstOffset32;
+				inputdata_ptr [ 5 ] = iPixelCount24;
+
+				inputdata_ptr [ 6 ] = XferX;
+				inputdata_ptr [ 7 ] = XferY;
+
+				inputdata_ptr[8] = XferSrcX;
+				inputdata_ptr[9] = XferSrcY;
+				inputdata_ptr [ 10 ] = XferDstX;
+				inputdata_ptr [ 11 ] = XferDstY;
+
+				inputdata_ptr [ 12 ] = XferWidth;
+				inputdata_ptr [ 13 ] = XferHeight;
+
+				inputdata_ptr[14] = XferSrcBufWidth;
+				inputdata_ptr[15] = XferSrcOffset32;
+				inputdata_ptr [ 16 ] = XferDstBufWidth;
+				inputdata_ptr [ 17 ] = XferDstOffset32;
 
 				// put in the start count of 32-bit units
 				// ***todo*** if using the count for gpu transfers, then need to conver XferX,XferY before switching to cpu tranfer
-				inputdata_ptr [ 13 ] = XferCount32;
+				inputdata_ptr [ 18 ] = XferCount32;
 
 				// need to know if transfer is related
-				inputdata_ptr [ 14 ] = XferId;
+				inputdata_ptr [ 19 ] = XferId;
 
-				// transfer in command
-				inputdata_ptr [ 15 ] = 0xf8000000ull;
 
+				// clear index 1 - so that it synchronizes when switching from drawing
+				//inputdata_ptr[1] = 0;
+				// set the start index in pixel input buffer (start index from target index)
+				//inputdata_ptr [ 16 ] = ullPixelInBuffer_WriteIndex - ullPixelInBuffer_TargetIndex;
+				inputdata_ptr[1] = ullPixelBufStartIdx - ullPixelInBuffer_TargetIndex;
+
+				// get the write index
+				//cout << "\nWriteIndex#" << dec << ulHwInputBuffer_WriteIndex;
 
 				// new command filled in
 				// send the command to the other thread
 				// *** todo ***
 				ulHwInputBuffer_WriteIndex++;
 			}
+#ifdef ENABLE_OPENCL_MULTIPLE_TRANSFERIN
 			else
 			{
 				// same transfer command //
 
 				// update the count of pixels in previous command
 				//inputdata_ptr2 [ 4 ] += WordCount32;
-				inputdata_ptr2 [ 4 ] += iPixelCount24;
+				inputdata_ptr2 [ 5 ] += iPixelCount24;
 			}
-
+#endif
 
 
 			// update count of 32-bit data transferred
@@ -36721,20 +38132,49 @@ void GPU::TransferDataIn32_DS ( u32* Data, u32 WordCount32 )
 			//XferX += WordCount32;
 			XferX += iPixelCount24;
 
-			// send command
-			//Copy_VRAM_toGPU ();
-			//FlushToHardware( 0, 1, ullPixelInBuffer_ReadIndex, ullPixelInBuffer_WriteIndex );
-			//Copy_VRAM_toCPU ();
 
-			//ullPixelInBuffer_ReadIndex = ullPixelInBuffer_WriteIndex;
-			//ullPixelInBuffer_TargetIndex = ullPixelInBuffer_WriteIndex;
+#ifdef TEST_OPENCL_PS2_TRANSFERIN
+
+#ifdef VALIDATE_OPENCL_PS2_TRANSFERIN
+			/*
+			// output the inputs sent
+			for (int i = 0; i < 16; i++)
+			{
+				cout << "\nInput#" << dec << i << ": " << hex << inputdata_ptr[i];
+			}
+			*/
+#endif
+
+			// send command
+			Copy_VRAM_toGPU ();
+			//FlushToHardware( 0, 1, ullPixelInBuffer_ReadIndex, ullPixelInBuffer_WriteIndex );
+			GPU::Flush();
+			Copy_VRAM_toCPU ();
+
+
+#ifdef VALIDATE_OPENCL_PS2_TRANSFERIN
+			cout << "\nPS2: GPU: HW: TRANSFER-IN: PixelFormat: " << PixelFormat_Names[GPURegsGp.BITBLTBUF.DPSM];
+			 
+			// output the validated inputs
+			/*
+			cout << "\nIndex#" << dec << p_ulHwPixelOutBuffer32[0];
+			for (int i = 0; i < 16; i++)
+			{
+				cout << "\nValidate#" << dec << i << ": " << hex << p_ulHwPixelOutBuffer32[i+1];
+			}
+			*/
+#endif
+
+#endif	// end #ifdef TEST_OPENCL_PS2_TRANSFERIN
 
 			// should be done
 			return;
-#endif
+
+#endif	// end #ifdef ENABLE_HWPIXEL_INPUT
+
 		}
 
-#endif
+#endif	// end #ifdef ALLOW_OPENCL_PS2_TRANSFERIN
 
 
 		if ( !XferX && !XferY )
@@ -36743,9 +38183,6 @@ void GPU::TransferDataIn32_DS ( u32* Data, u32 WordCount32 )
 				
 			// PSMCT24, PSMZ24 //
 
-#ifdef ALLOW_OPENCL_PS2_TRANSFERIN
-			cout << "\nhps2x64: ALERT: GPU: SHADER: 24-bit transfers not support by shader renderer yet!";
-#endif
 			// Limitations for PSMCT24, PSMZ24
 			// no limitation on start x-coord
 			// width must be a multiple of 8
@@ -36857,10 +38294,11 @@ void GPU::TransferDataIn32_DS ( u32* Data, u32 WordCount32 )
 		// not 24-bit pixels //
 
 #ifdef ALLOW_OPENCL_PS2_TRANSFERIN
+
 		// check if using gpu
 		if ( bEnable_OpenCL )
 		{
-			inputdata_ptr = & pHwInputBuffer64 [ ( ulHwInputBuffer_WriteIndex & c_ulHwInputBuffer_Mask ) << c_ulHwInputBuffer_Shift ];
+			inputdata_ptr = & ((u32*)pHwInputBuffer32) [ ( ulHwInputBuffer_WriteIndex & c_ulHwInputBuffer_Mask ) << c_ulHwInputBuffer_Shift ];
 
 			// fill in data structure for gpu //
 			// inputbuffer
@@ -36885,29 +38323,6 @@ void GPU::TransferDataIn32_DS ( u32* Data, u32 WordCount32 )
 			// ...
 			// 31: Data15
 
-			inputdata_ptr [ 0 ] = GPURegsGp.BITBLTBUF.Value;
-			inputdata_ptr [ 1 ] = GPURegsGp.TRXPOS.Value;
-			inputdata_ptr [ 2 ] = GPURegsGp.TRXREG.Value;
-			inputdata_ptr [ 3 ] = CurrentPath;
-			inputdata_ptr [ 4 ] = WordCount32;
-			inputdata_ptr [ 5 ] = XferX;
-			inputdata_ptr [ 6 ] = XferY;
-			inputdata_ptr [ 7 ] = XferDstX;
-			inputdata_ptr [ 8 ] = XferDstY;
-			inputdata_ptr [ 9 ] = XferWidth;
-			inputdata_ptr [ 10 ] = XferHeight;
-			inputdata_ptr [ 11 ] = XferDstBufWidth;
-			inputdata_ptr [ 12 ] = XferDstOffset32;
-
-			// put in the start count of 32-bit units
-			// ***todo*** if using the count for gpu transfers, then need to conver XferX,XferY before switching to cpu tranfer
-			inputdata_ptr [ 13 ] = XferCount32;
-
-			// need to know if transfer is related
-			inputdata_ptr [ 14 ] = XferId;
-
-			// transfer in command
-			inputdata_ptr [ 15 ] = 0xf8000000ull;
 
 			//if ( WordCount32 > 32 )
 			//{
@@ -36917,43 +38332,81 @@ void GPU::TransferDataIn32_DS ( u32* Data, u32 WordCount32 )
 #ifdef ENABLE_HWPIXEL_INPUT
 
 			// check that previous entry
-			inputdata_ptr2 = & pHwInputBuffer64 [ ( (ulHwInputBuffer_WriteIndex-1) & c_ulHwInputBuffer_Mask ) << c_ulHwInputBuffer_Shift ];
+			inputdata_ptr2 = & ((u32*)pHwInputBuffer32) [ ( (ulHwInputBuffer_WriteIndex-1) & c_ulHwInputBuffer_Mask ) << c_ulHwInputBuffer_Shift ];
 
+			//if (GPURegsGp.BITBLTBUF.DPSM != 0 && GPURegsGp.BITBLTBUF.DPSM != 2)
+			{
+				//cout << "\nPS2: GPU: HW: TRANSFER-IN: PixelFormat: " << PixelFormat_Names[GPURegsGp.BITBLTBUF.DPSM];
+			}
+
+#ifdef ENABLE_OPENCL_MULTIPLE_TRANSFERIN
 			// check if part of previous command or new command
 			if (
 				( ulHwInputBuffer_TargetIndex > (ulHwInputBuffer_WriteIndex-1) )
-				|| ( inputdata_ptr2 [ 14 ] != XferId )
-				|| ( inputdata_ptr2 [ 15 ] != ( 0xf8ull << 24 ) )
+				|| ( inputdata_ptr2 [ 19 ] != XferId )
+				|| ( inputdata_ptr2 [ 0 ] != ( 0xf8ull << 24 ) )
 			)
+#endif
 			{
 				// new transfer command //
 
-				// set the id
-				inputdata_ptr [ 14 ] = XferId;
+				// transfer in command
+				inputdata_ptr[0] = 0xf8000000ull;
+
+				((u64*)inputdata_ptr)[1] = GPURegsGp.BITBLTBUF.Value;
+
+				//inputdata_ptr [ 2 ] = GPURegsGp.TRXPOS.Value;
+				//inputdata_ptr [ 3 ] = GPURegsGp.TRXREG.Value;
+				inputdata_ptr[4] = CurrentPath;
+				inputdata_ptr[5] = WordCount32;
+
+				inputdata_ptr[6] = XferX;
+				inputdata_ptr[7] = XferY;
+
+				inputdata_ptr[8] = XferSrcX;
+				inputdata_ptr[9] = XferSrcY;
+				inputdata_ptr[10] = XferDstX;
+				inputdata_ptr[11] = XferDstY;
+
+				inputdata_ptr[12] = XferWidth;
+				inputdata_ptr[13] = XferHeight;
+
+				inputdata_ptr[14] = XferSrcBufWidth;
+				inputdata_ptr[15] = XferSrcOffset32;
+				inputdata_ptr[16] = XferDstBufWidth;
+				inputdata_ptr[17] = XferDstOffset32;
+
+				// put in the start count of 32-bit units
+				// ***todo*** if using the count for gpu transfers, then need to conver XferX,XferY before switching to cpu tranfer
+				inputdata_ptr[18] = XferCount32;
+
+				// need to know if transfer is related
+				inputdata_ptr[19] = XferId;
 
 				// set the start index in pixel input buffer (start index from target index)
-				inputdata_ptr [ 16 ] = ullPixelInBuffer_WriteIndex - ullPixelInBuffer_TargetIndex;
-
-				// set the count of 32-bit words in block
-				inputdata_ptr [ 4 ] = WordCount32;
+				//inputdata_ptr [ 13 ] = ullPixelInBuffer_WriteIndex - ullPixelInBuffer_TargetIndex;
+				inputdata_ptr[1] = ullPixelInBuffer_WriteIndex - ullPixelInBuffer_TargetIndex;
 
 				// set total pixel count
 				//inputdata_ptr [ 11 ] = w * h;
 
+				// get the write index
+				//cout << "\nWriteIndex#" << dec << ulHwInputBuffer_WriteIndex;
 
 				// new command filled in
 				// send the command to the other thread
 				// *** todo ***
 				ulHwInputBuffer_WriteIndex++;
 			}
+#ifdef ENABLE_OPENCL_MULTIPLE_TRANSFERIN
 			else
 			{
 				// same transfer command //
 
 				// update the count of pixels in previous command
-				inputdata_ptr2 [ 4 ] += WordCount32;
+				inputdata_ptr2 [ 5 ] += WordCount32;
 			}
-
+#endif
 
 			// copy pixels into buffer
 			for ( i = 0; i < WordCount32; i++ )
@@ -36962,37 +38415,6 @@ void GPU::TransferDataIn32_DS ( u32* Data, u32 WordCount32 )
 				ullPixelInBuffer_WriteIndex++;
 			}
 
-			/*
-			if ( ( GPURegsGp.BITBLTBUF.DPSM == 0x13 ) && ( XferCount32 < 4 ) )
-			{
-				// dispatch our test command
-				FlushToHardware ( ulHwInputBuffer_ReadIndex, ulHwInputBuffer_WriteIndex, ullPixelInBuffer_ReadIndex, ullPixelInBuffer_WriteIndex );
-
-				ulHwInputBuffer_TargetIndex = ulHwInputBuffer_WriteIndex;
-				ulHwInputBuffer_ReadIndex = ulHwInputBuffer_WriteIndex;
-
-				ullPixelInBuffer_ReadIndex = ullPixelInBuffer_WriteIndex;
-				ullPixelInBuffer_TargetIndex = ullPixelInBuffer_WriteIndex;
-
-			// get result
-			Copy_VRAM_toCPU ();
-			debug << "\r\nTRANSFERINHW";
-			debug << " t0=" << hex << RAM16[1000000+0] << " " << RAM16[1000000+1] << " " << RAM16[1000000+2];
-			debug << " t1=" << hex << RAM16[1000000+4] << " " << RAM16[1000000+5] << " " << RAM16[1000000+6];
-			debug << " t2=" << hex << RAM16[1000000+8] << " " << RAM16[1000000+9] << " " << RAM16[1000000+10];
-			debug << " t3=" << hex << RAM16[1000000+12] << " " << RAM16[1000000+13] << " " << RAM16[1000000+14];
-
-			debug << " l0=" << hex << (LUT_XOFFSET[ (12 + XferDstX) | (0x9 << 12) ] ^ LUT_YOFFSET[ (15 + XferDstY) | (0x9 << 7) ]);
-			debug << " l1=" << hex << (LUT_XOFFSET[ (13 + XferDstX) | (0x9 << 12) ] ^ LUT_YOFFSET[ (15 + XferDstY) | (0x9 << 7) ]);
-			debug << " l2=" << hex << (LUT_XOFFSET[ (14 + XferDstX) | (0x9 << 12) ] ^ LUT_YOFFSET[ (15 + XferDstY) | (0x9 << 7) ]);
-			debug << " l3=" << hex << (LUT_XOFFSET[ (15 + XferDstX) | (0x9 << 12) ] ^ LUT_YOFFSET[ (15 + XferDstY) | (0x9 << 7) ]);
-
-			debug << " c0=" << hex << CvtAddrPix8 ( 12 + XferDstX, 15 + XferDstY, XferDstBufWidth );
-			debug << " c1=" << hex << CvtAddrPix8 ( 13 + XferDstX, 15 + XferDstY, XferDstBufWidth );
-			debug << " c2=" << hex << CvtAddrPix8 ( 14 + XferDstX, 15 + XferDstY, XferDstBufWidth );
-			debug << " c3=" << hex << CvtAddrPix8 ( 15 + XferDstX, 15 + XferDstY, XferDstBufWidth );
-			}
-			*/
 
 			// update count of 32-bit data transferred
 			XferCount32 += WordCount32;
@@ -37001,12 +38423,47 @@ void GPU::TransferDataIn32_DS ( u32* Data, u32 WordCount32 )
 			// can update XferX,XferY with the real values when switching between software/hardware
 			XferX += WordCount32;
 
+#ifdef TEST_OPENCL_PS2_TRANSFERIN
+
+#ifdef VALIDATE_OPENCL_PS2_TRANSFERIN
+
+			// output the inputs sent
+			/*
+			for (int i = 0; i < 16; i++)
+			{
+				cout << "\nInput#" << dec << i << ": " << hex << inputdata_ptr[i];
+			}
+			*/
+#endif
+
+			// send command
+			Copy_VRAM_toGPU();
+			//FlushToHardware(0, 1, ullPixelInBuffer_ReadIndex, ullPixelInBuffer_WriteIndex);
+			GPU::Flush();
+			Copy_VRAM_toCPU();
+
+
+#ifdef VALIDATE_OPENCL_PS2_TRANSFERIN
+			cout << "\nPS2: GPU: HW: TRANSFER-IN: PixelFormat: " << PixelFormat_Names[GPURegsGp.BITBLTBUF.DPSM];
+
+			// output the validated inputs
+			/*
+			cout << "\nIndex#" << dec << p_ulHwPixelOutBuffer32[0];
+			for (int i = 0; i < 16; i++)
+			{
+				cout << "\nValidate#" << dec << i << ": " << hex << p_ulHwPixelOutBuffer32[i + 1];
+			}
+			*/
+#endif
+
+#endif	// end #ifdef TEST_OPENCL_PS2_TRANSFERIN
 
 
 			// should be done
 			return;
 
 #endif	// end #ifdef ENABLE_HWPIXEL_INPUT
+
 		}
 
 /*
@@ -37837,18 +39294,16 @@ void GPU::OutputTo_P1Buffer ( u64 *pMemDevice, u32 Address, u64 CycleCount )
 }
 
 
-
-void GPU::Flush ()
+// iCurrentThread defaults to zero, meaning main thread
+void GPU::Flush ( int iCurrentThread )
 {
 	// flush the p1 buffer of data if it is time for the data to be flushed
 	//GPU::Path1_ProcessBlocks ();
 
 	//cout << "\nGPU::FLUSH ulNumberOfThreads_Created=" << dec << ulNumberOfThreads_Created << " ulInputBuffer_WriteIndex=" << ulInputBuffer_WriteIndex << " ulInputBuffer_TargetIndex=" << ulInputBuffer_TargetIndex;
 
-	//if ( _GPU->ulNumberOfThreads || Playstation1::SPU2::_SPU2->ulNumThreads )
-	if ( ulNumberOfThreads_Created )
+	if ( ulNumberOfThreads_Created && !iCurrentThread )
 	{
-		//cout << "\nGPU::Flush ulInputBuffer_WriteIndex" << ulInputBuffer_WriteIndex << " ulInputBuffer_TargetIndex=" << ulInputBuffer_TargetIndex;
 		if ( ( ulInputBuffer_WriteIndex != ulInputBuffer_TargetIndex )
 			|| ( _GPU->ullP1Buf_WriteIndex != _GPU->ullP1Buf_TargetIndex )
 		)
@@ -37878,6 +39333,8 @@ void GPU::Flush ()
 		{
 			if ( ulHwInputBuffer_WriteIndex != ulHwInputBuffer_ReadIndex )
 			{
+				// testing
+				//cout << "\nSending FlushToHardware ReadIndex: " << dec << ulHwInputBuffer_ReadIndex << " WriteIndex: " << ulHwInputBuffer_WriteIndex;
 
 				FlushToHardware ( ulHwInputBuffer_ReadIndex, ulHwInputBuffer_WriteIndex, ullPixelInBuffer_ReadIndex, ullPixelInBuffer_WriteIndex );
 

@@ -13,8 +13,9 @@ Current System Requirements:
 
 Status: In development - Pre-initial Source code and binary release - Development/Testing usage only
 Current Version:
-hps1x64 v0400 - fixed wrong pal/ntsc ps1 timer settings in ps2 mode, last bios used saved in settings and loaded automatically on open
+hps1x64 v0410 - spu/spu2 reverb bugfix, early experimental hardware renderer (compute shader)
 Older Versions:
+hps1x64 v0400 - fixed wrong pal/ntsc ps1 timer settings in ps2 mode, last bios used saved in settings and loaded automatically on open
 hps1x64 v0390 - json settings, json menubar, Visual Studio compatibility, SPU2 fixes
 hps1x64 v0380 - dma priority changes, spu2 KON/KOFF fixes, spu2 LOOP flag fixes, dma timing fix, cdvd early dual layer support
 hps1x64 v0370 - spu2 interrupt fixes
@@ -70,13 +71,15 @@ hps2x64 - Playstation 2 simulator
 
 Current System Requirements:
 64-bit x64 Processor (4+ cores)
-SSE 4.2 (for R5900 recompiler and VU)(but avx-512 needed in the future for performance)
-1GB RAM free
+SSE 4.2 (for R5900 recompiler and VU)(but avx2/avx-512 needed in the future for performance)
+Vulkan-capable GPU (1 core for now/testing, 8+ in future)
+2GB RAM free
 
 Status: In development - Not ready for release
 Current Version:
-hps2x64 v027 - pal/ntsc timing fixes, pcrtc fixes, IPU fixes, last bios used saved in settings and loaded automatically on open
+hps2x64 v028 - R5900 PDIV* fixes, early experimental hardware renderer (compute shader)
 Older Versions:
+hps2x64 v027 - pal/ntsc timing fixes, pcrtc fixes, IPU fixes, last bios used saved in settings and loaded automatically on open
 hps2x64 v026 - json settings, json menubar, Visual Studio compatibility, vu static analysis, VU fixes
 hps2x64 v025 - fixed an issue with HWREG, compatibility improvements, ps2 dma start/continue fixes
 hps2x64 v024 - vu recompiler state cache, gpu optimizations, better pcrtc, gpu code fixes, removed/disabled multi-threaded vu1 option, temporarily disabled R5900 DCache
@@ -137,6 +140,10 @@ To switch between R3000A recompiler/interpreter:
 You can choose to use the interpreter via CPU | CPU: R3000A | Interpreter: R3000A.
 You can choose to use the recompiler via CPU | CPU: R3000A | Recompiler: R3000A.
 
+To switch between software/hardware renderer:
+You can choose to use the software renderer via GPU | Renderer | Software.
+You can choose to use the hardware renderer via GPU | Renderer | Hardware.
+
 Keys:
 Use Peripherals | Configure Joystick... and then follow the instructions to configure a compatible dual analog game pad.
 Note: If controller was inserted after program was started, then redetect pads (Peripherals->Re-Detect Joypad(s)).
@@ -174,6 +181,10 @@ To switch between R5900 recompiler/interpreter:
 You can choose to use the interpreter via CPU | CPU: R5900 | Interpreter: R5900.
 You can choose to use the recompiler via CPU | CPU: R5900 | Recompiler: R5900.
 
+To switch between software/hardware renderer:
+You can choose to use the software renderer via GPU | Renderer | Software.
+You can choose to use the hardware renderer via GPU | Renderer | Hardware.
+
 Troubleshooting:
 If a game disk loads improperly, ensure that it has been dumped properly from the original physical game disk. Pads are set to DualShock2 by default for compatibility.
 This program is WIP and for testing only.
@@ -186,12 +197,13 @@ Build/Debug instructions:
 
 1. The Microsoft Visual Studio Solution file "hpsx64.sln" is included. Open the file in Visual Studio.
 2. Make sure you are in the x64 Release configuration for normal play testing. Only use x64 Debug for debugging certain code issues.
+3. You will also need the Vulkan SDK for Vulkan headers and for compiling any modified compute shaders (.comp files)
 
 For hps1x64.exe (PS1 simulator) -
-3. In the x64 Release configuration, after opening hpsx64.sln just right-click on hps1x64 and choose "Build" in Visual Studio.
+4. In the x64 Release configuration, after opening hpsx64.sln just right-click on hps1x64 and choose "Build" in Visual Studio.
 
 For hps2x64.exe (PS2 simulator) -
-3. In the x64 Release configuration, after opening hpsx64.sln just right-click on hps2x64 and choose "Build" in Visual Studio.
+4. In the x64 Release configuration, after opening hpsx64.sln just right-click on hps2x64 and choose "Build" in Visual Studio.
 
 Note: A version of hps1x64.exe and hps2x64.exe should have been built for you already and should be in the same folder as this README file. For test/evaluate ONLY.
 

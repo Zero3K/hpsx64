@@ -27,6 +27,10 @@
 #include "guicon.h"
 
 
+#include "vulkan_setup.h"
+
+
+
 using namespace Playstation1;
 using namespace Utilities::Strings;
 //using namespace Config;
@@ -40,6 +44,10 @@ using namespace Utilities::Strings;
 #endif
 
 #define ENABLE_DIRECT_INPUT
+
+
+// allow hardware rendering
+#define ALLOW_PS1_HWRENDER
 
 
 
@@ -536,6 +544,25 @@ json jsnMenuBar = {
 			{ "English", "Video" }
 		} },
 		{ "SubMenu", {
+			{ "Renderer", {
+				{ "Caption", {
+					{ "English", "Renderer" }
+				} },
+				{ "SubMenu", {
+					{ "Renderer: Software", {
+						{ "Caption", {
+							{ "English", "Renderer: Software" }
+						} },
+						{ "Function", (unsigned long long) hps1x64::OnClick_Video_Renderer_Software }
+					} },
+					{ "Renderer: Hardware", {
+						{ "Caption", {
+							{ "English", "Renderer: Hardware" }
+						} },
+						{ "Function", (unsigned long long) hps1x64::OnClick_Video_Renderer_Hardware }
+					} },
+				} },
+			} },
 			{ "Scanlines", {
 				{ "Caption", {
 					{ "English", "Scanlines" }
@@ -657,6 +684,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	// don't need this for gcc
 	RedirectIOToConsole();
 #endif
+
+
+	// using vulkan
+	//char* pData;
+
+	//pData = (char*)vulkan_setup("compute.spv", sizeof(_GPU->VRAM) * 2, sizeof(_GPU->VRAM) * 2, sizeof(inputdata), sizeof(ulPixelInBuffer32), 128 * (1 << 16) * 4);
+	//pData = (char*)vulkan_setup("compute.spv", 1024 * 512 * 2, 1024 * 512 * 2, 16 * (1 << 16) * 4, (1 << 20) * 4, 128 * (1 << 16) * 4);
+	//pData = (char*)vulkan_setup("C:\\Users\\PCUser\\Desktop\\TheProject\\hpsx64\\compute.spv", 32, 32, 32, 32, 32);
 
 
 	WindowClass::Register ( hInstance, "testSystem" );
@@ -1041,7 +1076,7 @@ int hps1x64::InitializeProgram ()
 	
 	
 	cout << "\nCreating window";
-	
+
 	//ProgramWindow->CreateGLWindow ( ProgramWindow_Caption, ProgramWindow_X, ProgramWindow_Y, xsize, ysize, true, false );
 	ProgramWindow->CreateGLWindow ( ProgramWindow_Caption, xsize, ysize, true, false );
 	
@@ -1074,7 +1109,10 @@ int hps1x64::InitializeProgram ()
 	ProgramWindow->AddShortcutKey ( OnClick_Video_FullScreen, 0x46 );
 	ProgramWindow->AddShortcutKey ( OnClick_Video_FullScreen, 0x1b );
 	*/
-	
+
+
+
+
 	cout << "\nInitializing open gl for program window";
 
 	/////////////////////////////////////////////////////////
@@ -1462,6 +1500,16 @@ int hps1x64::RunProgram ()
 					ss << "hps1x64 - Speed(NTSC): " << dPerf << "%";
 					ulFramesPerSec = 60;
 				}
+
+				if (_SYSTEM._GPU.bEnable_OpenCL)
+				{
+					ss << " Renderer: Hardware";
+				}
+				else
+				{
+					ss << " Renderer: Software";
+				}
+
 				ProgramWindow->SetCaption( ss.str().c_str() );
 			}
 			
@@ -1481,6 +1529,9 @@ int hps1x64::RunProgram ()
 
 	// save configuration
 	SaveConfig ( ExecutablePath + "hps1x64.hcfg" );
+
+	// *TODO* destory all allocations, including vulkan //
+
 
 	return 1;
 }
@@ -2381,6 +2432,10 @@ void hps1x64::OnClick_Video_FullScreen ( int i )
 	if( ! ProgramWindow->fullscreen )
 	{
 		ProgramWindow->SetWindowSize ( GPU::MainProgramWindow_Width, GPU::MainProgramWindow_Height );
+
+		// update screen size in vulkan
+		vulkan_set_screen_size(GPU::MainProgramWindow_Width, GPU::MainProgramWindow_Height);
+		vulkan_create_swap_chain();
 	}
 	
 	ProgramWindow->ToggleGLFullScreen ();
@@ -2394,6 +2449,10 @@ void hps1x64::OnClick_Video_WindowSizeX1 ( int i )
 	GPU::MainProgramWindow_Width = (long) ( ((float)ProgramWindow_Width) * 1.0f );
 	GPU::MainProgramWindow_Height = (long) ( ((float)ProgramWindow_Height) * 1.0f );
 	ProgramWindow->SetWindowSize ( GPU::MainProgramWindow_Width, GPU::MainProgramWindow_Height );
+
+	// update screen size in vulkan
+	vulkan_set_screen_size(GPU::MainProgramWindow_Width, GPU::MainProgramWindow_Height);
+	vulkan_create_swap_chain();
 }
 
 void hps1x64::OnClick_Video_WindowSizeX15 ( int i )
@@ -2401,6 +2460,10 @@ void hps1x64::OnClick_Video_WindowSizeX15 ( int i )
 	GPU::MainProgramWindow_Width = (long) ( ((float)ProgramWindow_Width) * 1.5f );
 	GPU::MainProgramWindow_Height = (long) ( ((float)ProgramWindow_Height) * 1.5f );
 	ProgramWindow->SetWindowSize ( GPU::MainProgramWindow_Width, GPU::MainProgramWindow_Height );
+
+	// update screen size in vulkan
+	vulkan_set_screen_size(GPU::MainProgramWindow_Width, GPU::MainProgramWindow_Height);
+	vulkan_create_swap_chain();
 }
 
 void hps1x64::OnClick_Video_WindowSizeX2 ( int i )
@@ -2408,6 +2471,72 @@ void hps1x64::OnClick_Video_WindowSizeX2 ( int i )
 	GPU::MainProgramWindow_Width = (long) ( ((float)ProgramWindow_Width) * 2.0f );
 	GPU::MainProgramWindow_Height = (long) ( ((float)ProgramWindow_Height) * 2.0f );
 	ProgramWindow->SetWindowSize ( GPU::MainProgramWindow_Width, GPU::MainProgramWindow_Height );
+
+	// update screen size in vulkan
+	vulkan_set_screen_size(GPU::MainProgramWindow_Width, GPU::MainProgramWindow_Height);
+	vulkan_create_swap_chain();
+}
+
+
+
+void hps1x64::OnClick_Video_Renderer_Software(int i)
+{
+	cout << "\nYou clicked Video | Renderer | Software\n";
+
+	// if previously on hardware renderer, then copy framebuffer
+	if (_HPS1X64._SYSTEM._GPU.bEnable_OpenCL)
+	{
+		// copy frame buffer from hardware to software if hardware rendering is allowed
+		if (_HPS1X64._SYSTEM._GPU.bAllowGpuHardwareRendering)
+		{
+			// copy VRAM from gpu hardware to software VRAM
+			_HPS1X64._SYSTEM._GPU.Copy_VRAM_toCPU();
+		}
+	}
+
+	_HPS1X64._SYSTEM._GPU.bEnable_OpenCL = false;
+
+	_MenuClick = 1;
+
+	_HPS1X64.Update_CheckMarksOnMenu();
+}
+
+
+void hps1x64::OnClick_Video_Renderer_Hardware(int i)
+{
+	cout << "\nYou clicked Video | Renderer | Hardware\n";
+
+	if (_HPS1X64._SYSTEM._GPU.bAllowGpuHardwareRendering)
+	{
+		// if previously rendering on cpu, copy vram to gpu hardware
+		if (!_HPS1X64._SYSTEM._GPU.bEnable_OpenCL)
+		{
+			_HPS1X64._SYSTEM._GPU.Copy_VRAM_toGPU();
+		}
+
+		_HPS1X64._SYSTEM._GPU.bEnable_OpenCL = true;
+	}
+	else
+	{
+		cout << "\nhps1x64: ERROR: Unable to use hardware renderer. VULKAN not setup properly. Using software renderer.\n";
+
+		// if previously on hardware renderer, then copy framebuffer
+		if (_HPS1X64._SYSTEM._GPU.bEnable_OpenCL)
+		{
+			// copy frame buffer from hardware to software if hardware rendering is allowed
+			if (_HPS1X64._SYSTEM._GPU.bAllowGpuHardwareRendering)
+			{
+				// copy VRAM from gpu hardware to software VRAM
+				_HPS1X64._SYSTEM._GPU.Copy_VRAM_toCPU();
+			}
+		}
+
+		_HPS1X64._SYSTEM._GPU.bEnable_OpenCL = false;
+	}
+
+	_MenuClick = 1;
+
+	_HPS1X64.Update_CheckMarksOnMenu();
 }
 
 
@@ -2541,6 +2670,21 @@ void hps1x64::SaveState ( string FilePath )
 	// make sure cd is not reading asynchronously??
 	_SYSTEM._CD.cd_image.WaitForAllReadsComplete ();
 
+
+#ifdef ALLOW_PS1_HWRENDER
+	// if previously on hardware renderer, then copy framebuffer
+	if (_HPS1X64._SYSTEM._GPU.bEnable_OpenCL)
+	{
+		// copy frame buffer from hardware to software if hardware rendering is allowed
+		if (_HPS1X64._SYSTEM._GPU.bAllowGpuHardwareRendering)
+		{
+			// copy VRAM from gpu hardware to software VRAM
+			_HPS1X64._SYSTEM._GPU.Copy_VRAM_toCPU();
+		}
+	}
+#endif
+
+
 	////////////////////////////////////////////////////////
 	// We need to prompt for the file to save state to
 	if ( !FilePath.compare ( "" ) )
@@ -2630,6 +2774,26 @@ void hps1x64::LoadState ( string FilePath )
 	InputFile.read ( (char*) &_SYSTEM, sizeof( System ) );
 	
 	InputFile.close();
+
+
+#ifdef ALLOW_PS1_HWRENDER
+
+	if (_HPS1X64._SYSTEM._GPU.bEnable_OpenCL)
+	{
+		// if currently rendering on gpu, copy loaded vram to gpu hardware
+		if (_HPS1X64._SYSTEM._GPU.bAllowGpuHardwareRendering)
+		{
+			_HPS1X64._SYSTEM._GPU.Copy_VRAM_toGPU();
+		}
+		else
+		{
+			// the hardware does not allow this particular compute shader for some reason
+			_HPS1X64._SYSTEM._GPU.bEnable_OpenCL = false;
+		}
+	}
+
+#endif
+
 	
 	cout << "Done Loading state.\n";
 	

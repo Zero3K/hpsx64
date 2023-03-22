@@ -56,7 +56,6 @@ using namespace std;
 // enable recompiler option
 #define ENABLE_RECOMPILER_R5900
 
-
 // enables the level-2 recompiler
 //#define ENABLE_R5900_RECOMPILE2
 
@@ -68,6 +67,9 @@ using namespace std;
 // enables i-cache on R5900
 // must be enabled here and in R5900_Execute.cpp
 #define ENABLE_R5900_ICACHE
+
+// do not interrupt for CPX 0/1/2/3 instructions
+#define DISABLE_INTERRUPT_FOR_CPX_INSTRUCTIONS
 
 
 // interrupt testing
@@ -865,41 +867,48 @@ cout << "\nR3000A: CacheMiss: Recompile: PC=" << hex << PC;
 		// also make sure interrupts are enabled
 		if ( Status.CheckInterrupt )
 		{
-			// interrupt has now been checked
-			Status.CheckInterrupt = 0;
-
-			if ( ( CPR0.Status.IE && CPR0.Status.EIE ) && ( !CPR0.Status.EXL ) && ( !CPR0.Status.ERL ) && ( CPR0.Status.l & CPR0.Cause.l & 0x8c00 ) )
-			{
-				
-#ifdef ENABLE_R5900_IDLE
-				// not idle if interrupt hits
-				ulIdle = 0;
+			// make sure this is not a COP 0/1/2 instruction ??
+#ifdef DISABLE_INTERRUPT_FOR_CPX_INSTRUCTIONS
+			if ((CurInst.Opcode & 0x3c) != 0x10)
 #endif
-				
-				//if ( ( ( Bus->Read ( NextPC ) >> 24 ) & 0xfe ) != 0x4a )
-				//{
-					///////////////////////////////////////////////////
-					// Advance status bits for checking delay slot
-					//Status.DelaySlot_Valid = ( Status.DelaySlot_Valid << 1 ) & 0x3;
-					
-					// ***testing*** preserve interrupt when advancing delay slot?
-					//Status.DelaySlot_Valid = ( Status.DelaySlot_Valid & 0xfc ) | ( ( Status.DelaySlot_Valid << 1 ) & 0x3 );
-					
-					// do the required stuff
-					//ProcessRequiredCPUEvents ();
+			{
+				// interrupt has now been checked
+				Status.CheckInterrupt = 0;
+
+				if ((CPR0.Status.IE && CPR0.Status.EIE) && (!CPR0.Status.EXL) && (!CPR0.Status.ERL) && (CPR0.Status.l & CPR0.Cause.l & 0x8c00))
+				{
+
+#ifdef ENABLE_R5900_IDLE
+					// not idle if interrupt hits
+					ulIdle = 0;
+#endif
+
+					//if ( ( ( Bus->Read ( NextPC ) >> 24 ) & 0xfe ) != 0x4a )
+					//{
+						///////////////////////////////////////////////////
+						// Advance status bits for checking delay slot
+						//Status.DelaySlot_Valid = ( Status.DelaySlot_Valid << 1 ) & 0x3;
+
+						// ***testing*** preserve interrupt when advancing delay slot?
+						//Status.DelaySlot_Valid = ( Status.DelaySlot_Valid & 0xfc ) | ( ( Status.DelaySlot_Valid << 1 ) & 0x3 );
+
+						// do the required stuff
+						//ProcessRequiredCPUEvents ();
 					CycleCount++;
 					LastPC = PC;
 					PC = NextPC;
-					
+
 					// interrupt has been triggered
 					//Status.ExceptionType = Cpu::EXC_INT;	// *note* this is done in interrupt processing
-					ProcessAsynchronousInterrupt ();
+					ProcessAsynchronousInterrupt();
 					//cout << "\nStatus.Value=" << hex << Status.Value << dec << " CycleCount=" << CycleCount;
-					
-					
+
+
 					return;
-				//}
-			}
+					//}
+				}
+
+			}	// end if ( CurInst.Opcode & 0xfc != 0x10 )
 			
 		}
 		

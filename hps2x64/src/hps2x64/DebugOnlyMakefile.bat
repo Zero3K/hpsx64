@@ -1,2 +1,2 @@
-@echo off
-mingw32-make -B -f DebugOnlyMakefile.txt
+mingw32-make -f DebugOnlyMakefile.txt
+pause

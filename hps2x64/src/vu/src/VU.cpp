@@ -178,7 +178,7 @@ using namespace Vu;
 
 //#define INLINE_DEBUG_RECOMPILE2
 
-/*
+
 #define INLINE_DEBUG_VURUN
 
 
@@ -216,7 +216,7 @@ using namespace Vu;
 // this sends info to the vu execute debug on when vu gets started, etc
 #define INLINE_DEBUG_VUEXECUTE
 //#define INLINE_DEBUG_VUEXECUTE_MT
-*/
+
 
 
 #define INLINE_DEBUG_GETMEMPTR_INVALID
@@ -265,10 +265,8 @@ Vu::Recompiler* vrs [ 2 ];
 
 
 // need recompiler cache for vu
-//Vu::Recompiler* vu0_recompiler_cache [ 32 ];
-//Vu::Recompiler* vu1_recompiler_cache [ 32 ];
-Vu::Recompiler* vu_recompiler_cache [ 32 ] [ 2 ];
-//Vu::Recompiler* vu_recompiler_cache [ 32 ];
+//Vu::Recompiler* vu_recompiler_cache [ 32 ] [ 2 ];
+Vu::Recompiler* vu_recompiler_cache[VU::c_iVURecompilerCache_MaxEntries][2];
 
 
 VU *VU0::_VU0;
@@ -469,7 +467,7 @@ void VU::Start ( int iNumber )
 		{
 
 			// allocate recompiler caches for vu1
-			for( int i = 0; i < 32; i++ )
+			for( int i = 0; i < VU::c_iVURecompilerCache_MaxEntries; i++ )
 			{
 				vu_recompiler_cache [ i ] [ Number ] = new Recompiler ( this, 0, 21, 11 );
 				//vu_recompiler_cache [ i ] [ Number ]->SetOptimizationLevel ( this, 0 );
@@ -490,7 +488,7 @@ void VU::Start ( int iNumber )
 		{
 
 			// allocate recompiler caches for vu1
-			for( int i = 0; i < 32; i++ )
+			for( int i = 0; i < VU::c_iVURecompilerCache_MaxEntries; i++ )
 			{
 				vu_recompiler_cache [ i ] [ Number ] = new Recompiler ( this, 0, 21, 9 );
 				//vu_recompiler_cache [ i ] [ Number ]->SetOptimizationLevel ( this, 0 );
@@ -2641,6 +2639,10 @@ u32 VU::VIF_FIFO_Execute ( u32* Data, u32 SizeInWords32 )
 				//if ( PreviousValue )
 				if (!NewValue)
 				{
+#ifdef INLINE_DEBUG_VUCOM
+					debug << "\r\n***ALLOW PATH3 M3P=0***";
+#endif
+
 					//if (!NewValue)
 					{
 						// set new value (zero)
@@ -2682,6 +2684,10 @@ u32 VU::VIF_FIFO_Execute ( u32* Data, u32 SizeInWords32 )
 				//if ( !PreviousValue )
 				else
 				{
+#ifdef INLINE_DEBUG_VUCOM
+					debug << "\r\n***MASK PATH3 M3P=1 P2E=" << GPU::_GPU->EndOfPacket[2] << " P3E=" << GPU::_GPU->EndOfPacket[3] << " DMA#2.STR=" << Dma::pRegData[2]->CHCR.STR << " ***";
+#endif
+
 					//if ( GPU::_GPU->GIFRegs.STAT.M3P )
 					if (NewValue)
 					{
@@ -5262,7 +5268,7 @@ void VU::Run ()
 				if ( vrs[ Number ]->ullChecksum != ullRunningChecksum )
 				{
 					// check if checksum for those vu code memory contents are already recompiled (todo: bloom filter??)
-					for ( iMatch = 0; iMatch < 32; iMatch++ )
+					for ( iMatch = 0; iMatch < VU::c_iVURecompilerCache_MaxEntries; iMatch++ )
 					{
 						// check if checksum matches for any vu code that has already been recompiled
 						if ( vu_recompiler_cache [ iMatch ] [ Number ]->ullChecksum == ullRunningChecksum )
@@ -5271,7 +5277,7 @@ void VU::Run ()
 						}
 					}
 
-					if ( iMatch < 32 )
+					if ( iMatch < VU::c_iVURecompilerCache_MaxEntries)
 					{
 						// VU code memory contents were already cached //
 
@@ -5294,7 +5300,7 @@ void VU::Run ()
 						// VU code memory contents NOT already cached, so need to recompile //
 
 						// make this the current recompiled code that the vu is going to use
-						vrs [ Number ] = vu_recompiler_cache [ iNextRecompile & 31 ] [ Number ];
+						vrs [ Number ] = vu_recompiler_cache [ iNextRecompile & VU::c_iVURecompilerCache_Mask] [ Number ];
 
 						// perform static analysis
 						vrs [ Number ]->StaticAnalysis ( this );

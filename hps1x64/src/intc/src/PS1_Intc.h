@@ -293,6 +293,9 @@ namespace Playstation1
 #ifdef PS2_COMPILE
 		static const u32 I_CTRL = 0x1f801078;
 		u32 I_CTRL_Reg;
+
+		// previous sbus interrupt state to test for transition from 0->1
+		u32 ulPrevSbus;
 		
 		static u32* _ulIdle;
 #endif

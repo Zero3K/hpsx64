@@ -282,7 +282,10 @@ namespace Playstation2
 		static void OnClick_Audio_Buffer_1m ( int i );
 		static void OnClick_Audio_Filter ( int i );
 		static void OnClick_Audio_MultiThread ( int i );
-		
+
+		static void OnClick_Video_Renderer_Software(int i);
+		static void OnClick_Video_Renderer_Hardware(int i);
+
 		static void OnClick_Video_WindowSizeX1 ( int i );
 		static void OnClick_Video_WindowSizeX15 ( int i );
 		static void OnClick_Video_WindowSizeX2 ( int i );

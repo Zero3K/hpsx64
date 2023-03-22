@@ -89,16 +89,16 @@ u64* CDVD::_NextSystemEvent;
 //#define INLINE_DEBUG_SPLIT
 //#define INLINE_DEBUG_SPLIT_READ
 
-
+/*
 //#define INLINE_DEBUG
 #define INLINE_DEBUG_READ
 #define INLINE_DEBUG_WRITE
 #define INLINE_DEBUG_RUN
 
 #define INLINE_DEBUG_DISKREAD
-//#define INLINE_DEBUG_READBUFFER
+#define INLINE_DEBUG_READBUFFER
 #define INLINE_DEBUG_READY
-
+*/
 
 #endif
 
@@ -1028,10 +1028,17 @@ u32 CDVD::Read ( u32 Address )
 			
 		case 0x13:
 #ifdef INLINE_DEBUG_READ
-	debug << "; Command 0x13->Unknown";
+	debug << "; Command 0x13->Speed";
 #endif
 
-			Output = 4;
+			//Output = 4;
+			Output = (_CDVD->DiskSpeedType & CDVD_SPINDLE_SPEED) - 1;
+			if (_CDVD->CurrentDiskType == CDVD_TYPE_PS2DVD)
+			{
+				Output |= 0x10;
+			}
+
+
 			break;
 			
 		case 0x16:	// SCOMMAND
@@ -2327,45 +2334,29 @@ void CDVD::Process_NCommand ( u8 Command )
 			// maybe the 0x80 or'ed with the disk speed means to read data, and otherwise means to stream
 			switch ( DiskSpeedType & 0xf )
 			{
-				case 0x0:
-					DiskSpeed = 1.0;
-					break;
-				
 				case 0x1:
-					DiskSpeed = 2.0;
+					DiskSpeed = 1.0;
 					break;
 					
 				case 0x2:
-					// possibly means x24 ??
-					// means x12 ??
-					//DiskSpeed = 24;
-					DiskSpeed = 4.0;
-					//if ( CurrentDiskType == CDVD_TYPE_PS2DVD ) DiskSpeed = 1.0;
+					// means x2 ??
+					DiskSpeed = 2.0;
 					break;
 					
 				case 0x3:
 					// means x4
 					DiskSpeed = 4.0;
-					//if ( CurrentDiskType == CDVD_TYPE_PS2DVD ) DiskSpeed = 2.0;
-					// or possibly means x12 ?? or 8 ??
-					//DiskSpeed = 12;
 					break;
 					
 				case 0x4:
-					// probably means x4 ??
+					// x12 ??
 					DiskSpeed = 12.0;
-					//DiskSpeed = 4.0;
-					//if ( CurrentDiskType == CDVD_TYPE_PS2DVD ) DiskSpeed = 4.0;
-					//DiskSpeed = 24.0;
 					break;
 					
 				
 				case 0x5:
 					// means x24
-					// this must be x2 ??
 					DiskSpeed = 24.0;
-					//if ( CurrentDiskType == CDVD_TYPE_PS2DVD ) DiskSpeed = 4.0;
-					//DiskSpeed = 2;
 					break;
 				
 					
@@ -2741,52 +2732,27 @@ cout << "\n->SEEK->";
 			DiskSpeedType = _CDVD->ucNArgBuffer [ 9 ];
 
 
-#ifdef TEST_DISKSPEED
-			DiskSpeed = 1;
-#else
 			// ***todo*** 0x83 might mean x4 for dvd ???
 			//0x83 for cd should be x24??
 			//0x83 for dvd should be x4??
 			// 0x2 for dvd should be x2??
-			DiskSpeed = (float)(( DiskSpeedType & 0xf ) - 1);
-			/*
 			switch ( DiskSpeedType & 0xf )
 			{
 				case 0x1:
+					// x1
 					DiskSpeed = 1.0;
 					break;
 					
 				
 				case 0x2:
-					// maybe x4 for dvd ??
-					//... but this appears to actually be x1??
-					// this is DEFINITELY x1 dvd speed
-					//DiskSpeed = 2.0;
-					DiskSpeed = 1.0;
+					// x2
+					DiskSpeed = 2.0;
 					break;
 					
 				case 0x3:
 					// means x4
-					//DiskSpeed = 4;
-					// I assume this would be x3 ??
-					//DiskSpeed = 4.0;
-					DiskSpeed = 2.0;
-					break;
-					
-				case 0x4:
-					// probably means x2 ??
-					//DiskSpeed = 4.0;
-					DiskSpeed = 4.0;	//3;
-					break;
-					
-				case 0x5:
-					// means x24
-					//DiskSpeed = 24;
-					// hmmm.. on dvd this would probably be x1 ??
-					//DiskSpeed = 1;
 					DiskSpeed = 4.0;
 					break;
-				
 					
 				default:
 					// unknown
@@ -2794,10 +2760,8 @@ cout << "\n->SEEK->";
 					DiskSpeed = 4.0;
 					break;
 			}
-			*/
 
 
-#endif
 			
 			
 			// set the time to read one sector of data from disk
@@ -2805,8 +2769,6 @@ cout << "\n->SEEK->";
 
 			ullDiskReadCycles = (u64) ( dDiskReadCycleTime * SectorReadCount );
 
-			// *** temporary testing ***
-			//dDiskReadCycleTime = 2.0L;
 
 			
 			// get difference from last read sector
@@ -3137,6 +3099,9 @@ u64 CDVD::DMA_ReadyForRead ( void )
 {
 #ifdef INLINE_DEBUG_READY
 	debug << "\r\nCDVD::DMA_ReadyForRead";
+	debug << hex << " BA=" << Dma::_DMA->pRegData[3]->BCR.BA << " BS=" << Dma::_DMA->pRegData[3]->BCR.BS;
+	debug << hex << " CHCR=" << Dma::_DMA->pRegData[3]->CHCR.Value;
+	debug << dec << " AVAILABLE-SECTORS:" << CDVD::_CDVD->AvailableSectorCount;
 #endif
 
 	if ( !CDVD::_CDVD->AvailableSectorCount )
@@ -3344,6 +3309,4 @@ debug << "\r\n";
 	*/
 	
 }
-
-
 

@@ -1152,6 +1152,7 @@ namespace Playstation1
 
 #ifdef ALLOW_OPENCL_PS1
 
+		/*
 		static GLuint computeProgram;
 		//GLuint buffers[NUM_BUFS];       //SSBO objects, one for IMG_0, one for IMG_1, and one for commands/response
 		static GLuint shaderProgram;
@@ -1172,6 +1173,8 @@ namespace Playstation1
 		static GLuint fboId;
 
 		static GLchar* computeSource;
+		*/
+
 #endif
 		
 		
@@ -1195,12 +1198,48 @@ namespace Playstation1
 		alignas(32) static u32 inputdata [ ( 1 << c_ulInputBuffer_Shift ) * c_ulInputBuffer_Size ];
 		u32 Dummy;
 
+		// the maximum number of entries/commands in command list that gets sent to the hardware gpu compute shader
+		static constexpr int PS1_COMMAND_LIST_SIZE = (1 << 16);
 
+		// the maximum number of input pixels in buffer that gets sent to the hardware gpu compute shader
+		static constexpr int PS1_PIXEL_LIST_SIZE = (1 << 20);
+
+		// the maximum number of entries in the pre-compute buffer on hardware gpu compute shader
+		static constexpr int PS1_PRECOMPUTE_LIST_SIZE = (1 << 16);
+
+		static constexpr int SCRATCH_SPACE_SIZE_BYTES = (1024);
+		static constexpr int PS1_GPU_VRAM_SIZE_BYTES = (1024 * 512 * 2);
+		static constexpr int PS1_GPU_SVRAM_SIZE_BYTES = (1024 * 512 * 2);
+
+		// size of the input command buffer that gets sent to the hardware gpu compute shader
+		static constexpr int PS1_GPU_INPUT_COMMAND_SIZE_BYTES = (PS1_COMMAND_LIST_SIZE * 16 * 4);
+
+		// size of the buffer of input pixels that gets sent to the hardware gpu compute shader
+		static constexpr int PS1_GPU_INPUT_PIXEL_SIZE_BYTES = (PS1_PIXEL_LIST_SIZE * 4);
+
+		static constexpr int PS1_GPU_PIXELBUF_SIZE_BYTES = (1024 * 512 * 4);
+
+		// size of the pre-compute/work area on the hardware gpu compute shader
+		static constexpr int PS1_GPU_WORK_AREA_SIZE_BYTES = (PS1_PRECOMPUTE_LIST_SIZE * 64 * 4);
+
+		static constexpr int PS1_GPU_STAGING_SIZE_BYTES = (640 * 480 * 4);
+
+		// pointer to gpu scratch mapped for shader
+		static u32* p_uHwScratchData32;
 
 		// pointer into the hardware/opengl copy of the input buffer
+		// pointer to mapped input primitive command buffer on gpu for shader
 		static u32 *p_uHwInputData32;
+
+		// pointer to gpu memory mapped for shader
 		static u32 *p_uHwOutputData32;
-		
+
+		// pointer to mapped pixel/gfx input buffer on gpu for shader
+		static u32* p_ulHwPixelInBuffer32;
+
+		// pointer to the hardware pixel output buffer
+		static u32* p_ulHwPixelOutBuffer32;
+
 		static volatile u64 ulInputBuffer_WriteIndex;
 		static volatile u64 ulInputBuffer_TargetIndex;
 		static volatile u64 ulInputBuffer_ReadIndex;
@@ -1212,15 +1251,18 @@ namespace Playstation1
 		static volatile u64 ullPixelInBuffer_TargetIndex;
 		static volatile u64 ullPixelInBuffer_ReadIndex;
 		alignas(32) static u32 ulPixelInBuffer32 [ c_ullPixelInBuffer_Size ];
-		static u32 *p_ulHwPixelInBuffer32;
 
 
 		// current index that gpu opencl gpu is on
 		//static volatile u64 ullGPUIndex;
 		static volatile u64 ulTBufferIndex;
 
-		// open cl vars
+		// this is true if currently using gpu hardware rendering, false otherwise
 		u32 bEnable_OpenCL;
+
+		// if vulkan is setup ok, then can render on gpu hardware using shader renderer
+		// note: this needs to be static since it checks at program statup if this is allowed and don't want loading save states to overwrite this
+		static u32 bAllowGpuHardwareRendering;
 
 
 		// for drawing on a separate thread (should be combined with the regular code)

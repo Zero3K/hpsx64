@@ -384,7 +384,11 @@ namespace Playstation1
 		// loop specified bitmap
 		u32 LSA_Manual_Bitmap;
 		
-		
+		// bitmap indicating whether a loop should mute the sound or not
+		// need to keep track of whether any wave blocks have the bit set to not loop
+		// needs to be set to 1 at key-on for channel, and then cleared if loop not set in any blocks
+		u32 bLoopSet;
+
 		// play size is in samples
 		// 1024 does not work right, but 2048 is ok, and 4096 is bit of a delay.. need to fix the buffer size multiply
 		// using 262144 for testing

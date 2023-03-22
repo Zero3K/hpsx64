@@ -35,6 +35,11 @@ using namespace GeneralUtilities;
 //#define ENABLE_FILTER_PER_CHANNEL_FIR
 
 
+
+// require each block to have loop flag set in waveform data or else sound will mute
+//#define REQUIRE_ALL_LOOP_FLAGS
+
+
 #define KEY_ON_OFF_LOOP2
 
 
@@ -1099,7 +1104,11 @@ void SPU::Run ()
 
 					// check if envelope should be killed
 					//if ( KillEnvelope_Bitmap & ( 1 << Channel ) )
-					if ( ( !( RAM [ CurrentBlockAddress [ Channel ] >> 1 ] & ( 0x2 << 8 ) ) ) /*|| ( KillEnvelope_Bitmap & ( 1 << Channel ) )*/ )
+					if ( ( !( RAM [ CurrentBlockAddress [ Channel ] >> 1 ] & ( 0x2 << 8 ) ) ) 
+#ifdef REQUIRE_ALL_LOOP_FLAGS
+						|| !(bLoopSet & (1 << Channel))
+#endif
+						)
 					{
 						// if channel is not already set to mute, then turn off reverb for channel and mark we passed end of sample data
 						if ( ADSR_Status [ Channel ] != ADSR_MUTE )
@@ -3417,12 +3426,12 @@ void SPU::ProcessReverbR ( s32 RightInput )
 	// Late Reverb APF1 (All Pass Filter 1, with input from COMB) //
 	//[mRAPF1]=Rout-vAPF1*[mRAPF1-dAPF1], Rout=[mRAPF1-dAPF1]+[mRAPF1]*vAPF1
 	t_mRAPF1 = Rout - ( ( ( (s32) *_vAPF1 ) * s_mRAPF1_dAPF1 ) >> 15 );
-	Rout = s_mRAPF1_dAPF1 + ( ( s_mRAPF1 * ( (s32) *_vAPF1 ) ) >> 15 );
+	Rout = s_mRAPF1_dAPF1 + ( (t_mRAPF1 * ( (s32) *_vAPF1 ) ) >> 15 );
 	
 	// Late Reverb APF2 (All Pass Filter 2, with input from APF1) //
 	// [mRAPF2]=Rout-vAPF2*[mRAPF2-dAPF2], Rout=[mRAPF2-dAPF2]+[mRAPF2]*vAPF2
 	t_mRAPF2 = Rout - ( ( ( (s32) *_vAPF2 ) * s_mRAPF2_dAPF2 ) >> 15 );
-	Rout = s_mRAPF2_dAPF2 + ( ( s_mRAPF2 * ( (s32) *_vAPF2 ) ) >> 15 );
+	Rout = s_mRAPF2_dAPF2 + ( (t_mRAPF2 * ( (s32) *_vAPF2 ) ) >> 15 );
 	
 	// Output to Mixer (Output volume multiplied with input from APF2) //
 	// RightOutput = Rout*vROUT
@@ -3489,12 +3498,12 @@ void SPU::ProcessReverbL ( s32 LeftInput )
 	// Late Reverb APF1 (All Pass Filter 1, with input from COMB) //
 	//[mLAPF1]=Lout-vAPF1*[mLAPF1-dAPF1], Lout=[mLAPF1-dAPF1]+[mLAPF1]*vAPF1
 	t_mLAPF1 = Lout - ( ( ( (s32) *_vAPF1 ) * s_mLAPF1_dAPF1 ) >> 15 );
-	Lout = s_mLAPF1_dAPF1 + ( ( s_mLAPF1 * ( (s32) *_vAPF1 ) ) >> 15 );
+	Lout = s_mLAPF1_dAPF1 + ( (t_mLAPF1 * ( (s32) *_vAPF1 ) ) >> 15 );
 	
 	// Late Reverb APF2 (All Pass Filter 2, with input from APF1) //
 	// [mLAPF2]=Lout-vAPF2*[mLAPF2-dAPF2], Lout=[mLAPF2-dAPF2]+[mLAPF2]*vAPF2
 	t_mLAPF2 = Lout - ( ( ( (s32) *_vAPF2 ) * s_mLAPF2_dAPF2 ) >> 15 );
-	Lout = s_mLAPF2_dAPF2 + ( ( s_mLAPF2 * ( (s32) *_vAPF2 ) ) >> 15 );
+	Lout = s_mLAPF2_dAPF2 + ( (t_mLAPF2 * ( (s32) *_vAPF2 ) ) >> 15 );
 	
 	// Output to Mixer (Output volume multiplied with input from APF2) //
 	// LeftOutput = Lout*vLOUT
@@ -3557,7 +3566,7 @@ s32 SPU::ReadReverbBuffer ( u32 Address )
 #endif
 
 	// address is ready for use with shift right by 1
-	 return Value;
+	return Value;
 }
 
 void SPU::WriteReverbBuffer ( u32 Address, s32 Value )
@@ -3784,7 +3793,16 @@ void SPU::Start_SampleDecoding ( u32 Channel )
 		//Regs [ ( ( Channel << 4 ) + LSA_X ) >> 1 ] = ( CurrentBlockAddress [ Channel ] >> 3 );
 		pChRegs0->LSA = ( CurrentBlockAddress [ Channel ] >> 3 );
 	}
-	
+
+	// assume loop bits are set in waveform at start of key-on
+	bLoopSet |= (1 << Channel);
+
+	// clear loop set if loop bit not set
+	if (!(RAM[(CurrentBlockAddress[Channel] & c_iRam_Mask) >> 1] & (0x2 << 8)))
+	{
+		bLoopSet &= ~(1 << Channel);
+	}
+
 	// decode the new block
 	
 	// clear the samples first because of interpolation algorithm

@@ -346,10 +346,14 @@ using namespace R5900;
 #define USE_NEW_PINTH_CODE
 #define USE_NEW_PINTEH_CODE
 
+#define USE_NEW_PREVH_CODE
+
 #define USE_NEW_PEXCH_CODE
 #define USE_NEW_PEXCW_CODE
 #define USE_NEW_PEXEH_CODE
 #define USE_NEW_PEXEW_CODE
+
+#define USE_NEW_PROT3W_CODE
 
 #define USE_NEW_PCPYLD_CODE
 #define USE_NEW_PCPYUD_CODE
@@ -14895,44 +14899,26 @@ long Recompiler::DIV ( R5900::Instruction::Format i, u32 Address )
 			e->MovsxdReg64Mem32 ( RAX, & r->GPR [ i.Rs ].sw0 );
 			e->MovsxdReg64Mem32 ( RCX, & r->GPR [ i.Rt ].sw0 );
 			
-			//e->MovReg64ImmX ( RCX, -1 );
-			//e->MovReg64ImmX ( RDX, 1 );
-			//e->OrRegReg32 ( RAX, RAX );
-			//e->CmovSRegReg64 ( RCX, RDX );
 			e->Cqo ();
 			e->NotReg64 ( RDX );
 			e->OrReg64ImmX ( RDX, 1 );
 			
-			//e->OrRegReg64 ( RCX, RCX );
-			//e->Jmp8_E ( 0, 0 );
 			e->Jmp8_ECXZ ( 0, 0 );
 			
-			//e->MovRegReg64 ( RDX, RAX );
-			//e->SarRegImm64 ( RDX, 63 );
-			//e->Cqo ();
 			e->Cdq ();
 			//e->IdivRegReg64 ( RCX );
 			e->IdivRegReg32 ( RCX );
-			// *** todo for ps2 *** //
-			//e->MovMemReg32 ( & r->HiLo.sLo, RAX );
+
 			e->Cdqe ();
-			//e->MovMemReg64 ( & r->LO.s, RAX );
-			//e->MovMemReg32 ( & r->HiLo.sHi, RDX );
-			e->MovsxdReg64Reg32 ( RDX, RDX );
-			//e->MovMemReg64 ( & r->HI.s, RDX );
-			//e->Jmp8 ( 0, 1 );
 			e->XchgRegReg64 ( RAX, RDX );
-			
+			e->Cdqe();
+
 			e->SetJmpTarget8 ( 0 );
 			
 			
-			// *** todo for ps2 *** //
-			//e->MovMemReg32 ( & r->HiLo.uHi, RAX );
 			e->MovMemReg64 ( & r->HI.s, RAX );
-			//e->MovMemReg32 ( & r->HiLo.uLo, RCX );
 			e->MovMemReg64 ( & r->LO.s, RDX );
 			
-			//e->SetJmpTarget8 ( 1 );
 			
 			// done //
 #else
@@ -15047,30 +15033,20 @@ long Recompiler::DIVU ( R5900::Instruction::Format i, u32 Address )
 			
 			e->MovReg64ImmX ( RDX, -1 );
 			
-			//e->OrRegReg64 ( RCX, RCX );
-			//e->Jmp8_E ( 0, 0 );
 			e->Jmp8_ECXZ ( 0, 0 );
 			
 			e->XorRegReg32 ( RDX, RDX );
 			e->DivRegReg32 ( RCX );
-			//e->MovMemReg32 ( & r->HiLo.sLo, RAX );
+
 			e->Cdqe ();
-			//e->MovMemReg64 ( & r->LO.s, RAX );
-			//e->MovMemReg32 ( & r->HiLo.sHi, RDX );
-			e->MovsxdReg64Reg32 ( RDX, RDX );
-			//e->MovMemReg64 ( & r->HI.s, RDX );
-			//e->Jmp8 ( 0, 1 );
 			e->XchgRegReg64 ( RAX, RDX );
-			
+			e->Cdqe();
+
 			e->SetJmpTarget8 ( 0 );
 			
-			//e->MovMemImm32 ( & r->HiLo.sLo, -1 );
-			//e->MovMemReg32 ( & r->HiLo.uHi, RAX );
-			//e->MovMemImm64 ( & r->LO.s, -1 );
 			e->MovMemReg64 ( & r->LO.s, RDX );
 			e->MovMemReg64 ( & r->HI.s, RAX );
 			
-			//e->SetJmpTarget8 ( 1 );
 			
 			// done //
 #else
@@ -27872,14 +27848,9 @@ long R5900::Recompiler::PSUBB ( R5900::Instruction::Format i, u32 Address )
 						ret = e->movdqa_memreg ( & r->GPR [ i.Rd ].s, RAX );
 					}
 				}
-				if ( !i.Rt )
+				else if ( !i.Rt )
 				{
-					if ( !i.Rs )
-					{
-						e->pxorregreg ( RAX, RAX );
-						ret = e->movdqa_memreg ( & r->GPR [ i.Rd ].s, RAX );
-					}
-					else if ( i.Rd != i.Rs )
+					if ( i.Rd != i.Rs )
 					{
 						e->movdqa_regmem ( RAX, & r->GPR [ i.Rs ].s );
 						ret = e->movdqa_memreg ( & r->GPR [ i.Rd ].s, RAX );
@@ -27963,14 +27934,9 @@ long R5900::Recompiler::PSUBH ( R5900::Instruction::Format i, u32 Address )
 						ret = e->movdqa_memreg ( & r->GPR [ i.Rd ].s, RAX );
 					}
 				}
-				if ( !i.Rt )
+				else if ( !i.Rt )
 				{
-					if ( !i.Rs )
-					{
-						e->pxorregreg ( RAX, RAX );
-						ret = e->movdqa_memreg ( & r->GPR [ i.Rd ].s, RAX );
-					}
-					else if ( i.Rd != i.Rs )
+					if ( i.Rd != i.Rs )
 					{
 						e->movdqa_regmem ( RAX, & r->GPR [ i.Rs ].s );
 						ret = e->movdqa_memreg ( & r->GPR [ i.Rd ].s, RAX );
@@ -28054,14 +28020,9 @@ long R5900::Recompiler::PSUBW ( R5900::Instruction::Format i, u32 Address )
 						ret = e->movdqa_memreg ( & r->GPR [ i.Rd ].s, RAX );
 					}
 				}
-				if ( !i.Rt )
+				else if ( !i.Rt )
 				{
-					if ( !i.Rs )
-					{
-						e->pxorregreg ( RAX, RAX );
-						ret = e->movdqa_memreg ( & r->GPR [ i.Rd ].s, RAX );
-					}
-					else if ( i.Rd != i.Rs )
+					if ( i.Rd != i.Rs )
 					{
 						e->movdqa_regmem ( RAX, & r->GPR [ i.Rs ].s );
 						ret = e->movdqa_memreg ( & r->GPR [ i.Rd ].s, RAX );
@@ -28507,12 +28468,7 @@ long R5900::Recompiler::PSUBSB ( R5900::Instruction::Format i, u32 Address )
 				}
 				else if ( !i.Rt )
 				{
-					if ( !i.Rs )
-					{
-						e->pxorregreg ( RAX, RAX );
-						ret = e->movdqa_memreg ( & r->GPR [ i.Rd ].s, RAX );
-					}
-					else if ( i.Rd != i.Rs )
+					if ( i.Rd != i.Rs )
 					{
 						e->movdqa_regmem ( RAX, & r->GPR [ i.Rs ].s );
 						ret = e->movdqa_memreg ( & r->GPR [ i.Rd ].s, RAX );
@@ -28599,12 +28555,7 @@ long R5900::Recompiler::PSUBSH ( R5900::Instruction::Format i, u32 Address )
 				}
 				else if ( !i.Rt )
 				{
-					if ( !i.Rs )
-					{
-						e->pxorregreg ( RAX, RAX );
-						ret = e->movdqa_memreg ( & r->GPR [ i.Rd ].s, RAX );
-					}
-					else if ( i.Rd != i.Rs )
+					if ( i.Rd != i.Rs )
 					{
 						e->movdqa_regmem ( RAX, & r->GPR [ i.Rs ].s );
 						ret = e->movdqa_memreg ( & r->GPR [ i.Rd ].s, RAX );
@@ -29091,14 +29042,9 @@ long R5900::Recompiler::PSUBUB ( R5900::Instruction::Format i, u32 Address )
 					e->pxorregreg ( RAX, RAX );
 					ret = e->movdqa_memreg ( & r->GPR [ i.Rd ].s, RAX );
 				}
-				if ( !i.Rt )
+				else if ( !i.Rt )
 				{
-					if ( !i.Rs )
-					{
-						e->pxorregreg ( RAX, RAX );
-						ret = e->movdqa_memreg ( & r->GPR [ i.Rd ].s, RAX );
-					}
-					else if ( i.Rd != i.Rs )
+					if ( i.Rd != i.Rs )
 					{
 						e->movdqa_regmem ( RAX, & r->GPR [ i.Rs ].s );
 						ret = e->movdqa_memreg ( & r->GPR [ i.Rd ].s, RAX );
@@ -29174,12 +29120,7 @@ long R5900::Recompiler::PSUBUH ( R5900::Instruction::Format i, u32 Address )
 				}
 				else if ( !i.Rt )
 				{
-					if ( !i.Rs )
-					{
-						e->pxorregreg ( RAX, RAX );
-						ret = e->movdqa_memreg ( & r->GPR [ i.Rd ].s, RAX );
-					}
-					else if ( i.Rd != i.Rs )
+					if ( i.Rd != i.Rs )
 					{
 						e->movdqa_regmem ( RAX, & r->GPR [ i.Rs ].s );
 						ret = e->movdqa_memreg ( & r->GPR [ i.Rd ].s, RAX );
@@ -29670,13 +29611,27 @@ long R5900::Recompiler::PPACB ( R5900::Instruction::Format i, u32 Address )
 				}
 				else
 				{
-					e->movdqa_regmem ( RAX, & r->GPR [ i.Rt ].s );
-					e->movdqa_regmem ( RCX, & r->GPR [ i.Rs ].s );
-					
-					e->psllwregimm ( RAX, 8 );
-					e->psrlwregimm ( RAX, 8 );
-					e->psllwregimm ( RCX, 8 );
-					e->psrlwregimm ( RCX, 8 );
+					if (i.Rt)
+					{
+						e->movdqa_regmem(RAX, &r->GPR[i.Rt].s);
+						e->psllwregimm(RAX, 8);
+						e->psrlwregimm(RAX, 8);
+					}
+					else
+					{
+						e->pxorregreg(RAX, RAX);
+					}
+
+					if (i.Rs)
+					{
+						e->movdqa_regmem(RCX, &r->GPR[i.Rs].s);
+						e->psllwregimm(RCX, 8);
+						e->psrlwregimm(RCX, 8);
+					}
+					else
+					{
+						e->pxorregreg(RCX, RCX);
+					}
 
 					e->packuswbregreg ( RAX, RCX );
 					
@@ -29748,12 +29703,27 @@ long R5900::Recompiler::PPACH ( R5900::Instruction::Format i, u32 Address )
 				}
 				else
 				{
-					e->movdqa_regmem ( RAX, & r->GPR [ i.Rt ].s );
-					e->movdqa_regmem ( RCX, & r->GPR [ i.Rs ].s );
-					
-					e->pxorregreg ( RDX, RDX );
-					e->pblendwregregimm ( RAX, RDX, 0xaa );
-					e->pblendwregregimm ( RCX, RDX, 0xaa );
+					e->pxorregreg(RDX, RDX);
+
+					if (i.Rt)
+					{
+						e->movdqa_regmem(RAX, &r->GPR[i.Rt].s);
+						e->pblendwregregimm(RAX, RDX, 0xaa);
+					}
+					else
+					{
+						e->pxorregreg(RAX, RAX);
+					}
+
+					if (i.Rs)
+					{
+						e->movdqa_regmem(RCX, &r->GPR[i.Rs].s);
+						e->pblendwregregimm(RCX, RDX, 0xaa);
+					}
+					else
+					{
+						e->pxorregreg(RCX, RCX);
+					}
 
 					e->packusdwregreg ( RAX, RCX );
 					
@@ -29821,13 +29791,23 @@ long R5900::Recompiler::PPACW ( R5900::Instruction::Format i, u32 Address )
 				}
 				else
 				{
-					//e->movdqa_regmem ( RAX, & r->GPR [ i.Rt ].s );
-					//e->movdqa_regmem ( RCX, & r->GPR [ i.Rs ].s );
-					
-					//e->pshufdregregimm ( RAX, RAX, ( 2 << 2 ) + 0 );
-					//e->pshufdregregimm ( RCX, RCX, ( 2 << 6 ) + ( 0 << 4 ) );
-					e->pshufdregmemimm ( RAX, & r->GPR [ i.Rt ].s, ( 2 << 2 ) + 0 );
-					e->pshufdregmemimm ( RCX, & r->GPR [ i.Rs ].s, ( 2 << 6 ) + ( 0 << 4 ) );
+					if (i.Rt)
+					{
+						e->pshufdregmemimm(RAX, &r->GPR[i.Rt].s, (2 << 2) + 0);
+					}
+					else
+					{
+						e->pxorregreg(RAX, RAX);
+					}
+
+					if (i.Rs)
+					{
+						e->pshufdregmemimm(RCX, &r->GPR[i.Rs].s, (2 << 6) + (0 << 4));
+					}
+					else
+					{
+						e->pxorregreg(RCX, RCX);
+					}
 
 					e->pblendwregregimm ( RAX, RCX, 0xf0 );
 					
@@ -32214,81 +32194,51 @@ long R5900::Recompiler::PDIVW ( R5900::Instruction::Format i, u32 Address )
 			
 			// now do the division //
 			
+			e->MovsxdReg64Mem32(RAX, &r->GPR[i.Rs].sw0);
 			e->MovsxdReg64Mem32 ( RCX, & r->GPR [ i.Rt ].sw0 );
-			e->MovsxdReg64Mem32 ( RAX, & r->GPR [ i.Rs ].sw0 );
-			//e->OrRegReg64 ( RCX, RCX );
-			//e->Jmp8_E ( 0, 0 );
-			e->Jmp8_ECXZ ( 0, 0 );
-			
-			//e->MovRegReg64 ( RDX, RAX );
-			//e->SarRegImm64 ( RDX, 63 );
-			//e->Cqo ();
-			e->Cdq ();
-			//e->IdivRegReg64 ( RCX );
-			e->IdivRegReg32 ( RCX );
-			// *** todo for ps2 *** //
-			//e->MovMemReg32 ( & r->HiLo.sLo, RAX );
-			e->Cdqe ();
-			e->MovMemReg64 ( & r->LO.s, RAX );
-			//e->MovMemReg32 ( & r->HiLo.sHi, RDX );
-			e->MovsxdReg64Reg32 ( RDX, RDX );
-			e->MovMemReg64 ( & r->HI.s, RDX );
-			e->Jmp8 ( 0, 1 );
-			
-			e->SetJmpTarget8 ( 0 );
-			
-			//e->MovReg32ImmX ( RCX, -1 );
-			//e->MovReg32ImmX ( RDX, 1 );
-			e->MovReg64ImmX ( RCX, -1 );
-			e->MovReg64ImmX ( RDX, 1 );
-			e->OrRegReg32 ( RAX, RAX );
-			//e->CmovSRegReg32 ( RCX, RDX );
-			e->CmovSRegReg64 ( RCX, RDX );
-			// *** todo for ps2 *** //
-			//e->MovMemReg32 ( & r->HiLo.uHi, RAX );
-			e->MovMemReg64 ( & r->HI.s, RAX );
-			//e->MovMemReg32 ( & r->HiLo.uLo, RCX );
-			e->MovMemReg64 ( & r->LO.s, RCX );
-			
-			e->SetJmpTarget8 ( 1 );
 
-			e->MovsxdReg64Mem32 ( RCX, & r->GPR [ i.Rt ].sw2 );
-			e->MovsxdReg64Mem32 ( RAX, & r->GPR [ i.Rs ].sw2 );
-			//e->OrRegReg64 ( RCX, RCX );
-			//e->Jmp8_E ( 0, 0 );
+			e->Cqo();
+			e->NotReg64(RDX);
+			e->OrReg64ImmX(RDX, 1);
+
 			e->Jmp8_ECXZ ( 0, 0 );
 			
-			//e->MovRegReg64 ( RDX, RAX );
-			//e->SarRegImm64 ( RDX, 63 );
-			//e->Cqo ();
 			e->Cdq ();
 			//e->IdivRegReg64 ( RCX );
 			e->IdivRegReg32 ( RCX );
-			// *** todo for ps2 *** //
-			//e->MovMemReg32 ( & r->HiLo.sLo, RAX );
-			e->Cdqe ();
-			e->MovMemReg64 ( & r->LO.sq1, RAX );
-			//e->MovMemReg32 ( & r->HiLo.sHi, RDX );
-			e->MovsxdReg64Reg32 ( RDX, RDX );
-			e->MovMemReg64 ( & r->HI.sq1, RDX );
-			e->Jmp8 ( 0, 1 );
+
+			e->Cdqe();
+			e->XchgRegReg64(RAX, RDX);
+			e->Cdqe();
+
+			e->SetJmpTarget8(0);
+
+
+			e->MovMemReg64(&r->HI.s, RAX);
+			e->MovMemReg64(&r->LO.s, RDX);
+
+			e->MovsxdReg64Mem32(RAX, &r->GPR[i.Rs].sw2);
+			e->MovsxdReg64Mem32 ( RCX, & r->GPR [ i.Rt ].sw2 );
+
+			e->Cqo();
+			e->NotReg64(RDX);
+			e->OrReg64ImmX(RDX, 1);
+
+			e->Jmp8_ECXZ ( 0, 0 );
 			
-			e->SetJmpTarget8 ( 0 );
-			
-			//e->MovReg32ImmX ( RCX, -1 );
-			//e->MovReg32ImmX ( RDX, 1 );
-			e->MovReg64ImmX ( RCX, -1 );
-			e->MovReg64ImmX ( RDX, 1 );
-			e->OrRegReg32 ( RAX, RAX );
-			//e->CmovSRegReg32 ( RCX, RDX );
-			e->CmovSRegReg64 ( RCX, RDX );
-			// *** todo for ps2 *** //
-			//e->MovMemReg32 ( & r->HiLo.uHi, RAX );
-			e->MovMemReg64 ( & r->HI.sq1, RAX );
-			//e->MovMemReg32 ( & r->HiLo.uLo, RCX );
-			e->MovMemReg64 ( & r->LO.sq1, RCX );
-			
-			e->SetJmpTarget8 ( 1 );
+			e->Cdq ();
+			//e->IdivRegReg64 ( RCX );
+			e->IdivRegReg32 ( RCX );
+
+			e->Cdqe();
+			e->XchgRegReg64(RAX, RDX);
+			e->Cdqe();
+
+			e->SetJmpTarget8(0);
+
+			e->MovMemReg64(&r->HI.sq1, RAX);
+			e->MovMemReg64(&r->LO.sq1, RDX);
+
 #else
 			return -1;
 #endif
@@ -32380,54 +32330,45 @@ long R5900::Recompiler::PDIVUW ( R5900::Instruction::Format i, u32 Address )
 			
 			e->MovRegMem32 ( RCX, & r->GPR [ i.Rt ].sw0 );
 			e->MovRegMem32 ( RAX, & r->GPR [ i.Rs ].sw0 );
-			//e->OrRegReg64 ( RCX, RCX );
-			//e->Jmp8_E ( 0, 0 );
+
+			e->MovReg64ImmX(RDX, -1);
+
 			e->Jmp8_ECXZ ( 0, 0 );
 			
 			e->XorRegReg32 ( RDX, RDX );
 			e->DivRegReg32 ( RCX );
-			//e->MovMemReg32 ( & r->HiLo.sLo, RAX );
-			e->Cdqe ();
-			e->MovMemReg64 ( & r->LO.s, RAX );
-			//e->MovMemReg32 ( & r->HiLo.sHi, RDX );
-			e->MovsxdReg64Reg32 ( RDX, RDX );
-			e->MovMemReg64 ( & r->HI.s, RDX );
-			e->Jmp8 ( 0, 1 );
-			
-			e->SetJmpTarget8 ( 0 );
-			
-			//e->MovMemImm32 ( & r->HiLo.sLo, -1 );
-			//e->MovMemReg32 ( & r->HiLo.uHi, RAX );
-			e->MovMemImm64 ( & r->LO.s, -1 );
-			e->MovMemReg64 ( & r->HI.s, RAX );
-			
-			e->SetJmpTarget8 ( 1 );
 
-			
+
+			e->Cdqe();
+			e->XchgRegReg64(RAX, RDX);
+			e->Cdqe();
+
+			e->SetJmpTarget8(0);
+
+
+			e->MovMemReg64(&r->HI.s, RAX);
+			e->MovMemReg64(&r->LO.s, RDX);
+
+
 			e->MovRegMem32 ( RCX, & r->GPR [ i.Rt ].sw2 );
 			e->MovRegMem32 ( RAX, & r->GPR [ i.Rs ].sw2 );
-			//e->OrRegReg64 ( RCX, RCX );
-			//e->Jmp8_E ( 0, 0 );
+
+			e->MovReg64ImmX(RDX, -1);
+
 			e->Jmp8_ECXZ ( 0, 0 );
 			
 			e->XorRegReg32 ( RDX, RDX );
 			e->DivRegReg32 ( RCX );
-			//e->MovMemReg32 ( & r->HiLo.sLo, RAX );
-			e->Cdqe ();
-			e->MovMemReg64 ( & r->LO.sq1, RAX );
-			//e->MovMemReg32 ( & r->HiLo.sHi, RDX );
-			e->MovsxdReg64Reg32 ( RDX, RDX );
-			e->MovMemReg64 ( & r->HI.sq1, RDX );
-			e->Jmp8 ( 0, 1 );
-			
-			e->SetJmpTarget8 ( 0 );
-			
-			//e->MovMemImm32 ( & r->HiLo.sLo, -1 );
-			//e->MovMemReg32 ( & r->HiLo.uHi, RAX );
-			e->MovMemImm64 ( & r->LO.sq1, -1 );
-			e->MovMemReg64 ( & r->HI.sq1, RAX );
-			
-			e->SetJmpTarget8 ( 1 );
+
+			e->Cdqe();
+			e->XchgRegReg64(RAX, RDX);
+			e->Cdqe();
+
+			e->SetJmpTarget8(0);
+
+
+			e->MovMemReg64(&r->HI.sq1, RAX);
+			e->MovMemReg64(&r->LO.sq1, RDX);
 
 #else
 			return -1;
@@ -32518,106 +32459,74 @@ long R5900::Recompiler::PDIVBW ( R5900::Instruction::Format i, u32 Address )
 			
 			// now do the division //
 			
-			e->MovRegMem32 ( RCX, & r->GPR [ i.Rt ].sw0 );
-			e->MovsxdReg64Mem32 ( RAX, & r->GPR [ i.Rs ].sw0 );
-			
+			//e->MovsxdReg64Mem32(RAX, &r->GPR[i.Rs].sw0);
+			//e->MovRegMem32 ( RCX, & r->GPR [ i.Rt ].sw0 );
+			e->MovsxReg32Mem16(RCX, &r->GPR[i.Rt].sh0);
+			e->MovRegMem32(RAX, &r->GPR[i.Rs].sw0);
+
+
 			// sign-extend the word
-			e->MovsxReg64Reg16 ( RCX, RCX );
-			
+			//e->MovsxReg64Reg16 ( RCX, RCX );
+			//e->MovsxReg32Reg16(RCX, RCX);
+
 			e->Jmp8_ECXZ ( 0, 0 );
 			
-			e->Cqo ();
-			e->IdivRegReg64 ( RCX );
-			
-			e->MovMemReg32 ( & r->LO.sw0, RAX );
-			
-			e->MovsxReg32Reg16 ( RDX, RDX );
-			e->MovMemReg32 ( & r->HI.sw0, RDX );
-			e->Jmp8 ( 0, 1 );
-			
-			e->SetJmpTarget8 ( 0 );
-			
-			e->pcmpeqbregreg ( RCX, RCX );
-			e->movdqa_regreg ( RDX, RCX );
-			e->psrldregimm ( RDX, 31 );
-			e->movdqa_regmem ( RAX, & r->GPR [ i.Rs ].sw0 );
-			e->movdqa_regreg ( RBX, RAX );
-			e->psradregimm ( RAX, 31 );
-			e->pblendvbregreg ( RCX, RDX );
-			
-			e->movdqa_memreg ( & r->LO.sw0, RCX );
-			//e->pmovsxwdregreg ( RBX, RBX );
-			e->movdqa_memreg ( & r->HI.sw0, RBX );
+			e->Cdq();
+			e->IdivRegReg32(RCX);
 
+			//e->XchgRegReg32(RAX, RDX);
+			//e->Cwde();
+			e->MovsxReg32Reg16(RDX, RDX);
 
-			/*
-			e->MovReg32ImmX ( RCX, -1 );
-			e->MovReg32ImmX ( RDX, 1 );
-			e->OrRegReg32 ( RAX, RAX );
-			e->CmovSRegReg32 ( RCX, RDX );
-			
-			e->Cwde ();
-			e->MovMemReg32 ( & r->HI.sw0, RAX );
-			e->MovMemReg32 ( & r->LO.sw0, RCX );
-			
-			
-			e->MovRegMem32 ( RAX, & r->GPR [ i.Rs ].sw1 );
-			e->MovReg32ImmX ( RCX, -1 );
-			e->OrRegReg32 ( RAX, RAX );
-			e->CmovSRegReg32 ( RCX, RDX );
-			e->Cwde ();
-			e->MovMemReg32 ( & r->HI.sw0, RAX );
-			e->MovMemReg32 ( & r->LO.sw0, RCX );
+			e->MovMemReg32(&r->HI.sw0, RDX);
+			e->MovMemReg32(&r->LO.sw0, RAX);
 
-			e->MovRegMem32 ( RAX, & r->GPR [ i.Rs ].sw2 );
-			e->MovReg32ImmX ( RCX, -1 );
-			e->OrRegReg32 ( RAX, RAX );
-			e->CmovSRegReg32 ( RCX, RDX );
-			e->Cwde ();
-			e->MovMemReg32 ( & r->HI.sw0, RAX );
-			e->MovMemReg32 ( & r->LO.sw0, RCX );
+			//e->MovsxdReg64Mem32(RAX, &r->GPR[i.Rs].sw0);
+			e->MovRegMem32(RAX, &r->GPR[i.Rs].sw1);
 
-			e->MovRegMem32 ( RAX, & r->GPR [ i.Rs ].sw3 );
-			e->MovReg32ImmX ( RCX, -1 );
-			e->OrRegReg32 ( RAX, RAX );
-			e->CmovSRegReg32 ( RCX, RDX );
-			e->Cwde ();
-			e->MovMemReg32 ( & r->HI.sw0, RAX );
-			e->MovMemReg32 ( & r->LO.sw0, RCX );
-			*/
-			
-			e->Jmp8 ( 0, 0 );
-			
-			e->SetJmpTarget8 ( 1 );
+			e->Cdq();
+			e->IdivRegReg32(RCX);
+			e->MovsxReg32Reg16(RDX, RDX);
 
-			e->MovsxdReg64Mem32 ( RAX, & r->GPR [ i.Rs ].sw1 );
-			
-			e->Cqo ();
-			e->IdivRegReg64 ( RCX );
-			
-			e->MovMemReg32 ( & r->LO.sw1, RAX );
-			e->MovsxReg32Reg16 ( RDX, RDX );
-			e->MovMemReg32 ( & r->HI.sw1, RDX );
-			
-			e->MovsxdReg64Mem32 ( RAX, & r->GPR [ i.Rs ].sw2 );
-			
-			e->Cqo ();
-			e->IdivRegReg64 ( RCX );
-			
-			e->MovMemReg32 ( & r->LO.sw2, RAX );
-			e->MovsxReg32Reg16 ( RDX, RDX );
-			e->MovMemReg32 ( & r->HI.sw2, RDX );
-			
-			e->MovsxdReg64Mem32 ( RAX, & r->GPR [ i.Rs ].sw3 );
-			
-			e->Cqo ();
-			e->IdivRegReg64 ( RCX );
-			
-			e->MovMemReg32 ( & r->LO.sw3, RAX );
-			e->MovsxReg32Reg16 ( RDX, RDX );
-			e->MovMemReg32 ( & r->HI.sw3, RDX );
-			
-			e->SetJmpTarget8 ( 0 );
+			e->MovMemReg32(&r->HI.sw1, RDX);
+			e->MovMemReg32(&r->LO.sw1, RAX);
+
+			e->MovRegMem32(RAX, &r->GPR[i.Rs].sw2);
+
+			e->Cdq();
+			e->IdivRegReg32(RCX);
+			e->MovsxReg32Reg16(RDX, RDX);
+
+			e->MovMemReg32(&r->HI.sw2, RDX);
+			e->MovMemReg32(&r->LO.sw2, RAX);
+
+			e->MovRegMem32(RAX, &r->GPR[i.Rs].sw3);
+
+			e->Cdq();
+			e->IdivRegReg32(RCX);
+			e->MovsxReg32Reg16(RDX, RDX);
+
+			e->MovMemReg32(&r->HI.sw3, RDX);
+			e->MovMemReg32(&r->LO.sw3, RAX);
+
+			e->Jmp8(0, 1);
+
+			e->SetJmpTarget8(0);
+
+			e->movdqa_regmem(RAX, &r->GPR[i.Rs].s);
+			e->pcmpeqbregreg(RDX, RDX);
+			e->movdqa_regreg(RCX, RAX);
+			e->psradregimm(RCX, 31);
+			e->pxorregreg(RCX, RDX);
+			e->psrldregimm(RDX, 31);
+			e->porregreg(RDX, RCX);
+
+			// for PDIVBW, it appears that remainder (HI) is not sign extended on division by zero ??
+			e->movdqa_memreg(&r->HI.sw0, RAX);
+			e->movdqa_memreg(&r->LO.sw0, RDX);
+
+			e->SetJmpTarget8(1);
+
 #else
 			return -1;
 #endif

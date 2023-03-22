@@ -594,7 +594,7 @@ namespace Playstation2
 		
 		
 		
-		inline void SetInterrupt ()
+		inline static void SetInterrupt ()
 		{
 			*_Intc_Stat |= ( 1 << c_InterruptBit );
 			if ( *_Intc_Stat & *_Intc_Mask ) *_R5900_Cause_13 |= ( 1 << 10 );

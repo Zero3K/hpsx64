@@ -10423,19 +10423,12 @@ long Recompiler::DIV ( Instruction::Format i, u32 Address )
 			e->NotReg32 ( RDX );
 			e->OrReg32ImmX ( RDX, 1 );
 			
-			//e->OrRegReg64 ( RCX, RCX );
-			//e->Jmp8_E ( 0, 0 );
 			e->Jmp8_ECXZ ( 0, 0 );
 			
-			//e->MovRegReg64 ( RDX, RAX );
-			//e->SarRegImm64 ( RDX, 63 );
-			//e->Cqo ();
 			e->Cdq ();
 			//e->IdivRegReg64 ( RCX );
 			e->IdivRegReg32 ( RCX );
-			//e->MovMemReg32 ( & r->HiLo.sLo, RAX );
-			//e->MovMemReg32 ( & r->HiLo.sHi, RDX );
-			//e->Jmp8 ( 0, 1 );
+
 			e->XchgRegReg32( RAX, RDX );
 			
 			e->SetJmpTarget8 ( 0 );
@@ -10444,7 +10437,6 @@ long Recompiler::DIV ( Instruction::Format i, u32 Address )
 			e->MovMemReg32 ( & r->HiLo.sHi, RAX );
 			e->MovMemReg32 ( & r->HiLo.sLo, RDX );
 			
-			//e->SetJmpTarget8 ( 1 );
 			
 			// done //
 #else
@@ -10556,25 +10548,20 @@ long Recompiler::DIVU ( Instruction::Format i, u32 Address )
 			//}
 			e->MovRegMem32 ( RCX, & r->GPR [ i.Rt ].s );
 			e->MovRegMem32 ( RAX, & r->GPR [ i.Rs ].s );
-			//e->OrRegReg64 ( RCX, RCX );
-			//e->Jmp8_E ( 0, 0 );
+
 			e->MovReg32ImmX ( RDX, -1 );
 			e->Jmp8_ECXZ ( 0, 0 );
 			
 			e->XorRegReg32 ( RDX, RDX );
 			e->DivRegReg32 ( RCX );
-			//e->MovMemReg32 ( & r->HiLo.sLo, RAX );
-			//e->MovMemReg32 ( & r->HiLo.sHi, RDX );
-			//e->Jmp8 ( 0, 1 );
+
 			e->XchgRegReg32 ( RAX, RDX );
 			
 			e->SetJmpTarget8 ( 0 );
 			
-			//e->MovMemImm32 ( & r->HiLo.sLo, -1 );
 			e->MovMemReg32 ( & r->HiLo.sLo, RDX );
 			e->MovMemReg32 ( & r->HiLo.sHi, RAX );
 			
-			//e->SetJmpTarget8 ( 1 );
 			
 			// done //
 #else

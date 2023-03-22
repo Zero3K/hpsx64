@@ -65,7 +65,8 @@ using namespace Playstation1;
 
 
 // only interrupt when dma interrupt status transitions from 0 to 1
-//#define INT_TRANSITION_ONLY
+// martin korth psx specification says to interrupt only on transition from 0->1, because otherwise can miss multiple interrupts
+#define INT_TRANSITION_ONLY
 
 
 // attempt to synchronize transfers with ps1 for now
@@ -90,6 +91,7 @@ using namespace Playstation1;
 
 
 // sets the interrupt pending flag in ICR/ICR2 only if the interrupt is enabled
+// martin korth psx specification states interrupt bit only set if it is enabled
 #define SET_INTPENDING_ONLY_WHEN_ENABLED
 #define SET_INTPENDING_ONLY_WHEN_ENABLED2
 
@@ -4275,12 +4277,24 @@ void Dma::Update_ICR ( u32 Data )
 	
 	// check if interrupts have been all acknowledged/cleared
 	// check if interrupt bit 31 should be set for ICR1
-	if ( ( DMARegs0.ICR.Value & ( DMARegs0.ICR.Value << 8 ) & 0x7f000000 )
+	if (
+		(
+			(
+				( DMARegs0.ICR.Value & ( DMARegs0.ICR.Value << 8 ) & 0x7f000000 )
+
 #ifdef PS2_COMPILE
-		|| ( DMARegs1.ICR2.Value & ( DMARegs1.ICR2.Value << 8 ) & 0x7f000000 )
+				// for ps2, also check ICR2
+				|| ( DMARegs1.ICR2.Value & ( DMARegs1.ICR2.Value << 8 ) & 0x7f000000 )
 #endif
-		&& ( DMARegs0.ICR.Value & 0x00800000 )
+			)
+
+			&& ( DMARegs0.ICR.Value & 0x00800000 )
 		)
+
+		// or set interrupt if ICR bit 15 set according to martin psx spec
+		|| (DMARegs0.ICR.Value & 0x8000)
+
+	)
 	{
 #ifdef INLINE_DEBUG_UPDATE_ICR
 	debug << " SETINTBIT";
@@ -4370,12 +4384,22 @@ void Dma::Update_ICR2 ( u32 Data )
 	
 	// check if interrupts have been all acknowledged/cleared
 	// check if interrupt bit 31 should be set for ICR1
-	if ( ( DMARegs0.ICR.Value & ( DMARegs0.ICR.Value << 8 ) & 0x7f000000 )
-#ifdef PS2_COMPILE
-		|| ( DMARegs1.ICR2.Value & ( DMARegs1.ICR2.Value << 8 ) & 0x7f000000 )
-#endif
-		&& ( DMARegs0.ICR.Value & 0x00800000 )
+	if (
+		(
+			(
+				(DMARegs0.ICR.Value & (DMARegs0.ICR.Value << 8) & 0x7f000000)
+
+				// for ps2, also check ICR2
+				|| (DMARegs1.ICR2.Value & (DMARegs1.ICR2.Value << 8) & 0x7f000000)
+			)
+
+			&& (DMARegs0.ICR.Value & 0x00800000)
 		)
+
+		// or set interrupt if ICR bit 15 set according to martin psx spec
+		|| (DMARegs0.ICR.Value & 0x8000)
+
+	)
 	{
 #ifdef INLINE_DEBUG_UPDATE_ICR
 	debug << " SETINTBIT";

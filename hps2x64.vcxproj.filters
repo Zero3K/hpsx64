@@ -207,6 +207,9 @@
     <ClCompile Include="common\guicon.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="common\Vulkan\vulkan_setup.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="common\GeneralEmuDataStructures.h">
@@ -455,5 +458,13 @@
     <ClInclude Include="common\guicon.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="common\Vulkan\vulkan_setup.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="common\Vulkan\vulkan_list_of_functions.inl">
+      <Filter>Header Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

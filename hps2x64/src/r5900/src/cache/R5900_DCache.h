@@ -400,6 +400,7 @@ namespace R5900
 		
 		
 		// return index to cache line if valid - for write back
+		// returns -1 on miss
 		inline u32 InvalidateHit ( u32 Address )
 		{
 			u32 ulIndex;
@@ -408,11 +409,13 @@ namespace R5900
 			ulIndex = ( ( Address >> 6 ) & 0x3f ) << 1;
 			
 			Address &= 0x1fffffc0;
-			
+
 			// make sure the cache line is valid and that the address is actually cached there
 			// for ps2, must check way0 and way1 both
 			if ( PFN [ ulIndex ] == Address )
 			{
+				// hit //
+
 				Valid [ ulIndex ] = 0;
 				PFN [ ulIndex ] = -1;
 				
@@ -427,6 +430,8 @@ namespace R5900
 			
 			if ( PFN [ ulIndex ] == Address )
 			{
+				// hit //
+
 				Valid [ ulIndex ] = 0;
 				PFN [ ulIndex ] = -1;
 				
@@ -438,61 +443,6 @@ namespace R5900
 			
 			return -1;
 		}
-		
-		
-		/*
-		// read address from cache
-		// assumes that the cache line is valid - should always check if address is a cache hit first with isCacheHit
-		inline u32 Read ( u32 Address )
-		{
-			return Data [ ( Address >> 2 ) & 0x3ff ];
-		}
-		
-		// load line into cache for block starting at address
-		// Data points to a 4 element array of 32-bit values
-		inline u32* GetCacheLinePtr ( u32 Address )
-		{
-			// get the index of start of cache line
-			u32 ICacheDataStartIndex = ( ( Address & 0x1ffffff0 ) >> 2 ) & 0x3ff;
-
-			// load data into cache
-			return &(Data [ ICacheDataStartIndex ]);
-		}
-		
-		inline void ValidateCacheLine ( u32 Address )
-		{
-			// get the cache line that address should be at
-			u32 DCacheBlockIndex = ( Address >> 4 ) & 0xff;
-			
-			// set the source address for start of cache line
-			Data [ DCacheBlockIndex ] = Address & 0x1ffffff0;
-			
-			// mark cache line as valid
-			Valid [ DCacheBlockIndex ] = true;
-		}
-		
-		// invalidate address from cache if it is cached
-		inline void Invalidate ( u32 Address )
-		{
-			if ( isCacheHit ( Address ) )
-			{
-				// invalidate cache line
-				Valid [ ( Address >> 4 ) & 0xff ] = false;
-			}
-		}
-
-		
-		// invalidate address from cache if it is cached
-		inline void InvalidateDirect ( u32 Address )
-		{
-			// address will be the address to the actual cache line, like 0x0,0x10,0x20,...,0xfe0,0xff0
-			// get the cache line that address should be at
-			
-			// invalidate cache line
-			Valid [ ( Address >> 4 ) & 0xff ] = false;
-		}
-		*/
-		
 		
 	
 	};

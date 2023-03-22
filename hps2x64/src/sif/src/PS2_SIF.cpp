@@ -80,7 +80,7 @@
 
 //#define INLINE_DEBUG_SPLIT
 
-/*
+
 #define INLINE_DEBUG_WRITE_EE
 #define INLINE_DEBUG_READ_EE
 #define INLINE_DEBUG_WRITE_IOP
@@ -99,7 +99,7 @@
 //#define INLINE_DEBUG_DMA_IN_READY
 //#define INLINE_DEBUG_DMA_OUT_READY
 //#define INLINE_DEBUG_RUN
-*/
+
 
 #endif
 

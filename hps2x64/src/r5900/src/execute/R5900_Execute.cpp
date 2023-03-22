@@ -114,8 +114,8 @@ using namespace PS2Float;
 #define ENABLE_VU0_SKIP_WAIT
 
 
-//#define UPDATE_INTERRUPTS_EI
-//#define UPDATE_INTERRUPTS_DI
+#define UPDATE_INTERRUPTS_EI
+#define UPDATE_INTERRUPTS_DI
 
 
 
@@ -192,7 +192,7 @@ using namespace PS2Float;
 #define INLINE_DEBUG_INVALID
 #define INLINE_DEBUG_UNIMPLEMENTED
 //#define INLINE_DEBUG_ERET
-#define INLINE_DEBUG_INTEGER_VECTOR
+//#define INLINE_DEBUG_INTEGER_VECTOR
 //#define INLINE_DEBUG_VU0
 //#define INLINE_DEBUG_VUEXECUTE
 //#define INLINE_DEBUG_FPU
@@ -938,8 +938,8 @@ void Execute::DIV ( Instruction::Format i )
 			// *todo* check during testing if signs are switched on modulus result when sign of dividend and divisor are different
 			//r->HiLo.sLo = r->GPR [ i.Rs ].s / r->GPR [ i.Rt ].s;
 			//r->HiLo.sHi = r->GPR [ i.Rs ].s % r->GPR [ i.Rt ].s;
-			r->LO.s = r->GPR [ i.Rs ].sw0 / r->GPR [ i.Rt ].sw0;
-			r->HI.s = r->GPR [ i.Rs ].sw0 % r->GPR [ i.Rt ].sw0;
+			r->LO.s = (r->GPR [ i.Rs ].sw0 / r->GPR [ i.Rt ].sw0);
+			r->HI.s = (r->GPR [ i.Rs ].sw0 % r->GPR [ i.Rt ].sw0);
 		}
 	}
 	else
@@ -955,6 +955,7 @@ void Execute::DIV ( Instruction::Format i )
 			r->LO.s = -1;
 		}
 		
+
 		//r->HiLo.uHi = r->GPR [ i.Rs ].u;
 		r->HI.s = r->GPR [ i.Rs ].sw0;
 	}
@@ -7593,11 +7594,27 @@ void Execute::PDIVW ( Instruction::Format i )
 	r->MulDiv_BusyUntil_Cycle = r->CycleCount + c_iDivideCycles;
 	r->MulDiv_BusyUntil_Cycle1 = r->MulDiv_BusyUntil_Cycle;
 	
-	r->LO.sq0 = (s32) ( r->GPR [ i.Rs ].sw0 / r->GPR [ i.Rt ].sw0 );
-	r->LO.sq1 = (s32) ( r->GPR [ i.Rs ].sw2 / r->GPR [ i.Rt ].sw2 );
-	
-	r->HI.sq0 = (s32) ( r->GPR [ i.Rs ].sw0 % r->GPR [ i.Rt ].sw0 );
-	r->HI.sq1 = (s32) ( r->GPR [ i.Rs ].sw2 % r->GPR [ i.Rt ].sw2 );
+	if (r->GPR[i.Rt].sw0)
+	{
+		r->LO.sq0 = (s32)(r->GPR[i.Rs].sw0 / r->GPR[i.Rt].sw0);
+		r->HI.sq0 = (s32)(r->GPR[i.Rs].sw0 % r->GPR[i.Rt].sw0);
+	}
+	else
+	{
+		r->LO.sq0 = (s32)((~(r->GPR[i.Rs].sw0 >> 31)) | 1);
+		r->HI.sq0 = r->GPR[i.Rs].sw0;
+	}
+
+	if (r->GPR[i.Rt].sw2)
+	{
+		r->LO.sq1 = (s32)(r->GPR[i.Rs].sw2 / r->GPR[i.Rt].sw2);
+		r->HI.sq1 = (s32)(r->GPR[i.Rs].sw2 % r->GPR[i.Rt].sw2);
+	}
+	else
+	{
+		r->LO.sq1 = (s32)((~(r->GPR[i.Rs].sw2 >> 31)) | 1);
+		r->HI.sq1 = r->GPR[i.Rs].sw2;
+	}
 	
 #if defined INLINE_DEBUG_PDIVW || defined INLINE_DEBUG_R5900 || defined INLINE_DEBUG_INTEGER_VECTOR
 	debug << hex << " Output:" << " LO=" << r->LO.uq0 << " " << r->LO.uq1 << " HI=" << r->HI.uq0 << " " << r->HI.uq1;
@@ -7630,12 +7647,28 @@ void Execute::PDIVUW ( Instruction::Format i )
 	r->MulDiv_BusyUntil_Cycle = r->CycleCount + c_iDivideCycles;
 	r->MulDiv_BusyUntil_Cycle1 = r->MulDiv_BusyUntil_Cycle;
 	
-	r->LO.sq0 = (s32) ( r->GPR [ i.Rs ].uw0 / r->GPR [ i.Rt ].uw0 );
-	r->LO.sq1 = (s32) ( r->GPR [ i.Rs ].uw2 / r->GPR [ i.Rt ].uw2 );
+	if (r->GPR[i.Rt].sw0)
+	{
+		r->LO.sq0 = (s32)(r->GPR[i.Rs].uw0 / r->GPR[i.Rt].uw0);
+		r->HI.sq0 = (s32)(r->GPR[i.Rs].uw0 % r->GPR[i.Rt].uw0);
+	}
+	else
+	{
+		r->LO.sq0 = -1;
+		r->HI.sq0 = r->GPR[i.Rs].sw0;
+	}
 	
-	r->HI.sq0 = (s32) ( r->GPR [ i.Rs ].uw0 % r->GPR [ i.Rt ].uw0 );
-	r->HI.sq1 = (s32) ( r->GPR [ i.Rs ].uw2 % r->GPR [ i.Rt ].uw2 );
-	
+	if (r->GPR[i.Rt].sw2)
+	{
+		r->LO.sq1 = (s32)(r->GPR[i.Rs].uw2 / r->GPR[i.Rt].uw2);
+		r->HI.sq1 = (s32)(r->GPR[i.Rs].uw2 % r->GPR[i.Rt].uw2);
+	}
+	else
+	{
+		r->LO.sq1 = -1;
+		r->HI.sq1 = r->GPR[i.Rs].sw2;
+	}
+
 #if defined INLINE_DEBUG_PDIVUW || defined INLINE_DEBUG_R5900 || defined INLINE_DEBUG_INTEGER_VECTOR
 	debug << hex << " Output:" << " LO=" << r->LO.uq0 << " " << r->LO.uq1 << " HI=" << r->HI.uq0 << " " << r->HI.uq1;
 #endif
@@ -7667,15 +7700,31 @@ void Execute::PDIVBW ( Instruction::Format i )
 	r->MulDiv_BusyUntil_Cycle = r->CycleCount + c_iDivideCycles;
 	r->MulDiv_BusyUntil_Cycle1 = r->MulDiv_BusyUntil_Cycle;
 	
-	r->LO.sw0 = ( r->GPR [ i.Rs ].sw0 / ( (s32) r->GPR [ i.Rt ].sh0 ) );
-	r->LO.sw1 = ( r->GPR [ i.Rs ].sw1 / ( (s32) r->GPR [ i.Rt ].sh0 ) );
-	r->LO.sw2 = ( r->GPR [ i.Rs ].sw2 / ( (s32) r->GPR [ i.Rt ].sh0 ) );
-	r->LO.sw3 = ( r->GPR [ i.Rs ].sw3 / ( (s32) r->GPR [ i.Rt ].sh0 ) );
-	
-	r->HI.sw0 = (s16) ( r->GPR [ i.Rs ].sw0 % ( (s32) r->GPR [ i.Rt ].sh0 ) );
-	r->HI.sw1 = (s16) ( r->GPR [ i.Rs ].sw1 % ( (s32) r->GPR [ i.Rt ].sh0 ) );
-	r->HI.sw2 = (s16) ( r->GPR [ i.Rs ].sw2 % ( (s32) r->GPR [ i.Rt ].sh0 ) );
-	r->HI.sw3 = (s16) ( r->GPR [ i.Rs ].sw3 % ( (s32) r->GPR [ i.Rt ].sh0 ) );
+	if (r->GPR[i.Rt].sh0)
+	{
+		r->LO.sw0 = (r->GPR[i.Rs].sw0 / ((s32)r->GPR[i.Rt].sh0));
+		r->LO.sw1 = (r->GPR[i.Rs].sw1 / ((s32)r->GPR[i.Rt].sh0));
+		r->LO.sw2 = (r->GPR[i.Rs].sw2 / ((s32)r->GPR[i.Rt].sh0));
+		r->LO.sw3 = (r->GPR[i.Rs].sw3 / ((s32)r->GPR[i.Rt].sh0));
+
+		r->HI.sw0 = (s16)(r->GPR[i.Rs].sw0 % ((s32)r->GPR[i.Rt].sh0));
+		r->HI.sw1 = (s16)(r->GPR[i.Rs].sw1 % ((s32)r->GPR[i.Rt].sh0));
+		r->HI.sw2 = (s16)(r->GPR[i.Rs].sw2 % ((s32)r->GPR[i.Rt].sh0));
+		r->HI.sw3 = (s16)(r->GPR[i.Rs].sw3 % ((s32)r->GPR[i.Rt].sh0));
+	}
+	else
+	{
+		r->LO.sw0 = (s32)((~(r->GPR[i.Rs].sw0 >> 31)) | 1);
+		r->LO.sw1 = (s32)((~(r->GPR[i.Rs].sw1 >> 31)) | 1);
+		r->LO.sw2 = (s32)((~(r->GPR[i.Rs].sw2 >> 31)) | 1);
+		r->LO.sw3 = (s32)((~(r->GPR[i.Rs].sw3 >> 31)) | 1);
+
+		// appears that with PDIVBW, there is no sign-extending on the remainder on division by zero
+		r->HI.sw0 = r->GPR[i.Rs].sw0;
+		r->HI.sw1 = r->GPR[i.Rs].sw1;
+		r->HI.sw2 = r->GPR[i.Rs].sw2;
+		r->HI.sw3 = r->GPR[i.Rs].sw3;
+	}
 	
 #if defined INLINE_DEBUG_PDIVBW || defined INLINE_DEBUG_R5900 || defined INLINE_DEBUG_INTEGER_VECTOR
 	debug << hex << " Output:" << " LO=" << r->LO.uq0 << " " << r->LO.uq1 << " HI=" << r->HI.uq0 << " " << r->HI.uq1;
@@ -8098,8 +8147,13 @@ void Execute::SYNC ( Instruction::Format i )
 	debug << "\r\n" << hex << setw( 8 ) << r->PC << " " << dec << r->CycleCount << " " << Print::PrintInstruction ( i.Value ).c_str () << "; " << hex << i.Value;
 #endif
 
+	if (i.Shift & 0x10)
+	{
+		// SYNC.P //
+		
 		// interrupt status changed
-		r->UpdateInterrupt ();
+		r->UpdateInterrupt();
+	}
 }
 
 
@@ -8246,10 +8300,22 @@ void Execute::CACHE ( Instruction::Format i )
 			// make sure address is cached ?
 			if ( !r->DCache.isCached( VirtualAddress ) )
 			{
+				// miss //
+				r->CPR0.Status.CacheHistory = 0;
+
 				break;
 			}
 
-			r->DCache.InvalidateHit ( VirtualAddress );
+			if (r->DCache.InvalidateHit(VirtualAddress) != -1)
+			{
+				// hit //
+				r->CPR0.Status.CacheHistory = 1;
+			}
+			else
+			{
+				// miss //
+				r->CPR0.Status.CacheHistory = 0;
+			}
 			
 			
 			break;
@@ -8270,6 +8336,9 @@ void Execute::CACHE ( Instruction::Format i )
 			//if ( ( VirtualAddress & 0x70000000 ) == 0x70000000 )
 			if ( !r->DCache.isCached( VirtualAddress ) )
 			{
+				// miss //
+				r->CPR0.Status.CacheHistory = 0;
+
 				//cout << "\nhps2x64: R5900: DHWBIN/DHIN on uncached address:" << hex << VirtualAddress;
 				break;
 			}
@@ -8309,13 +8378,22 @@ void Execute::CACHE ( Instruction::Format i )
 				}
 				
 				// invalidate cache entry
-				r->DCache.InvalidateHit ( VirtualAddress );
+				if (r->DCache.InvalidateHit(VirtualAddress) != -1)
+				{
+					// hit //
+					r->CPR0.Status.CacheHistory = 1;
+				}
+				else
+				{
+					// miss //
+					r->CPR0.Status.CacheHistory = 0;
+				}
 			}
 			
 			
 			break;
 			
-		// DHWOIN - data cache write-back if dirty bit is set, but does not invalidate data cache intry
+		// DHWOIN - data cache write-back if dirty bit is set, but does not invalidate data cache entry
 		case 0x1c:
 #if defined INLINE_DEBUG_CACHE || defined INLINE_DEBUG_R5900
 	debug << " DHWOIN";

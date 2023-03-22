@@ -759,19 +759,12 @@ void Execute::DIV ( Instruction::Format i )
 	if ( r->GPR [ i.Rt ].u != 0 )
 	{
 		// if rs = 0x80000000 and rt = -1 then hi = 0 and lo = 0x80000000
-		if ( r->GPR [ i.Rs ].u == 0x80000000 && r->GPR [ i.Rt ].s == -1 )
-		{
-			r->HiLo.uHi = 0;
-			r->HiLo.uLo = 0x80000000;
-		}
-		else
-		{
-			r->HiLo.sLo = r->GPR [ i.Rs ].s / r->GPR [ i.Rt ].s;
-			r->HiLo.sHi = r->GPR [ i.Rs ].s % r->GPR [ i.Rt ].s;
-		}
+		r->HiLo.sLo = r->GPR [ i.Rs ].s / r->GPR [ i.Rt ].s;
+		r->HiLo.sHi = r->GPR [ i.Rs ].s % r->GPR [ i.Rt ].s;
 	}
 	else
 	{
+		/*
 		if ( r->GPR [ i.Rs ].s < 0 )
 		{
 			r->HiLo.sLo = 1;
@@ -780,6 +773,9 @@ void Execute::DIV ( Instruction::Format i )
 		{
 			r->HiLo.sLo = -1;
 		}
+		*/
+
+		r->HiLo.sLo = (~(r->GPR[i.Rs].s >> 31)) | 1;
 		
 		r->HiLo.uHi = r->GPR [ i.Rs ].u;
 	}

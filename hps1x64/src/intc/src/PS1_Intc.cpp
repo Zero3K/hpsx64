@@ -402,11 +402,17 @@ void Intc::UpdateInts ()
 	
 #ifdef PS2_COMPILE
 #ifdef ENABLE_SBUS_INT
-	if ( _INTC->I_STAT_Reg.Value & *_SBus_F230 )
+	// this should probably only happen on transition from 0->1
+	// or it is supposed to happen on the falling edge, from 1->0 ?? or maybe the signal goes directly and it is the 0->1 transition ?
+	u32 ulNewSbus = _INTC->I_STAT_Reg.Value & *_SBus_F230;
+	//if ( ( _INTC->I_STAT_Reg.Value & _INTC->I_MASK_Reg.Value )
+	//if (_INTC->ulPrevSbus && !ulNewSbus)
+	if ( ulNewSbus && !_INTC->ulPrevSbus )
 	{
 		// ??
 		Playstation2::SIF::SetInterrupt_EE_SIF ();
 	}
+	_INTC->ulPrevSbus = ulNewSbus;
 #endif
 #endif
 

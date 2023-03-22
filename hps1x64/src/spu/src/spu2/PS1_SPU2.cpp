@@ -55,7 +55,7 @@ using namespace GeneralUtilities;
 // important note: correct operation is to comment out CLEAR_VMIX_ON_CHDONE
 //#define CLEAR_VMIX_ON_CHDONE
 
-//#define CLEAR_VMIXE_ON_CHDONE
+#define CLEAR_VMIXE_ON_CHDONE
 
 // only allow reverb interrupt if reverb is enabled
 //#define ENABLE_REVERB_INT_ONLY_WHEN_REVERB_ENABLED
@@ -74,6 +74,10 @@ using namespace GeneralUtilities;
 
 
 #define KEY_ON_OFF_LOOP2
+
+
+// require each block to have loop flag set in waveform data or else sound will mute
+//#define REQUIRE_ALL_LOOP_FLAGS
 
 
 
@@ -2063,11 +2067,11 @@ void SPUCore::Run ()
 
 				case ADSR_ATTACK:
 #ifdef INLINE_DEBUG_RUN_ATTACK
-					debug << "\r\nChannel#" << Channel;
+					debug << "\r\nCore#" << CoreNumber;
+					debug << " Channel#" << dec << Channel;
 #endif
 
 #ifdef INLINE_DEBUG_RUN_ATTACK
-					//debug << "; Attack; Rate=" << (((double)VOL_ATTACK_Constant [ Channel ])/64536) << "; Rate75=" << (((double)VOL_ATTACK_Constant75 [ Channel ])/64536);
 					debug << "; Attack";
 #endif
 
@@ -2128,7 +2132,8 @@ void SPUCore::Run ()
 
 				case ADSR_DECAY:
 #ifdef INLINE_DEBUG_RUN_DECAY
-					debug << "\r\nChannel#" << Channel;
+					debug << "\r\nCore#" << CoreNumber;
+					debug << " Channel#" << dec << Channel;
 #endif
 
 #ifdef INLINE_DEBUG_RUN_DECAY
@@ -2228,19 +2233,20 @@ void SPUCore::Run ()
 
 				case ADSR_SUSTAIN:
 #ifdef INLINE_DEBUG_RUN_SUSTAIN
-					debug << "\r\nChannel#" << Channel;
+					debug << "\r\nCore#" << CoreNumber;
+					debug << " Channel#" << dec << Channel;
 #endif
 
 #ifdef INLINE_DEBUG_RUN_SUSTAIN
 					//debug << "; Sustain; Rate=" << (((double)VOL_SUSTAIN_Constant [ Channel ])/64536) << "; Rate75=" << (((double)VOL_SUSTAIN_Constant75 [ Channel ])/64536);
-					debug << "; Sustain";
+					debug << " SUSTAIN";
 #endif
 
 					/////////////////////////////////////////////
 					// ADSR - Sustain Mode
 
 #ifdef INLINE_DEBUG_RUN_SUSTAIN
-					debug << "; (before) VOL_ADSR_Value=" << hex << pChRegs0->ENV_X << "; Cycles=" << dec << Cycles[Channel];
+					debug << " (before) ENV_X=" << hex << pChRegs0->ENV_X << "; Cycles=" << dec << Cycles[Channel];
 #endif
 
 					//ModeRate = Regs [ ( ADSR_1 >> 1 ) + ( Channel << 3 ) ];
@@ -2260,7 +2266,7 @@ void SPUCore::Run ()
 						VolumeEnvelope((s16&)pChRegs0->ENV_X, Cycles[Channel], (ModeRate >> 6) & 0x7f, ModeRate >> 14, false);
 
 #ifdef INLINE_DEBUG_RUN_SUSTAIN
-						debug << "; (after) VOL_ADSR_Value=" << hex << pChRegs0->ENV_X << "; Cycles=" << dec << Cycles[Channel] << "; Value=" << hex << ((ModeRate >> 6) & 0x7f) << "; flags=" << ((ModeRate >> 15) << 1);
+						debug << " (after) ENV_X=" << hex << pChRegs0->ENV_X << "; Cycles=" << dec << Cycles[Channel] << "; Value=" << hex << ((ModeRate >> 6) & 0x7f) << "; flags=" << ((ModeRate >> 15) << 1);
 #endif
 
 						// ***TODO*** potential bug here NEED TO CHECK IF RATE IS INCREASING OR DECREASING
@@ -2302,7 +2308,8 @@ void SPUCore::Run ()
 
 				case ADSR_RELEASE:
 #ifdef INLINE_DEBUG_RUN_RELEASE
-					debug << "\r\nChannel#" << Channel;
+					debug << "\r\nCore#" << CoreNumber;
+					debug << " Channel#" << Channel;
 #endif
 
 #ifdef INLINE_DEBUG_RUN_RELEASE
@@ -2536,7 +2543,11 @@ void SPUCore::Run ()
 
 					// check if envelope should be killed
 					//if ( ! ( bLoopSet & ( 1 << Channel ) ) )
-					if ( !( RAM [ CurrentBlockAddress [ Channel ] ] & ( 0x2 << 8 ) ) )
+					if ( !( RAM [ CurrentBlockAddress [ Channel ] ] & ( 0x2 << 8 ) ) 
+#ifdef REQUIRE_ALL_LOOP_FLAGS
+						|| !( bLoopSet & ( 1 << Channel ) )
+#endif
+						)
 					{
 						// if channel is not already set to mute, then turn off reverb for channel and mark we passed end of sample data
 						if ( ADSR_Status [ Channel ] != ADSR_MUTE )
@@ -2603,7 +2614,7 @@ void SPUCore::Run ()
 							pChRegs1->LSA = SWAPH ( CurrentBlockAddress [ Channel ] & ~7 );
 
 							// loop set ?
-							bLoopSet |= ( 1 << Channel );
+							//bLoopSet |= ( 1 << Channel );
 
 							// clear killing of envelope
 							//KillEnvelope_Bitmap &= ~( 1 << Channel );
@@ -3298,8 +3309,8 @@ void SPU2::Start ()
 	GlobalVolume = c_iGlobalVolume_Default;
 	
 	// start the sound buffer out at 1m for now
-	PlayBuffer_Size = 8192;
-	NextPlayBuffer_Size = 8192;
+	PlayBuffer_Size = c_iPlayBuffer_MaxSize;
+	NextPlayBuffer_Size = c_iPlayBuffer_MaxSize;
 
 	wfx.nSamplesPerSec = 48000; /* sample rate */
 	wfx.wBitsPerSample = 16; /* sample size */
@@ -6406,37 +6417,33 @@ void SPUCore::ProcessReverbR ( s64 RightInput )
 	s64 s_mRAPF2 = ReadReverbBuffer ( SWAPH ( pCoreRegs0->mRAPF2 ) );
 	s64 s_mRAPF2_dAPF2 = ReadReverbBuffer ( ( SWAPH ( pCoreRegs0->mRAPF2 ) - SWAPH ( pCoreRegs0->dAPF2 ) ) );
 
-	// clamp input
-	//RightInput = adpcm_decoder::uclamp ( RightInput );
 
 	// input from mixer //
 	//Rin = ( RightInput * ( (s64) *_vRIN ) ) >> 15;
-	Rin = ( RightInput * ( (s64) pCoreRegs1->vRIN ) ) >> 15;
+	Rin = adpcm_decoder::clamp( ( RightInput * ( (s64) pCoreRegs1->vRIN ) ) >> 15 );
 	
 	// same side reflection //
 	//[mRSAME] = (Rin + [dRSAME]*vWALL - [mRSAME-2])*vIIR + [mRSAME-2]  ;R-to-R
 	//t_mRSAME = ( ( ( Rin + ( ( s_dRSAME * ( (s64) *_vWALL ) ) >> 15 ) - s_mRSAME ) * ( (s64) *_vIIR ) ) >> 15 ) + s_mRSAME;
-	t_mRSAME = ( ( /*adpcm_decoder::uclamp*/ ( Rin + ( ( s_dRSAME * ( (s64) pCoreRegs1->vWALL ) ) >> 15 ) - s_mRSAME ) * ( (s64) pCoreRegs1->vIIR ) ) >> 15 ) + s_mRSAME;
+	t_mRSAME = ( ( ( ( Rin + ( ( s_dRSAME * ( (s64) pCoreRegs1->vWALL ) ) >> 15 ) - s_mRSAME ) * ( (s64) pCoreRegs1->vIIR ) ) >> 15 ) + s_mRSAME );
 	
 	// Different Side Reflection //
 	//[mRDIFF] = (Rin + [dLDIFF]*vWALL - [mRDIFF-2])*vIIR + [mRDIFF-2]  ;L-to-R
 	//t_mRDIFF = ( ( ( Rin + ( ( s_dLDIFF * ( (s64) *_vWALL ) ) >> 15 ) - s_mRDIFF ) * ( (s64) *_vIIR ) ) >> 15 ) + s_mRDIFF;
-	t_mRDIFF = ( ( /*adpcm_decoder::uclamp*/ ( Rin + ( ( s_dLDIFF * ( (s64) pCoreRegs1->vWALL ) ) >> 15 ) - s_mRDIFF ) * ( (s64) pCoreRegs1->vIIR ) ) >> 15 ) + s_mRDIFF;
+	t_mRDIFF = ( ( ( ( Rin + ( ( s_dLDIFF * ( (s64) pCoreRegs1->vWALL ) ) >> 15 ) - s_mRDIFF ) * ( (s64) pCoreRegs1->vIIR ) ) >> 15 ) + s_mRDIFF );
 	
 	// Early Echo (Comb Filter, with input from buffer) //
 	//Rout=vCOMB1*[mRCOMB1]+vCOMB2*[mRCOMB2]+vCOMB3*[mRCOMB3]+vCOMB4*[mRCOMB4]
 	//Rout = ( ( ( (s64) *_vCOMB1 ) * s_mRCOMB1 ) + ( ( (s64) *_vCOMB2 ) * s_mRCOMB2 ) + ( ( (s64) *_vCOMB3 ) * s_mRCOMB3 ) + ( ( (s64) *_vCOMB4 ) * s_mRCOMB4 ) ) >> 15;
-	Rout = ( ( ( (s64) pCoreRegs1->vCOMB1 ) * s_mRCOMB1 ) + ( ( (s64) pCoreRegs1->vCOMB2 ) * s_mRCOMB2 ) + ( ( (s64) pCoreRegs1->vCOMB3 ) * s_mRCOMB3 ) + ( ( (s64) pCoreRegs1->vCOMB4 ) * s_mRCOMB4 ) ) >> 15;
+	Rout = (( ( ( (s64) pCoreRegs1->vCOMB1 ) * s_mRCOMB1 ) + ( ( (s64) pCoreRegs1->vCOMB2 ) * s_mRCOMB2 ) + ( ( (s64) pCoreRegs1->vCOMB3 ) * s_mRCOMB3 ) + ( ( (s64) pCoreRegs1->vCOMB4 ) * s_mRCOMB4 ) ) >> 15);
 
-	// clamp vars
-	//Rout = adpcm_decoder::uclamp ( Rout );
 
 	// Late Reverb APF1 (All Pass Filter 1, with input from COMB) //
 	//[mRAPF1]=Rout-vAPF1*[mRAPF1-dAPF1], Rout=[mRAPF1-dAPF1]+[mRAPF1]*vAPF1
 	//t_mRAPF1 = Rout - ( ( ( (s64) *_vAPF1 ) * s_mRAPF1_dAPF1 ) >> 15 );
 	//Rout = s_mRAPF1_dAPF1 + ( ( s_mRAPF1 * ( (s64) *_vAPF1 ) ) >> 15 );
-	t_mRAPF1 = Rout - ( ( ( (s64) pCoreRegs1->vAPF1 ) * s_mRAPF1_dAPF1 ) >> 15 );
-	Rout = s_mRAPF1_dAPF1 + ( ( s_mRAPF1 * ( (s64) pCoreRegs1->vAPF1 ) ) >> 15 );
+	t_mRAPF1 = ( Rout - ( ( ( (s64) pCoreRegs1->vAPF1 ) * s_mRAPF1_dAPF1 ) >> 15 ) );
+	Rout = ( s_mRAPF1_dAPF1 + ( (t_mRAPF1 * ( (s64) pCoreRegs1->vAPF1 ) ) >> 15 ) );
 
 	// clamp vars
 	//Rout = adpcm_decoder::uclamp ( Rout );
@@ -6445,8 +6452,8 @@ void SPUCore::ProcessReverbR ( s64 RightInput )
 	// [mRAPF2]=Rout-vAPF2*[mRAPF2-dAPF2], Rout=[mRAPF2-dAPF2]+[mRAPF2]*vAPF2
 	//t_mRAPF2 = Rout - ( ( ( (s64) *_vAPF2 ) * s_mRAPF2_dAPF2 ) >> 15 );
 	//Rout = s_mRAPF2_dAPF2 + ( ( s_mRAPF2 * ( (s64) *_vAPF2 ) ) >> 15 );
-	t_mRAPF2 = Rout - ( ( ( (s64) pCoreRegs1->vAPF2 ) * s_mRAPF2_dAPF2 ) >> 15 );
-	Rout = s_mRAPF2_dAPF2 + ( ( s_mRAPF2 * ( (s64) pCoreRegs1->vAPF2 ) ) >> 15 );
+	t_mRAPF2 = ( Rout - ( ( ( (s64) pCoreRegs1->vAPF2 ) * s_mRAPF2_dAPF2 ) >> 15 ) );
+	Rout = ( s_mRAPF2_dAPF2 + ( (t_mRAPF2 * ( (s64) pCoreRegs1->vAPF2 ) ) >> 15 ) );
 
 	// clamp vars
 	//Rout = adpcm_decoder::uclamp ( Rout );
@@ -6454,7 +6461,7 @@ void SPUCore::ProcessReverbR ( s64 RightInput )
 	// Output to Mixer (Output volume multiplied with input from APF2) //
 	// RightOutput = Rout*vROUT
 	//ReverbR_Output = ( Rout * ( (s64) *_vROUT ) ) >> 15;
-	ReverbR_Output = ( Rout * ( (s64) pCoreRegs1->vROUT ) ) >> 15;
+	ReverbR_Output = ( ( Rout * ( (s64) pCoreRegs1->vROUT ) ) >> 15 );
 	
 	// only write to the reverb buffer if reverb is enabled
 	//if ( REG ( CTRL ) & 0x80 )
@@ -6522,58 +6529,50 @@ void SPUCore::ProcessReverbL ( s64 LeftInput )
 	s64 s_mLAPF2 = ReadReverbBuffer ( SWAPH ( pCoreRegs0->mLAPF2 ) );
 	s64 s_mLAPF2_dAPF2 = ReadReverbBuffer ( ( SWAPH ( pCoreRegs0->mLAPF2 ) - SWAPH ( pCoreRegs0->dAPF2 ) ) );
 
-	// clamp input
-	//LeftInput = adpcm_decoder::uclamp ( LeftInput );
 	
 	// input from mixer //
 	//Lin = ( LeftInput * ( (s64) *_vLIN ) ) >> 15;
-	Lin = ( LeftInput * ( (s64) pCoreRegs1->vLIN ) ) >> 15;
+	Lin = ( ( LeftInput * ( (s64) pCoreRegs1->vLIN ) ) >> 15 );
 	
 	// same side reflection //
 	//[mLSAME] = (Lin + [dLSAME]*vWALL - [mLSAME-2])*vIIR + [mLSAME-2]  ;L-to-L
 	//t_mLSAME = ( ( ( Lin + ( ( s_dLSAME * ( (s64) *_vWALL ) ) >> 15 ) - s_mLSAME ) * ( (s64) *_vIIR ) ) >> 15 ) + s_mLSAME;
-	t_mLSAME = ( ( /*adpcm_decoder::uclamp*/ ( Lin + ( ( s_dLSAME * ( (s64) pCoreRegs1->vWALL ) ) >> 15 ) - s_mLSAME ) * ( (s64) pCoreRegs1->vIIR ) ) >> 15 ) + s_mLSAME;
-	
+	t_mLSAME = ((((Lin + ((s_dLSAME * ((s64)pCoreRegs1->vWALL)) >> 15) - s_mLSAME) * ((s64)pCoreRegs1->vIIR)) >> 15) + s_mLSAME);
+
 	// Different Side Reflection //
 	//[mLDIFF] = (Lin + [dRDIFF]*vWALL - [mLDIFF-2])*vIIR + [mLDIFF-2]  ;R-to-L
 	//t_mLDIFF = ( ( ( Lin + ( ( s_dRDIFF * ( (s64) *_vWALL ) ) >> 15 ) - s_mLDIFF ) * ( (s64) *_vIIR ) ) >> 15 ) + s_mLDIFF;
-	t_mLDIFF = ( ( /*adpcm_decoder::uclamp*/ ( Lin + ( ( s_dRDIFF * ( (s64) pCoreRegs1->vWALL ) ) >> 15 ) - s_mLDIFF ) * ( (s64) pCoreRegs1->vIIR ) ) >> 15 ) + s_mLDIFF;
+	t_mLDIFF = ((((Lin + ((s_dRDIFF * ((s64)pCoreRegs1->vWALL)) >> 15) - s_mLDIFF) * ((s64)pCoreRegs1->vIIR)) >> 15) + s_mLDIFF);
 
 	
 	// Early Echo (Comb Filter, with input from buffer) //
 	//Lout=vCOMB1*[mLCOMB1]+vCOMB2*[mLCOMB2]+vCOMB3*[mLCOMB3]+vCOMB4*[mLCOMB4]
 	//Lout = ( ( (s64) *_vCOMB1 ) * s_mLCOMB1 + ( (s64) *_vCOMB2 ) * s_mLCOMB2 + ( (s64) *_vCOMB3 ) * s_mLCOMB3 + ( (s64) *_vCOMB4 ) * s_mLCOMB4 ) >> 15;
-	Lout = ( ( (s64) pCoreRegs1->vCOMB1 ) * s_mLCOMB1 + ( (s64) pCoreRegs1->vCOMB2 ) * s_mLCOMB2 + ( (s64) pCoreRegs1->vCOMB3 ) * s_mLCOMB3 + ( (s64) pCoreRegs1->vCOMB4 ) * s_mLCOMB4 ) >> 15;
+	Lout = (( ( (s64) pCoreRegs1->vCOMB1 ) * s_mLCOMB1 + ( (s64) pCoreRegs1->vCOMB2 ) * s_mLCOMB2 + ( (s64) pCoreRegs1->vCOMB3 ) * s_mLCOMB3 + ( (s64) pCoreRegs1->vCOMB4 ) * s_mLCOMB4 ) >> 15);
 
-	// clamp vars
-	//Lout = adpcm_decoder::uclamp ( Lout );
 
 	// Late Reverb APF1 (All Pass Filter 1, with input from COMB) //
 	//[mLAPF1]=Lout-vAPF1*[mLAPF1-dAPF1], Lout=[mLAPF1-dAPF1]+[mLAPF1]*vAPF1
 	//t_mLAPF1 = Lout - ( ( ( (s64) *_vAPF1 ) * s_mLAPF1_dAPF1 ) >> 15 );
 	//Lout = s_mLAPF1_dAPF1 + ( ( s_mLAPF1 * ( (s64) *_vAPF1 ) ) >> 15 );
-	t_mLAPF1 = Lout - ( ( ( (s64) pCoreRegs1->vAPF1 ) * s_mLAPF1_dAPF1 ) >> 15 );
-	Lout = s_mLAPF1_dAPF1 + ( ( s_mLAPF1 * ( (s64) pCoreRegs1->vAPF1 ) ) >> 15 );
+	t_mLAPF1 = (Lout - ((((s64)pCoreRegs1->vAPF1) * s_mLAPF1_dAPF1) >> 15));
+	Lout = (s_mLAPF1_dAPF1 + ((t_mLAPF1 * ((s64)pCoreRegs1->vAPF1)) >> 15));
 
 //debug << "\r\nWriteReverb0: " << dec << " Lout=" << Lout << " s_mLAPF2=" << s_mLAPF2 << " s_mLAPF2_dAPF2=" << s_mLAPF2_dAPF2 << " vAPF2=" << pCoreRegs1->vAPF2;
 
-	// clamp vars
-	//Lout = adpcm_decoder::uclamp ( Lout );
 
 	// Late Reverb APF2 (All Pass Filter 2, with input from APF1) //
 	// [mLAPF2]=Lout-vAPF2*[mLAPF2-dAPF2], Lout=[mLAPF2-dAPF2]+[mLAPF2]*vAPF2
 	//t_mLAPF2 = Lout - ( ( ( (s64) *_vAPF2 ) * s_mLAPF2_dAPF2 ) >> 15 );
 	//Lout = s_mLAPF2_dAPF2 + ( ( s_mLAPF2 * ( (s64) *_vAPF2 ) ) >> 15 );
-	t_mLAPF2 = Lout - ( ( ( (s64) pCoreRegs1->vAPF2 ) * s_mLAPF2_dAPF2 ) >> 15 );
-	Lout = s_mLAPF2_dAPF2 + ( ( s_mLAPF2 * ( (s64) pCoreRegs1->vAPF2 ) ) >> 15 );
+	t_mLAPF2 = (Lout - ((((s64)pCoreRegs1->vAPF2) * s_mLAPF2_dAPF2) >> 15));
+	Lout = ( s_mLAPF2_dAPF2 + ( (t_mLAPF2 * ( (s64) pCoreRegs1->vAPF2 ) ) >> 15 ) );
 
-	// clamp vars
-	//Lout = adpcm_decoder::uclamp ( Lout );
 
 	// Output to Mixer (Output volume multiplied with input from APF2) //
 	// LeftOutput = Lout*vLOUT
 	//ReverbL_Output = ( Lout * ( (s64) *_vLOUT ) ) >> 15;
-	ReverbL_Output = ( Lout * ( (s64) pCoreRegs1->vLOUT ) ) >> 15;
+	ReverbL_Output = ( ( Lout * ( (s64) pCoreRegs1->vLOUT ) ) >> 15 );
 	
 	// only write to the reverb buffer if reverb is enabled
 	//if ( REG ( CTRL ) & 0x80 )
@@ -6664,7 +6663,7 @@ s64 SPUCore::ReadReverbBuffer ( u32 Address )
 #endif
 
 	// address is ready for use with shift right by 1
-	 return Value;
+	return Value;
 }
 
 void SPUCore::WriteReverbBuffer ( u32 Address, s64 Value )
@@ -6738,7 +6737,7 @@ void SPUCore::WriteReverbBuffer ( u32 Address, s64 Value )
 
 	// address is ready for use with shift right by 1
 	//RAM [ Address >> 1 ] = adpcm_decoder::clamp ( Value );
-	RAM [ Address ] = adpcm_decoder::clamp ( Value );
+	RAM [ Address ] = adpcm_decoder::clamp64 ( Value );
 }
 
 void SPUCore::UpdateReverbBuffer ()
@@ -7070,10 +7069,10 @@ void SPUCore::Start_SampleDecoding ( u32 Channel )
 		// set loop start address
 		pChRegs1->LSA = SWAPH ( CurrentBlockAddress [ Channel ] );
 
-		// assume loop is set for now for channel
-		bLoopSet |= ( 1 << Channel );
 	}
 	
+	// assume loop is set for now for channel
+	bLoopSet |= (1 << Channel);
 
 	// clear loop set if loop bit not set
 	if ( ! ( RAM [ CurrentBlockAddress [ Channel ] & ( c_iRam_Mask >> 1 ) ] & ( 0x2 << 8 ) ) )
@@ -7430,7 +7429,34 @@ void SPUCore::DebugWindow_Enable ( int Number )
 		SPUMaster_ValueList [ Number ]->AddVariable ( "IRQA_1", & pCoreRegs0->IRQA_1 );
 		SPUMaster_ValueList [ Number ]->AddVariable ( "CTRL", & pCoreRegs0->CTRL );
 		SPUMaster_ValueList [ Number ]->AddVariable ( "STAT", & pCoreRegs0->STAT );
-		
+
+		SPUMaster_ValueList[Number]->AddVariable("MMIX", &pCoreRegs0->MMIX);
+
+		SPUMaster_ValueList[Number]->AddVariable("PMON_0", &pCoreRegs0->PMON_0);
+		SPUMaster_ValueList[Number]->AddVariable("PMON_1", &pCoreRegs0->PMON_1);
+		SPUMaster_ValueList[Number]->AddVariable("NON_0", &pCoreRegs0->NON_0);
+		SPUMaster_ValueList[Number]->AddVariable("NON_1", &pCoreRegs0->NON_1);
+
+		SPUMaster_ValueList[Number]->AddVariable("vIIR", (u16*) & pCoreRegs1->vIIR);
+		SPUMaster_ValueList[Number]->AddVariable("ADMAS", &pCoreRegs0->ADMAS);
+
+		SPUMaster_ValueList[Number]->AddVariable("SBA_0", &pCoreRegs0->SBA_0);
+		SPUMaster_ValueList[Number]->AddVariable("SBA_1", &pCoreRegs0->SBA_1);
+
+		SPUMaster_ValueList[Number]->AddVariable("VMIXL_0", &pCoreRegs0->VMIXL_0);
+		SPUMaster_ValueList[Number]->AddVariable("VMIXL_1", &pCoreRegs0->VMIXL_1);
+		SPUMaster_ValueList[Number]->AddVariable("VMIXR_0", &pCoreRegs0->VMIXR_0);
+		SPUMaster_ValueList[Number]->AddVariable("VMIXR_1", &pCoreRegs0->VMIXR_1);
+		SPUMaster_ValueList[Number]->AddVariable("VMIXEL_0", &pCoreRegs0->VMIXEL_0);
+		SPUMaster_ValueList[Number]->AddVariable("VMIXEL_1", &pCoreRegs0->VMIXEL_1);
+		SPUMaster_ValueList[Number]->AddVariable("VMIXER_0", &pCoreRegs0->VMIXER_0);
+		SPUMaster_ValueList[Number]->AddVariable("VMIXER_1", &pCoreRegs0->VMIXER_1);
+
+		SPUMaster_ValueList[Number]->AddVariable("RVWAS_0", &pCoreRegs0->RVWAS_0);
+		SPUMaster_ValueList[Number]->AddVariable("RVWAS_1", &pCoreRegs0->RVWAS_1);
+		//SPUMaster_ValueList[Number]->AddVariable("RVWAE_0", &pCoreRegs0->RVWAE_0);
+		SPUMaster_ValueList[Number]->AddVariable("RVWAE_1", &pCoreRegs0->RVWAE_1);
+
 		
 		// add variables into lists
 		for ( i = 0; i < NumberOfChannels; i++ )

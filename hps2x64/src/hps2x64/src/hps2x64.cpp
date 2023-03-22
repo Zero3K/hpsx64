@@ -31,6 +31,8 @@
 
 #include "guicon.h"
 
+#include "vulkan_setup.h"
+
 using namespace WinApi;
 
 using namespace Playstation2;
@@ -46,6 +48,8 @@ using namespace Utilities::Strings;
 
 
 #define ENABLE_DIRECT_INPUT
+
+#define ALLOW_PS2_HWRENDER
 
 
 json jsnMenuBar = {
@@ -685,6 +689,25 @@ json jsnMenuBar = {
 			{ "English", "Video" }
 		} },
 		{ "SubMenu", {
+			{ "Renderer", {
+				{ "Caption", {
+					{ "English", "Renderer" }
+				} },
+				{ "SubMenu", {
+					{ "Renderer: Software", {
+						{ "Caption", {
+							{ "English", "Renderer: Software" }
+						} },
+						{ "Function", (unsigned long long) hps2x64::OnClick_Video_Renderer_Software }
+					} },
+					{ "Renderer: Hardware", {
+						{ "Caption", {
+							{ "English", "Renderer: Hardware" }
+						} },
+						{ "Function", (unsigned long long) hps2x64::OnClick_Video_Renderer_Hardware }
+					} },
+				} },
+			} },
 			/*
 			{ "Scanlines", {
 				{ "Caption", {
@@ -975,7 +998,9 @@ void hps2x64::Update_CheckMarksOnMenu ()
 {
 	// uncheck all first
 	ProgramWindow->Menus->UnCheckItem("Bios");
-	ProgramWindow->Menus->UnCheckItem ( "Insert/Remove Game Disk" );
+	ProgramWindow->Menus->UnCheckItem("Insert/Remove Audio Disk");
+	ProgramWindow->Menus->UnCheckItem("Insert/Remove PS1 Game Disk");
+	ProgramWindow->Menus->UnCheckItem ( "Insert/Remove PS2 Game Disk" );
 	ProgramWindow->Menus->UnCheckItem ( "Pad 1 Digital" );
 	ProgramWindow->Menus->UnCheckItem ( "Pad 1 Analog" );
 	ProgramWindow->Menus->UnCheckItem ( "Pad 1 DualShock2" );
@@ -1028,6 +1053,8 @@ void hps2x64::Update_CheckMarksOnMenu ()
 	ProgramWindow->Menus->UnCheckItem ( "SPU Multi-Thread" );
 	ProgramWindow->Menus->UnCheckItem ( "Enable Vsync" );
 	
+	ProgramWindow->Menus->UnCheckItem("Renderer: Software");
+	ProgramWindow->Menus->UnCheckItem("Renderer: Hardware");
 
 	// check if a bios is loaded into memory or not
 	if (sLastBiosPath.compare(""))
@@ -1048,6 +1075,20 @@ void hps2x64::Update_CheckMarksOnMenu ()
 	
 	if ( !_SYSTEM._PS1SYSTEM._CD.isLidOpen )
 	{
+		switch (_HPS2X64._SYSTEM._PS1SYSTEM._CDVD.CurrentDiskType)
+		{
+		case CDVD_TYPE_PS2CD:
+		case CDVD_TYPE_PS2DVD:
+			ProgramWindow->Menus->CheckItem("Insert/Remove PS2 Game Disk");
+			break;
+
+		case CDVD_TYPE_PSCD:
+			ProgramWindow->Menus->CheckItem("Insert/Remove PS1 Game Disk");
+			break;
+		}
+
+
+		/*
 		switch ( _SYSTEM._PS1SYSTEM._CD.isGameCD )
 		{
 			case true:
@@ -1058,7 +1099,13 @@ void hps2x64::Update_CheckMarksOnMenu ()
 				ProgramWindow->Menus->CheckItem ( "Insert/Remove Audio Disk" );
 				break;
 		}
-	}
+		*/
+
+
+	}	// end if ( !_SYSTEM._PS1SYSTEM._CD.isLidOpen )
+
+
+
 	
 	// check box for analog/digital pad 1/2 //
 	
@@ -1302,7 +1349,18 @@ void hps2x64::Update_CheckMarksOnMenu ()
 	{
 		ProgramWindow->Menus->CheckItem ( "Enable Vsync" );
 	}
-	
+
+#ifdef ALLOW_PS2_HWRENDER
+	if (_HPS2X64._SYSTEM._GPU.bEnable_OpenCL)
+	{
+		ProgramWindow->Menus->CheckItem("Renderer: Hardware");
+	}
+	else
+	{
+		ProgramWindow->Menus->CheckItem("Renderer: Software");
+	}
+#endif
+
 }
 
 
@@ -1311,6 +1369,19 @@ void hps2x64::InitializeProgram ()
 	static constexpr char* ProgramWindow_Caption = "hps2x64";
 
 	u32 xsize, ysize;
+
+
+	// run current test
+	cout << "\ntesting\n";
+
+	s32 sop1 = 0x80000000;
+	s32 sop2 = -1;
+	u32 uop1 = 0x80000000ul;
+	u32 uop2 = -1ul;
+	cout << "\ntest: sop1=" << hex << sop1 << " sop2=" << sop2 << " result=sop1/sop2=" << hex << (sop1 / sop2);
+	cout << "\ntest: sop1=" << hex << sop1 << " sop2=" << sop2 << " result=sop1%sop2=" << hex << (sop1 % sop2);
+	cout << "\ntest: uop1=" << hex << uop1 << " uop2=" << uop2 << " result=uop1/uop2=" << hex << (uop1 / uop2);
+	cout << "\ntest: uop1=" << hex << uop1 << " uop2=" << uop2 << " result=uop1%uop2=" << hex << (uop1 % uop2);
 
 	////////////////////////////////////////////////
 	// create program window
@@ -1444,9 +1515,6 @@ void hps2x64::InitializeProgram ()
 	
 	cout << "\ndone initializing";
 	
-	// run current test
-	//cout << "\ntesting\n";
-	//cout << Vu::Instruction::Print::PrintInstruction ( 0x2ff ) << "\n";
 
 }
 
@@ -1473,6 +1541,12 @@ void hps2x64::RunProgram ()
 	double dTicksPerMilliSec;
 	
 	cout << "\nRunning program";
+
+
+	// LOAD VULKAN //
+
+	_SYSTEM._GPU.LoadVulkan();
+
 	
 	// get ticks per second for the platform's high-resolution timer
 	if ( !QueryPerformanceFrequency ( (LARGE_INTEGER*) &TicksPerSec ) )
@@ -1700,7 +1774,7 @@ void hps2x64::RunProgram ()
 						GPU::End_Frame ();
 
 						SPU2::End_Thread ();
-					
+
 						// if menu has been clicked then wait
 						WindowClass::Window::WaitForModalMenuLoop ();
 						
@@ -1764,7 +1838,8 @@ void hps2x64::RunProgram ()
 				}
 				
 				// put in caption for statistic
-				ss << " - Speed: " << fixed << setprecision(2);
+				//ss << " - Speed: " << fixed << setprecision(2);
+				ss << " " << fixed << setprecision(2);
 
 				// get the difference in ticks between the time we started and the time we are at now
 				TicksLeft = ullPerfEnd_Timer - ullPerfStart_Timer;
@@ -1777,7 +1852,7 @@ void hps2x64::RunProgram ()
 				{
 					// single-threaded //
 
-					ss << " Thread0 (Main): ";
+					ss << "Thread0 (Main): ";
 					ss << dPerf << "%";
 				}
 				else
@@ -1795,24 +1870,31 @@ void hps2x64::RunProgram ()
 					{
 						// gpu only theaded //
 
-						ss << " Thread0 (Main): ";
+						ss << "Thread0: ";
 						ss << dPerf << "%";
-						ss << " Thread1 (GPU): ";
+						ss << " Thread1(GPU): ";
 						ss << dPerf2 << "%";
 					}
 					else
 					{
 						// vu1+gpu threaded //
 
-						ss << " Thread0 (Main): ";
+						ss << "Thread0 (Main): ";
 						ss << dPerf << "%";
 						ss << " Thread1 (VU1+GPU): ";
 						ss << dPerf2 << "%";
 					}
+
 				}
 
-				//ss << "hps2x64 - Speed(NTSC): " << dPerf << "%";
-
+				if (_SYSTEM._GPU.bEnable_OpenCL)
+				{
+					ss << " Renderer: Hardware";
+				}
+				else
+				{
+					ss << " Renderer: Software";
+				}
 
 				// put the program name and speed statistics in the caption bar for program
 				ProgramWindow->SetCaption( ss.str().c_str() );
@@ -1829,7 +1911,13 @@ void hps2x64::RunProgram ()
 	}
 	
 	cout << "\nDone running program\n";
+
+
+	// unload vulkan //
 	
+	//vulkan_destroy();
+	_SYSTEM._GPU.UnloadVulkan();
+
 	
 	// Program loop is done here at this point //
 	// Closing Program //
@@ -3617,6 +3705,72 @@ void hps2x64::OnClick_Audio_MultiThread ( int i )
 }
 
 
+
+void hps2x64::OnClick_Video_Renderer_Software(int i)
+{
+	cout << "\nYou clicked Video | Renderer | Software\n";
+
+	// if previously on hardware renderer, then copy framebuffer
+	if (_HPS2X64._SYSTEM._GPU.bEnable_OpenCL)
+	{
+		// copy frame buffer from hardware to software if hardware rendering is allowed
+		if (_HPS2X64._SYSTEM._GPU.bAllowGpuHardwareRendering)
+		{
+			// copy VRAM from gpu hardware to software VRAM
+			_HPS2X64._SYSTEM._GPU.Copy_VRAM_toCPU();
+			_HPS2X64._SYSTEM._GPU.Copy_CLUT_toCPU();
+		}
+	}
+
+	_HPS2X64._SYSTEM._GPU.bEnable_OpenCL = false;
+
+	_MenuWasClicked = 1;
+
+	_HPS2X64.Update_CheckMarksOnMenu();
+}
+
+
+void hps2x64::OnClick_Video_Renderer_Hardware(int i)
+{
+	cout << "\nYou clicked Video | Renderer | Hardware\n";
+
+	if (_HPS2X64._SYSTEM._GPU.bAllowGpuHardwareRendering)
+	{
+		// if previously rendering on cpu, copy vram to gpu hardware
+		if (!_HPS2X64._SYSTEM._GPU.bEnable_OpenCL)
+		{
+			_HPS2X64._SYSTEM._GPU.Copy_VRAM_toGPU();
+			_HPS2X64._SYSTEM._GPU.Copy_CLUT_toGPU();
+			_HPS2X64._SYSTEM._GPU.Copy_VARS_toGPU();
+		}
+
+		_HPS2X64._SYSTEM._GPU.bEnable_OpenCL = true;
+	}
+	else
+	{
+		cout << "\nhps2x64: ERROR: Unable to use hardware renderer. VULKAN not setup properly. Using software renderer.\n";
+
+		// if previously on hardware renderer, then copy framebuffer
+		if (_HPS2X64._SYSTEM._GPU.bEnable_OpenCL)
+		{
+			// copy frame buffer from hardware to software if hardware rendering is allowed
+			if (_HPS2X64._SYSTEM._GPU.bAllowGpuHardwareRendering)
+			{
+				// copy VRAM from gpu hardware to software VRAM
+				_HPS2X64._SYSTEM._GPU.Copy_VRAM_toCPU();
+				_HPS2X64._SYSTEM._GPU.Copy_CLUT_toCPU();
+			}
+		}
+
+		_HPS2X64._SYSTEM._GPU.bEnable_OpenCL = false;
+	}
+
+	_MenuWasClicked = 1;
+
+	_HPS2X64.Update_CheckMarksOnMenu();
+}
+
+
 void hps2x64::OnClick_Video_FullScreen ( int i )
 {
 	//MenuClicked m;
@@ -3630,6 +3784,10 @@ void hps2x64::OnClick_Video_FullScreen ( int i )
 	if( ! ProgramWindow->fullscreen )
 	{
 		ProgramWindow->SetWindowSize ( Playstation2::GPU::MainProgramWindow_Width, Playstation2::GPU::MainProgramWindow_Height );
+
+		// update screen size in vulkan
+		vulkan_set_screen_size(Playstation2::GPU::MainProgramWindow_Width, Playstation2::GPU::MainProgramWindow_Height);
+		vulkan_create_swap_chain();
 	}
 	
 	ProgramWindow->ToggleGLFullScreen ();
@@ -3665,6 +3823,10 @@ void hps2x64::OnClick_Video_WindowSizeX1 ( int i )
 	Playstation2::GPU::MainProgramWindow_Width = (long) ( ((float)ProgramWindow_Width) * 1.0f );
 	Playstation2::GPU::MainProgramWindow_Height = (long) ( ((float)ProgramWindow_Height) * 1.0f );
 	ProgramWindow->SetWindowSize ( Playstation2::GPU::MainProgramWindow_Width, Playstation2::GPU::MainProgramWindow_Height );
+
+	// update screen size in vulkan
+	vulkan_set_screen_size(Playstation2::GPU::MainProgramWindow_Width, Playstation2::GPU::MainProgramWindow_Height);
+	vulkan_create_swap_chain();
 }
 
 void hps2x64::OnClick_Video_WindowSizeX15 ( int i )
@@ -3672,6 +3834,10 @@ void hps2x64::OnClick_Video_WindowSizeX15 ( int i )
 	Playstation2::GPU::MainProgramWindow_Width = (long) ( ((float)ProgramWindow_Width) * 1.5f );
 	Playstation2::GPU::MainProgramWindow_Height = (long) ( ((float)ProgramWindow_Height) * 1.5f );
 	ProgramWindow->SetWindowSize ( Playstation2::GPU::MainProgramWindow_Width, Playstation2::GPU::MainProgramWindow_Height );
+
+	// update screen size in vulkan
+	vulkan_set_screen_size(Playstation2::GPU::MainProgramWindow_Width, Playstation2::GPU::MainProgramWindow_Height);
+	vulkan_create_swap_chain();
 }
 
 void hps2x64::OnClick_Video_WindowSizeX2 ( int i )
@@ -3679,6 +3845,10 @@ void hps2x64::OnClick_Video_WindowSizeX2 ( int i )
 	Playstation2::GPU::MainProgramWindow_Width = (long) ( ((float)ProgramWindow_Width) * 2.0f );
 	Playstation2::GPU::MainProgramWindow_Height = (long) ( ((float)ProgramWindow_Height) * 2.0f );
 	ProgramWindow->SetWindowSize ( Playstation2::GPU::MainProgramWindow_Width, Playstation2::GPU::MainProgramWindow_Height );
+
+	// update screen size in vulkan
+	vulkan_set_screen_size(Playstation2::GPU::MainProgramWindow_Width, Playstation2::GPU::MainProgramWindow_Height);
+	vulkan_create_swap_chain();
 }
 
 
@@ -3963,6 +4133,23 @@ void hps2x64::SaveState ( string FilePath )
 	// make sure cd is not reading asynchronously??
 	_SYSTEM._PS1SYSTEM._CD.cd_image.WaitForAllReadsComplete ();
 
+
+#ifdef ALLOW_PS2_HWRENDER
+	// if previously on hardware renderer, then copy framebuffer
+	if (_HPS2X64._SYSTEM._GPU.bEnable_OpenCL)
+	{
+		// copy frame buffer from hardware to software if hardware rendering is allowed
+		if (_HPS2X64._SYSTEM._GPU.bAllowGpuHardwareRendering)
+		{
+			// copy VRAM from gpu hardware to software VRAM
+			_HPS2X64._SYSTEM._GPU.Copy_VRAM_toCPU();
+			_HPS2X64._SYSTEM._GPU.Copy_CLUT_toCPU();
+			_HPS2X64._SYSTEM._GPU.Copy_VARS_toCPU();
+		}
+	}
+#endif
+
+
 	////////////////////////////////////////////////////////
 	// We need to prompt for the file to save state to
 	if ( !FilePath.compare ( "" ) )
@@ -3998,6 +4185,8 @@ void hps2x64::SaveState ( string FilePath )
 	if ( _HPS2X64._SYSTEM._GPU.bEnable_OpenCL )
 	{
 		_HPS2X64._SYSTEM._GPU.Copy_VRAM_toCPU ();
+		_HPS2X64._SYSTEM._GPU.Copy_CLUT_toCPU();
+		_HPS2X64._SYSTEM._GPU.Copy_VARS_toCPU();
 	}
 
 
@@ -4065,9 +4254,28 @@ void hps2x64::LoadState ( string FilePath )
 	_SYSTEM.Refresh ();
 
 
-	//_HPS2X64._SYSTEM._GPU.Copy_VRAM_toGPU ();
 	//_HPS2X64._SYSTEM._GPU.bEnable_OpenCL = true;
-	_HPS2X64._SYSTEM._GPU.bEnable_OpenCL = false;
+	//_HPS2X64._SYSTEM._GPU.bEnable_OpenCL = false;
+
+#ifdef ALLOW_PS2_HWRENDER
+	// if previously on hardware renderer, then copy framebuffer
+	if (_HPS2X64._SYSTEM._GPU.bEnable_OpenCL)
+	{
+		// copy frame buffer from hardware to software if hardware rendering is allowed
+		if (_HPS2X64._SYSTEM._GPU.bAllowGpuHardwareRendering)
+		{
+			// copy VRAM from gpu hardware to software VRAM
+			_HPS2X64._SYSTEM._GPU.Copy_VRAM_toGPU();
+			_HPS2X64._SYSTEM._GPU.Copy_CLUT_toGPU();
+			_HPS2X64._SYSTEM._GPU.Copy_VARS_toGPU();
+		}
+		else
+		{
+			// the hardware does not allow this particular compute shader for some reason
+			_HPS2X64._SYSTEM._GPU.bEnable_OpenCL = false;
+		}
+	}
+#endif
 
 
 	cout << "Done Loading state.\n";

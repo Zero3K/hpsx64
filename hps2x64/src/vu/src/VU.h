@@ -138,7 +138,10 @@ namespace Playstation2
 		static constexpr double c_dClockSpeed1 = 147456000.0L;
 		static constexpr double c_dClockSpeed2 = 149500000.0L;
 		
-		
+		// must be power of 2
+		static constexpr int c_iVURecompilerCache_MaxEntries = 1 << 4;
+		static constexpr int c_iVURecompilerCache_Mask = c_iVURecompilerCache_MaxEntries - 1;
+
 		// the number of vu cycles for every cpu cycle or vice versa
 		static constexpr double c_dVUPerCPU_Cycles = ( 1.0L / 2.0L );
 		static constexpr double c_dCPUPerVU_Cycles = ( 2.0L / 1.0L );
