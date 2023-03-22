@@ -395,3 +395,9 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
+
+*.hcfg
+card0
+card1
+ps2card0
+ps2card1
