@@ -297,7 +297,4 @@
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
-  <ItemGroup>
-    <Text Include="common\Vulkan\vulkan_list_of_functions.inl" />
-  </ItemGroup>
 </Project>

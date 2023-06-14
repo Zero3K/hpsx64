@@ -121,95 +121,6 @@ VkFence vulkan_fence;
 
 HMODULE VulkanLibrary;
 
-bool vulkan_load_library()
-{
-#if defined(VK_USE_PLATFORM_WIN32_KHR)
-	VulkanLibrary = LoadLibrary("vulkan-1.dll");
-#elif defined(VK_USE_PLATFORM_XCB_KHR) || defined(VK_USE_PLATFORM_XLIB_KHR)
-	VulkanLibrary = dlopen("libvulkan.so", RTLD_NOW);
-#endif
-
-	if (VulkanLibrary == nullptr) {
-		std::cout << "Could not load Vulkan library!" << std::endl;
-		return false;
-	}
-	return true;
-}
-
-
-namespace vulkanapi {
-
-#define VK_EXPORTED_FUNCTION( fun ) PFN_##fun fun;
-#define VK_GLOBAL_LEVEL_FUNCTION( fun ) PFN_##fun fun;
-#define VK_INSTANCE_LEVEL_FUNCTION( fun ) PFN_##fun fun;
-#define VK_DEVICE_LEVEL_FUNCTION( fun ) PFN_##fun fun;
-
-#include "vulkan_list_of_functions.inl"
-
-
-	bool vulkan_load_exported_entry_points()
-	{
-#if defined(VK_USE_PLATFORM_WIN32_KHR)
-#define LoadProcAddress GetProcAddress
-#elif defined(VK_USE_PLATFORM_XCB_KHR) || defined(VK_USE_PLATFORM_XLIB_KHR)
-#define LoadProcAddress dlsym
-#endif
-
-#define VK_EXPORTED_FUNCTION( fun ) \
-if( !(fun = (PFN_##fun)LoadProcAddress( VulkanLibrary, #fun )) ) { \
-  std::cout << "Could not load exported function: " << #fun << "!" << std::endl; \
-  return false; \
-}
-
-#include "vulkan_list_of_functions.inl"
-
-		return true;
-	}
-
-
-	bool vulkan_load_global_level_entry_points()
-	{
-#define VK_GLOBAL_LEVEL_FUNCTION( fun )                                               \
-if( !(fun = (PFN_##fun)vkGetInstanceProcAddr( nullptr, #fun )) ) {                    \
-  std::cout << "Could not load global level function: " << #fun << "!" << std::endl;  \
-  return false;                                                                       \
-}
-
-#include "vulkan_list_of_functions.inl"
-
-		return true;
-	}
-
-
-	bool vulkan_load_instance_level_entry_points()
-	{
-#define VK_INSTANCE_LEVEL_FUNCTION( fun )                                               \
-if( !(fun = (PFN_##fun)vkGetInstanceProcAddr( vulkan_instance, #fun )) ) {              \
-  std::cout << "Could not load instance level function: " << #fun << "!" << std::endl;  \
-  return false;                                                                         \
-}
-
-#include "vulkan_list_of_functions.inl"
-
-		return true;
-	}
-
-
-	bool vulkan_load_device_level_entry_points()
-	{
-#define VK_DEVICE_LEVEL_FUNCTION( fun )                                               \
-if( !(fun = (PFN_##fun)vkGetDeviceProcAddr( vulkan_device, #fun )) ) {                \
-  std::cout << "Could not load device level function: " << #fun << "!" << std::endl;  \
-  return false;                                                                       \
-}
-
-#include "vulkan_list_of_functions.inl"
-
-		return true;
-	}
-
-}
-
 
 int vulkan_get_subgroup_size()
 {
@@ -234,9 +145,9 @@ void vulkan_set_gpu_threads(int num_gpu_threads)
 bool vulkan_wait()
 {
 	// get device queue ??
-	vulkanapi::vkGetDeviceQueue(vulkan_device, vulkan_queueFamilyIndex, 0, &vulkan_queue);
+	vkGetDeviceQueue(vulkan_device, vulkan_queueFamilyIndex, 0, &vulkan_queue);
 
-	VkResult v1 = vulkanapi::vkQueueWaitIdle(vulkan_queue);
+	VkResult v1 = vkQueueWaitIdle(vulkan_queue);
 	if ( v1 != VK_SUCCESS)
 	{
 		std::cout << "\nVULKAN ERROR: Problem with idle wait.\n";
@@ -251,7 +162,7 @@ bool vulkan_wait()
 // wait for gpu fence with vulkan
 bool vulkan_wait_fence()
 {
-	VkResult res = vulkanapi::vkWaitForFences(vulkan_device, 1, &vulkan_fence, VK_TRUE, UINT64_MAX);
+	VkResult res = vkWaitForFences(vulkan_device, 1, &vulkan_fence, VK_TRUE, UINT64_MAX);
 	if (res != VK_SUCCESS)
 	{
 		std::cout << "\nVULKAN ERROR: Problem with idle FENCE wait.\n";
@@ -259,7 +170,7 @@ bool vulkan_wait_fence()
 		return false;
 	}
 
-	vulkanapi::vkResetFences(vulkan_device, 1, &vulkan_fence);
+	vkResetFences(vulkan_device, 1, &vulkan_fence);
 	return true;
 }
 
@@ -274,7 +185,7 @@ void vulkan_flush()
 		VK_WHOLE_SIZE
 	};
 
-	if (vulkanapi::vkFlushMappedMemoryRanges(vulkan_device, 1, &memrange) != VK_SUCCESS)
+	if (vkFlushMappedMemoryRanges(vulkan_device, 1, &memrange) != VK_SUCCESS)
 	{
 		std::cout << "\nVULKAN: ERROR: problem flushing mapped memory range.\n";
 	}
@@ -288,8 +199,8 @@ bool vulkan_execute_compute_only()
 	//	cout << "\nERROR: VULKAN: Problem with idle wait during vulkan_execute.\n";
 	//}
 
-	//if (vulkanapi::vkQueueSubmit(vulkan_queue, 1, &vulkan_submitInfo, 0) != VK_SUCCESS)
-	if (vulkanapi::vkQueueSubmit(vulkan_queue, 1, &vulkan_submitInfo, vulkan_fence) != VK_SUCCESS)
+	//if (vkQueueSubmit(vulkan_queue, 1, &vulkan_submitInfo, 0) != VK_SUCCESS)
+	if (vkQueueSubmit(vulkan_queue, 1, &vulkan_submitInfo, vulkan_fence) != VK_SUCCESS)
 	{
 		std::cout << "\nVULKAN ERROR: Problem with queue submit (COMPUTE ONLY).\n";
 		return false;
@@ -305,15 +216,15 @@ bool vulkan_execute()
 #ifdef VULKAN_EXECUTE_COMPUTE_ONLY
 
 	// get device queue ??
-	vulkanapi::vkGetDeviceQueue(vulkan_device, vulkan_queueFamilyIndex, 0, &vulkan_queue);
+	vkGetDeviceQueue(vulkan_device, vulkan_queueFamilyIndex, 0, &vulkan_queue);
 
-	if (vulkanapi::vkQueueWaitIdle(vulkan_queue) != VK_SUCCESS)
+	if (vkQueueWaitIdle(vulkan_queue) != VK_SUCCESS)
 	{
 		std::cout << "\nERROR: VULKAN: Problem with idle wait during vulkan_execute.\n";
 
 	}
 
-	if (vulkanapi::vkQueueSubmit(vulkan_queue, 1, &vulkan_submitInfo, 0) != VK_SUCCESS)
+	if (vkQueueSubmit(vulkan_queue, 1, &vulkan_submitInfo, 0) != VK_SUCCESS)
 	{
 		std::cout << "\nVULKAN ERROR: Problem with queue submit.\n";
 	}
@@ -325,7 +236,7 @@ bool vulkan_execute()
 	//}
 
 	uint32_t image_index;
-	VkResult result = vulkanapi::vkAcquireNextImageKHR(vulkan_device, vulkan_swapchain, UINT64_MAX, vulkan_image_available_semaphore, VK_NULL_HANDLE, &image_index);
+	VkResult result = vkAcquireNextImageKHR(vulkan_device, vulkan_swapchain, UINT64_MAX, vulkan_image_available_semaphore, VK_NULL_HANDLE, &image_index);
 	switch (result) {
 	case VK_SUCCESS:
 	case VK_SUBOPTIMAL_KHR:
@@ -360,8 +271,8 @@ bool vulkan_execute()
 	  & vulkan_rendering_finished_semaphore            // const VkSemaphore           *pSignalSemaphores
 	};
 
-	//if (vulkanapi::vkQueueSubmit(vulkan_queue, 1, &submit_info, VK_NULL_HANDLE) != VK_SUCCESS) {
-	if (vulkanapi::vkQueueSubmit(vulkan_queue, 1, &submit_info, vulkan_fence) != VK_SUCCESS) {
+	//if (vkQueueSubmit(vulkan_queue, 1, &submit_info, VK_NULL_HANDLE) != VK_SUCCESS) {
+	if (vkQueueSubmit(vulkan_queue, 1, &submit_info, vulkan_fence) != VK_SUCCESS) {
 			//return false;
 		cout << "\nVULKAN ERROR: Problem with queue submit.\n";
 		return false;
@@ -378,7 +289,7 @@ bool vulkan_execute()
 		  & image_index,                                 // const uint32_t              *pImageIndices
 		  nullptr                                       // VkResult                    *pResults
 	};
-	result = vulkanapi::vkQueuePresentKHR(vulkan_queue, &present_info);
+	result = vkQueuePresentKHR(vulkan_queue, &present_info);
 
 	switch (result) {
 	case VK_SUCCESS:
@@ -412,19 +323,19 @@ void vulkan_clear()
 {
 	if (vulkan_device != VK_NULL_HANDLE)
 	{
-		vulkanapi::vkDeviceWaitIdle(vulkan_device);
+		vkDeviceWaitIdle(vulkan_device);
 
 		if (vulkan_commandPool != VK_NULL_HANDLE) {
 			// free command buffer
-			vulkanapi::vkFreeCommandBuffers(vulkan_device, vulkan_commandPool, 1, &vulkan_commandBuffer);
+			vkFreeCommandBuffers(vulkan_device, vulkan_commandPool, 1, &vulkan_commandBuffer);
 
 			//if ((vulkan_PresentQueueCmdBuffers.size() > 0) && (vulkan_PresentQueueCmdBuffers[0] != VK_NULL_HANDLE)) {
 			if (vulkan_PresentQueueCmdBuffers.size() > 0) {
-				vulkanapi::vkFreeCommandBuffers(vulkan_device, vulkan_commandPool, static_cast<uint32_t>(vulkan_PresentQueueCmdBuffers.size()), &vulkan_PresentQueueCmdBuffers[0]);
+				vkFreeCommandBuffers(vulkan_device, vulkan_commandPool, static_cast<uint32_t>(vulkan_PresentQueueCmdBuffers.size()), &vulkan_PresentQueueCmdBuffers[0]);
 				vulkan_PresentQueueCmdBuffers.clear();
 			}
 
-			vulkanapi::vkDestroyCommandPool(vulkan_device, vulkan_commandPool, nullptr);
+			vkDestroyCommandPool(vulkan_device, vulkan_commandPool, nullptr);
 			vulkan_commandPool = VK_NULL_HANDLE;
 		}
 	}
@@ -438,67 +349,67 @@ void vulkan_destroy()
 
 	if (vulkan_device != VK_NULL_HANDLE)
 	{
-		vulkanapi::vkDeviceWaitIdle(vulkan_device);
+		vkDeviceWaitIdle(vulkan_device);
 
-		vulkanapi::vkUnmapMemory(vulkan_device, vulkan_memory);
+		vkUnmapMemory(vulkan_device, vulkan_memory);
 
-		vulkanapi::vkDestroyFence(vulkan_device, vulkan_fence, nullptr);
+		vkDestroyFence(vulkan_device, vulkan_fence, nullptr);
 
-		vulkanapi::vkFreeDescriptorSets(vulkan_device, vulkan_descriptorPool, 1, &vulkan_descriptorSet);
-		vulkanapi::vkDestroyDescriptorPool(vulkan_device, vulkan_descriptorPool, nullptr);
+		vkFreeDescriptorSets(vulkan_device, vulkan_descriptorPool, 1, &vulkan_descriptorSet);
+		vkDestroyDescriptorPool(vulkan_device, vulkan_descriptorPool, nullptr);
 
-		vulkanapi::vkDestroyPipeline(vulkan_device, vulkan_pipeline, nullptr);
-		vulkanapi::vkDestroyPipelineLayout(vulkan_device, vulkan_pipelineLayout, nullptr);
+		vkDestroyPipeline(vulkan_device, vulkan_pipeline, nullptr);
+		vkDestroyPipelineLayout(vulkan_device, vulkan_pipelineLayout, nullptr);
 
-		vulkanapi::vkDestroyDescriptorSetLayout(vulkan_device, vulkan_descriptorSetLayout, nullptr);
+		vkDestroyDescriptorSetLayout(vulkan_device, vulkan_descriptorSetLayout, nullptr);
 
-		vulkanapi::vkDestroyShaderModule(vulkan_device, vulkan_shader_module, nullptr);
+		vkDestroyShaderModule(vulkan_device, vulkan_shader_module, nullptr);
 
-		vulkanapi::vkDestroyImage(vulkan_device, vulkan_image, nullptr);
+		vkDestroyImage(vulkan_device, vulkan_image, nullptr);
 
 		for (int i = 0; i < vulkan_buffers.size(); i++)
 		{
-			vulkanapi::vkDestroyBuffer(vulkan_device, vulkan_buffers[i], nullptr);
+			vkDestroyBuffer(vulkan_device, vulkan_buffers[i], nullptr);
 		}
-		vulkanapi::vkFreeMemory(vulkan_device, vulkan_memory, nullptr);
-		vulkanapi::vkFreeMemory(vulkan_device, vulkan_memory_local, nullptr);
-		vulkanapi::vkFreeMemory(vulkan_device, vulkan_memory_image, nullptr);
+		vkFreeMemory(vulkan_device, vulkan_memory, nullptr);
+		vkFreeMemory(vulkan_device, vulkan_memory_local, nullptr);
+		vkFreeMemory(vulkan_device, vulkan_memory_image, nullptr);
 
-		//vulkanapi::vkDestroyBuffer(vulkan_device, vulkan_scratch_buffer, nullptr);
-		//vulkanapi::vkDestroyBuffer(vulkan_device, vulkan_inout_buffer, nullptr);
-		//vulkanapi::vkDestroyBuffer(vulkan_device, vulkan_out_buffer, nullptr);
-		//vulkanapi::vkDestroyBuffer(vulkan_device, vulkan_incomm_buffer, nullptr);
-		//vulkanapi::vkDestroyBuffer(vulkan_device, vulkan_indata_buffer, nullptr);
-		//vulkanapi::vkDestroyBuffer(vulkan_device, vulkan_work_buffer, nullptr);
-		//vulkanapi::vkDestroyBuffer(vulkan_device, vulkan_staging_buffer, nullptr);
+		//vkDestroyBuffer(vulkan_device, vulkan_scratch_buffer, nullptr);
+		//vkDestroyBuffer(vulkan_device, vulkan_inout_buffer, nullptr);
+		//vkDestroyBuffer(vulkan_device, vulkan_out_buffer, nullptr);
+		//vkDestroyBuffer(vulkan_device, vulkan_incomm_buffer, nullptr);
+		//vkDestroyBuffer(vulkan_device, vulkan_indata_buffer, nullptr);
+		//vkDestroyBuffer(vulkan_device, vulkan_work_buffer, nullptr);
+		//vkDestroyBuffer(vulkan_device, vulkan_staging_buffer, nullptr);
 
 
 		if (vulkan_image_available_semaphore != VK_NULL_HANDLE) {
-			vulkanapi::vkDestroySemaphore(vulkan_device, vulkan_image_available_semaphore, nullptr);
+			vkDestroySemaphore(vulkan_device, vulkan_image_available_semaphore, nullptr);
 			vulkan_image_available_semaphore = VK_NULL_HANDLE;
 		}
 		if (vulkan_rendering_finished_semaphore != VK_NULL_HANDLE) {
-			vulkanapi::vkDestroySemaphore(vulkan_device, vulkan_rendering_finished_semaphore, nullptr);
+			vkDestroySemaphore(vulkan_device, vulkan_rendering_finished_semaphore, nullptr);
 			vulkan_rendering_finished_semaphore = VK_NULL_HANDLE;
 		}
 		if (vulkan_swapchain != VK_NULL_HANDLE) {
-			vulkanapi::vkDestroySwapchainKHR(vulkan_device, vulkan_swapchain, nullptr);
+			vkDestroySwapchainKHR(vulkan_device, vulkan_swapchain, nullptr);
 			vulkan_swapchain = VK_NULL_HANDLE;
 		}
 
 		// do this last
-		vulkanapi::vkDestroyDevice(vulkan_device, nullptr);
+		vkDestroyDevice(vulkan_device, nullptr);
 		vulkan_device = VK_NULL_HANDLE;
 	}
 
 
 	if (vulkan_instance != VK_NULL_HANDLE) {
 		if (vulkan_presentation_surface != VK_NULL_HANDLE) {
-			vulkanapi::vkDestroySurfaceKHR(vulkan_instance, vulkan_presentation_surface, nullptr);
+			vkDestroySurfaceKHR(vulkan_instance, vulkan_presentation_surface, nullptr);
 			vulkan_presentation_surface = VK_NULL_HANDLE;
 		}
 
-		vulkanapi::vkDestroyInstance(vulkan_instance, nullptr);
+		vkDestroyInstance(vulkan_instance, nullptr);
 		vulkan_instance = VK_NULL_HANDLE;
 	}
 
@@ -539,7 +450,7 @@ bool vulkan_create_swap_chain()
 	};
 
 	//VkCommandPool vulkan_commandPool;
-	if (vulkanapi::vkCreateCommandPool(vulkan_device, &commandPoolCreateInfo, 0, &vulkan_commandPool) != VK_SUCCESS)
+	if (vkCreateCommandPool(vulkan_device, &commandPoolCreateInfo, 0, &vulkan_commandPool) != VK_SUCCESS)
 	{
 		cout << "\nVULKAN ERROR: Problem creating command pool.\n";
 		return false;
@@ -548,7 +459,7 @@ bool vulkan_create_swap_chain()
 
 	// get surface capabilities
 	VkSurfaceCapabilitiesKHR surface_capabilities;
-	if (vulkanapi::vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vulkan_physicalDevice, vulkan_presentation_surface, &surface_capabilities) != VK_SUCCESS) {
+	if (vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vulkan_physicalDevice, vulkan_presentation_surface, &surface_capabilities) != VK_SUCCESS) {
 		std::cout << "ERROR: VULKAN: Could not check presentation surface capabilities!" << std::endl;
 		return false;
 	}
@@ -556,14 +467,14 @@ bool vulkan_create_swap_chain()
 
 	// get supported surface formats
 	uint32_t formats_count;
-	if ((vulkanapi::vkGetPhysicalDeviceSurfaceFormatsKHR(vulkan_physicalDevice, vulkan_presentation_surface, &formats_count, nullptr) != VK_SUCCESS) ||
+	if ((vkGetPhysicalDeviceSurfaceFormatsKHR(vulkan_physicalDevice, vulkan_presentation_surface, &formats_count, nullptr) != VK_SUCCESS) ||
 		(formats_count == 0)) {
 		std::cout << "ERROR: VULKAN: occurred during presentation surface formats enumeration!" << std::endl;
 		return false;
 	}
 
 	std::vector<VkSurfaceFormatKHR> surface_formats(formats_count);
-	if (vulkanapi::vkGetPhysicalDeviceSurfaceFormatsKHR(vulkan_physicalDevice, vulkan_presentation_surface, &formats_count, &surface_formats[0]) != VK_SUCCESS) {
+	if (vkGetPhysicalDeviceSurfaceFormatsKHR(vulkan_physicalDevice, vulkan_presentation_surface, &formats_count, &surface_formats[0]) != VK_SUCCESS) {
 		std::cout << "ERROR: VULKAN: occurred during presentation surface formats enumeration!" << std::endl;
 		return false;
 	}
@@ -571,14 +482,14 @@ bool vulkan_create_swap_chain()
 
 	// get supported present modes
 	uint32_t present_modes_count;
-	if ((vulkanapi::vkGetPhysicalDeviceSurfacePresentModesKHR(vulkan_physicalDevice, vulkan_presentation_surface, &present_modes_count, nullptr) != VK_SUCCESS) ||
+	if ((vkGetPhysicalDeviceSurfacePresentModesKHR(vulkan_physicalDevice, vulkan_presentation_surface, &present_modes_count, nullptr) != VK_SUCCESS) ||
 		(present_modes_count == 0)) {
 		std::cout << "Error occurred during presentation surface present modes enumeration!" << std::endl;
 		return false;
 	}
 
 	std::vector<VkPresentModeKHR> present_modes(present_modes_count);
-	if (vulkanapi::vkGetPhysicalDeviceSurfacePresentModesKHR(vulkan_physicalDevice, vulkan_presentation_surface, &present_modes_count, &present_modes[0]) != VK_SUCCESS) {
+	if (vkGetPhysicalDeviceSurfacePresentModesKHR(vulkan_physicalDevice, vulkan_presentation_surface, &present_modes_count, &present_modes[0]) != VK_SUCCESS) {
 		std::cout << "Error occurred during presentation surface present modes enumeration!" << std::endl;
 		return false;
 	}
@@ -788,12 +699,12 @@ bool vulkan_create_swap_chain()
 	};
 
 	//VkSwapchainKHR vulkan_swapchain;
-	if (vulkanapi::vkCreateSwapchainKHR(vulkan_device, &swap_chain_create_info, nullptr, &vulkan_swapchain) != VK_SUCCESS) {
+	if (vkCreateSwapchainKHR(vulkan_device, &swap_chain_create_info, nullptr, &vulkan_swapchain) != VK_SUCCESS) {
 		std::cout << "ERROR: VULKAN: Could not create swap chain!" << std::endl;
 		return false;
 	}
 	if (old_swap_chain != VK_NULL_HANDLE) {
-		vulkanapi::vkDestroySwapchainKHR(vulkan_device, old_swap_chain, nullptr);
+		vkDestroySwapchainKHR(vulkan_device, old_swap_chain, nullptr);
 	}
 
 	//return true;
@@ -805,7 +716,7 @@ bool vulkan_create_swap_chain()
 
 	// get the images created in the swap chain
 	std::vector<VkImage> swap_chain_images(image_count);
-	if (vulkanapi::vkGetSwapchainImagesKHR(vulkan_device, vulkan_swapchain, &image_count, &swap_chain_images[0]) != VK_SUCCESS) {
+	if (vkGetSwapchainImagesKHR(vulkan_device, vulkan_swapchain, &image_count, &swap_chain_images[0]) != VK_SUCCESS) {
 		std::cout << "ERROR: VULKAN: Could not get swap chain images!" << std::endl;
 		return false;
 	}
@@ -938,15 +849,15 @@ bool vulkan_create_swap_chain()
 			image_subresource_range                     // VkImageSubresourceRange                subresourceRange
 		};
 
-		if (vulkanapi::vkAllocateCommandBuffers(vulkan_device, &commandBufferAllocateInfo, &vulkan_PresentQueueCmdBuffers[i]) != VK_SUCCESS)
+		if (vkAllocateCommandBuffers(vulkan_device, &commandBufferAllocateInfo, &vulkan_PresentQueueCmdBuffers[i]) != VK_SUCCESS)
 		{
 			std::cout << "\nVULKAN ERROR: Problem allocating command buffers for swap chain commands.\n";
 			return false;
 		}
 
-		vulkanapi::vkBeginCommandBuffer(vulkan_PresentQueueCmdBuffers[i], &commandBufferBeginInfo);
+		vkBeginCommandBuffer(vulkan_PresentQueueCmdBuffers[i], &commandBufferBeginInfo);
 
-		//vulkanapi::vkCmdPipelineBarrier(vulkan_PresentQueueCmdBuffers[i], VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 0, nullptr, 1, &barrier_wait_until_buffer_read, 0, nullptr);
+		//vkCmdPipelineBarrier(vulkan_PresentQueueCmdBuffers[i], VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 0, nullptr, 1, &barrier_wait_until_buffer_read, 0, nullptr);
 
 		VkBufferCopy bufcopy =
 		{
@@ -955,12 +866,12 @@ bool vulkan_create_swap_chain()
 		//vkCmdCopyBuffer(vulkan_PresentQueueCmdBuffers[i], vulkan_out_buffer, vulkan_inout_buffer, 1, &bufcopy);
 
 		// I'd imagine the compute shader run should go here
-		vulkanapi::vkCmdBindPipeline(vulkan_PresentQueueCmdBuffers[i], VK_PIPELINE_BIND_POINT_COMPUTE, vulkan_pipeline);
+		vkCmdBindPipeline(vulkan_PresentQueueCmdBuffers[i], VK_PIPELINE_BIND_POINT_COMPUTE, vulkan_pipeline);
 
-		vulkanapi::vkCmdBindDescriptorSets(vulkan_PresentQueueCmdBuffers[i], VK_PIPELINE_BIND_POINT_COMPUTE, vulkan_pipelineLayout, 0, 1, &vulkan_descriptorSet, 0, 0);
+		vkCmdBindDescriptorSets(vulkan_PresentQueueCmdBuffers[i], VK_PIPELINE_BIND_POINT_COMPUTE, vulkan_pipelineLayout, 0, 1, &vulkan_descriptorSet, 0, 0);
 
 		// set number of shaders to run simultaneously here
-		vulkanapi::vkCmdDispatch(vulkan_PresentQueueCmdBuffers[i], vulkan_num_gpu_x_workgroups, 1, 1);
+		vkCmdDispatch(vulkan_PresentQueueCmdBuffers[i], vulkan_num_gpu_x_workgroups, 1, 1);
 
 		//vkCmdPipelineBarrier(vulkan_PresentQueueCmdBuffers[i], VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 1, &barrier_wait_until_buffer_written, 0, nullptr);
 
@@ -978,7 +889,7 @@ bool vulkan_create_swap_chain()
 		//vkCmdPipelineBarrier(vulkan_PresentQueueCmdBuffers[i], VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier_from_present_to_clear);
 		//vkCmdPipelineBarrier(vulkan_PresentQueueCmdBuffers[i], VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier_from_present_to_clear);
 		//vkCmdPipelineBarrier(vulkan_PresentQueueCmdBuffers[i], VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier_from_present_to_clear);
-		vulkanapi::vkCmdPipelineBarrier(vulkan_PresentQueueCmdBuffers[i], VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, &barrier_wait_until_buffer_written, 0, &barrier_from_present_to_clear);
+		vkCmdPipelineBarrier(vulkan_PresentQueueCmdBuffers[i], VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, &barrier_wait_until_buffer_written, 0, &barrier_from_present_to_clear);
 
 		//vkCmdClearColorImage(vulkan_PresentQueueCmdBuffers[i], swap_chain_images[i], VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &clear_color, 1, &image_subresource_range);
 
@@ -986,11 +897,11 @@ bool vulkan_create_swap_chain()
 
 
 		// draw the screen from buffer
-		//vulkanapi::vkCmdCopyBufferToImage(vulkan_PresentQueueCmdBuffers[i], vulkan_staging_buffer, swap_chain_images[i], VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
-		vulkanapi::vkCmdCopyBufferToImage(vulkan_PresentQueueCmdBuffers[i], vulkan_staging_buffer, vulkan_image, VK_IMAGE_LAYOUT_GENERAL, 1, &region);
+		//vkCmdCopyBufferToImage(vulkan_PresentQueueCmdBuffers[i], vulkan_staging_buffer, swap_chain_images[i], VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+		vkCmdCopyBufferToImage(vulkan_PresentQueueCmdBuffers[i], vulkan_staging_buffer, vulkan_image, VK_IMAGE_LAYOUT_GENERAL, 1, &region);
 
 		// blit image to the screen
-		vulkanapi::vkCmdBlitImage(vulkan_PresentQueueCmdBuffers[i], vulkan_image, VK_IMAGE_LAYOUT_GENERAL, swap_chain_images[i], VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &image_blit_region, VK_FILTER_NEAREST);
+		vkCmdBlitImage(vulkan_PresentQueueCmdBuffers[i], vulkan_image, VK_IMAGE_LAYOUT_GENERAL, swap_chain_images[i], VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &image_blit_region, VK_FILTER_NEAREST);
 
 		VkImageMemoryBarrier barrier_wait_until_screen_written = {
 			VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,     // VkStructureType                        sType
@@ -1010,9 +921,9 @@ bool vulkan_create_swap_chain()
 
 		
 		//vkCmdPipelineBarrier(vulkan_PresentQueueCmdBuffers[i], VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier_from_clear_to_present);
-		//vulkanapi::vkCmdPipelineBarrier(vulkan_PresentQueueCmdBuffers[i], VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier_from_clear_to_present);
+		//vkCmdPipelineBarrier(vulkan_PresentQueueCmdBuffers[i], VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier_from_clear_to_present);
 
-		if (vulkanapi::vkEndCommandBuffer(vulkan_PresentQueueCmdBuffers[i]) != VK_SUCCESS) {
+		if (vkEndCommandBuffer(vulkan_PresentQueueCmdBuffers[i]) != VK_SUCCESS) {
 			std::cout << "ERROR: VULKAN: Could not record command buffers!" << std::endl;
 			return false;
 		}
@@ -1041,32 +952,32 @@ bool vulkan_create_swap_chain()
 	*/
 
 	//VkCommandBuffer commandBuffer;
-	if (vulkanapi::vkAllocateCommandBuffers(vulkan_device, &commandBufferAllocateInfo, &vulkan_commandBuffer) != VK_SUCCESS)
+	if (vkAllocateCommandBuffers(vulkan_device, &commandBufferAllocateInfo, &vulkan_commandBuffer) != VK_SUCCESS)
 	{
 		std::cout << "\nVULKAN ERROR: Problem allocating command buffers.\n";
-		return nullptr;
+		return false;
 
 	}
 
 
 
 
-	if (vulkanapi::vkBeginCommandBuffer(vulkan_commandBuffer, &commandBufferBeginInfo) != VK_SUCCESS)
+	if (vkBeginCommandBuffer(vulkan_commandBuffer, &commandBufferBeginInfo) != VK_SUCCESS)
 	{
 		std::cout << "\nVULKAN ERROR: Problem with begin command buffer.\n";
-		return nullptr;
+		return false;
 
 	}
 
 	//vkCmdPipelineBarrier(vulkan_commandBuffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 0, nullptr);
 
-	vulkanapi::vkCmdBindPipeline(vulkan_commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, vulkan_pipeline);
+	vkCmdBindPipeline(vulkan_commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, vulkan_pipeline);
 
-	vulkanapi::vkCmdBindDescriptorSets(vulkan_commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE,
+	vkCmdBindDescriptorSets(vulkan_commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE,
 		vulkan_pipelineLayout, 0, 1, &vulkan_descriptorSet, 0, 0);
 
 	// set number of shaders to run simultaneously here
-	vulkanapi::vkCmdDispatch(vulkan_commandBuffer, vulkan_num_gpu_x_workgroups, 1, 1);
+	vkCmdDispatch(vulkan_commandBuffer, vulkan_num_gpu_x_workgroups, 1, 1);
 
 
 	//vkCmdCopyBuffer(vulkan_commandBuffer, vulkan_inout_buffer, vulkan_out_buffer, 1, &bufcopy);
@@ -1075,10 +986,10 @@ bool vulkan_create_swap_chain()
 	//vkCmdPipelineBarrier(Vulkan.PresentQueueCmdBuffers[i], VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier_from_clear_to_present);
 	//vkCmdPipelineBarrier(vulkan_commandBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier_wait_until_image_written);
 
-	if (vulkanapi::vkEndCommandBuffer(vulkan_commandBuffer) != VK_SUCCESS)
+	if (vkEndCommandBuffer(vulkan_commandBuffer) != VK_SUCCESS)
 	{
 		std::cout << "\nVULKAN ERROR: Problem with end command buffer.\n";
-		return nullptr;
+		return false;
 
 	}
 
@@ -1110,31 +1021,6 @@ bool vulkan_create_swap_chain()
 //void* vulkan_setup(HWND wHandle, HINSTANCE wInstance, char* shader_file_data, int shader_file_size, int inout_buffer_size_bytes, int out_buffer_size_bytes, int in_comm_buffer_size_bytes, int in_data_buffer_size_bytes, int work_buffer_size_bytes)
 void* vulkan_setup(HWND wHandle, HINSTANCE wInstance, char* shader_file_data, int shader_file_size, long* external_vars_sizes, int external_vars_count, long* internal_vars_sizes, int internal_vars_count)
 {
-	// dynamically load vulkan //
-
-	if (!vulkan_load_library())
-	{
-		std::cout << "\nERROR: VULKAN: INIT: Unable to load library!\n";
-		return nullptr;
-	}
-
-	if (!vulkanapi::vulkan_load_exported_entry_points())
-	{
-		std::cout << "\nERROR: VULKAN: INIT: Unable to load exported entry points!\n";
-		return nullptr;
-
-	}
-
-	if (!vulkanapi::vulkan_load_global_level_entry_points())
-	{
-		std::cout << "\nERROR: VULKAN: INIT: Unable to load global level entry points!\n";
-		return nullptr;
-
-	}
-
-
-
-
 	// swap chain not created yet, so no previous swap chain
 	vulkan_swapchain = VK_NULL_HANDLE;
 
@@ -1152,13 +1038,13 @@ void* vulkan_setup(HWND wHandle, HINSTANCE wInstance, char* shader_file_data, in
 
 
 	uint32_t extensionCount = 0;
-	vulkanapi::vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
+	vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
 
 	std::cout << "\n" << extensionCount << " extensions supported\n";
 
 	std::vector<VkExtensionProperties> extensions(extensionCount);
 
-	vulkanapi::vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, extensions.data());
+	vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, extensions.data());
 
 	std::cout << "available extensions:\n";
 
@@ -1195,21 +1081,11 @@ void* vulkan_setup(HWND wHandle, HINSTANCE wInstance, char* shader_file_data, in
 	};
 
 	//VkInstance vulkan_instance;
-	if (vulkanapi::vkCreateInstance(&instanceCreateInfo, 0, &vulkan_instance) != VK_SUCCESS)
+	if (vkCreateInstance(&instanceCreateInfo, 0, &vulkan_instance) != VK_SUCCESS)
 	{
 		std::cout << "\nVULKAN ERROR: Problem creating VULKAN instance.\n";
 		return nullptr;
 	}
-
-
-	if (!vulkanapi::vulkan_load_instance_level_entry_points())
-	{
-		std::cout << "\nERROR: VULKAN: INIT: Unable to load instance level entry points!\n";
-		return nullptr;
-
-	}
-
-
 
 
 	// create presentation surface for WINDOWS OS
@@ -1222,7 +1098,7 @@ void* vulkan_setup(HWND wHandle, HINSTANCE wInstance, char* shader_file_data, in
 	};
 
 	//VkSurfaceKHR vulkan_presentation_surface;
-	if (vulkanapi::vkCreateWin32SurfaceKHR(vulkan_instance, &surface_create_info, nullptr, &vulkan_presentation_surface) != VK_SUCCESS)
+	if (vkCreateWin32SurfaceKHR(vulkan_instance, &surface_create_info, nullptr, &vulkan_presentation_surface) != VK_SUCCESS)
 	{
 		std::cout << "\nVULKAN ERROR: Problem creating WIN32 surface.\n";
 		return nullptr;
@@ -1231,7 +1107,7 @@ void* vulkan_setup(HWND wHandle, HINSTANCE wInstance, char* shader_file_data, in
 
 
 	uint32_t physicalDeviceCount = 0;
-	if (vulkanapi::vkEnumeratePhysicalDevices(vulkan_instance, &physicalDeviceCount, 0) != VK_SUCCESS)
+	if (vkEnumeratePhysicalDevices(vulkan_instance, &physicalDeviceCount, 0) != VK_SUCCESS)
 	{
 		std::cout << "\nVULKAN ERROR: Problem enumerating VULKAN physical devices.\n";
 		return nullptr;
@@ -1241,7 +1117,7 @@ void* vulkan_setup(HWND wHandle, HINSTANCE wInstance, char* shader_file_data, in
 	//	sizeof(VkPhysicalDevice) * physicalDeviceCount);
 	std::vector<VkPhysicalDevice> physicalDevices(physicalDeviceCount);
 
-	if (vulkanapi::vkEnumeratePhysicalDevices(vulkan_instance, &physicalDeviceCount, physicalDevices.data()) != VK_SUCCESS)
+	if (vkEnumeratePhysicalDevices(vulkan_instance, &physicalDeviceCount, physicalDevices.data()) != VK_SUCCESS)
 	{
 		std::cout << "\nVULKAN ERROR: Problem enumerating VULKAN physical devices.\n";
 		return nullptr;
@@ -1262,8 +1138,8 @@ void* vulkan_setup(HWND wHandle, HINSTANCE wInstance, char* shader_file_data, in
 
 	for (const auto& device : physicalDevices) {
 
-		vulkanapi::vkGetPhysicalDeviceProperties(device, &deviceProperties);
-		vulkanapi::vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
+		vkGetPhysicalDeviceProperties(device, &deviceProperties);
+		vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
 
 		subgroupProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SUBGROUP_PROPERTIES;
 		subgroupProperties.pNext = NULL;
@@ -1271,7 +1147,7 @@ void* vulkan_setup(HWND wHandle, HINSTANCE wInstance, char* shader_file_data, in
 		physicalDeviceProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
 		physicalDeviceProperties.pNext = &subgroupProperties;
 
-		vulkanapi::vkGetPhysicalDeviceProperties2(device, &physicalDeviceProperties);
+		vkGetPhysicalDeviceProperties2(device, &physicalDeviceProperties);
 
 		std::cout << '\t' << deviceProperties.deviceName << '\n';
 		std::cout << '\t' << "devicetype:" << deviceProperties.deviceType << '\n';
@@ -1298,13 +1174,13 @@ void* vulkan_setup(HWND wHandle, HINSTANCE wInstance, char* shader_file_data, in
 	vulkan_SubgroupSize = subgroupProperties.subgroupSize;
 
 	uint32_t queueFamilyPropertiesCount = 0;
-	vulkanapi::vkGetPhysicalDeviceQueueFamilyProperties(vulkan_physicalDevice, &queueFamilyPropertiesCount, 0);
+	vkGetPhysicalDeviceQueueFamilyProperties(vulkan_physicalDevice, &queueFamilyPropertiesCount, 0);
 
 	//VkQueueFamilyProperties* const queueFamilyProperties = (VkQueueFamilyProperties*)_alloca(
 	//	sizeof(VkQueueFamilyProperties) * queueFamilyPropertiesCount);
 	std::vector<VkQueueFamilyProperties> queueFamilyProperties(queueFamilyPropertiesCount);
 
-	vulkanapi::vkGetPhysicalDeviceQueueFamilyProperties(vulkan_physicalDevice, &queueFamilyPropertiesCount, queueFamilyProperties.data());
+	vkGetPhysicalDeviceQueueFamilyProperties(vulkan_physicalDevice, &queueFamilyPropertiesCount, queueFamilyProperties.data());
 
 	//uint32_t queueFamilyIndex;
 	VkBool32 queue_present_support;
@@ -1330,7 +1206,7 @@ void* vulkan_setup(HWND wHandle, HINSTANCE wInstance, char* shader_file_data, in
 			vulkan_queueFamilyIndex = i;
 
 			// need to know if presentation is supported
-			vulkanapi::vkGetPhysicalDeviceSurfaceSupportKHR(vulkan_physicalDevice, i, vulkan_presentation_surface, &queue_present_support);
+			vkGetPhysicalDeviceSurfaceSupportKHR(vulkan_physicalDevice, i, vulkan_presentation_surface, &queue_present_support);
 
 			std::cout << "\n***Found suitable queue family index for COMPUTE queue***\n";
 
@@ -1381,7 +1257,7 @@ void* vulkan_setup(HWND wHandle, HINSTANCE wInstance, char* shader_file_data, in
 
 
 	//VkDevice vulkan_device;
-	if (vulkanapi::vkCreateDevice(vulkan_physicalDevice, &deviceCreateInfo, nullptr, &vulkan_device) != VK_SUCCESS) {
+	if (vkCreateDevice(vulkan_physicalDevice, &deviceCreateInfo, nullptr, &vulkan_device) != VK_SUCCESS) {
 		//throw std::runtime_error("failed to create logical device!");
 		std::cout << "\nVULKAN ERROR: Problem creating VULKAN device.\n";
 		return nullptr;
@@ -1393,17 +1269,8 @@ void* vulkan_setup(HWND wHandle, HINSTANCE wInstance, char* shader_file_data, in
 	}
 
 
-
-	if (!vulkanapi::vulkan_load_device_level_entry_points())
-	{
-		std::cout << "\nERROR: VULKAN: INIT: Unable to load device level entry points!\n";
-		return nullptr;
-
-	}
-
-
 	VkQueue computeQueue;
-	vulkanapi::vkGetDeviceQueue(vulkan_device, vulkan_queueFamilyIndex, 0, &computeQueue);
+	vkGetDeviceQueue(vulkan_device, vulkan_queueFamilyIndex, 0, &computeQueue);
 
 	// *** device created *** //
 
@@ -1417,8 +1284,8 @@ void* vulkan_setup(HWND wHandle, HINSTANCE wInstance, char* shader_file_data, in
 
 	//VkSemaphore vulkan_image_available_semaphore;
 	//VkSemaphore vulkan_rendering_finished_semaphore;
-	if ((vulkanapi::vkCreateSemaphore(vulkan_device, &semaphore_create_info, nullptr, &vulkan_image_available_semaphore) != VK_SUCCESS) ||
-		(vulkanapi::vkCreateSemaphore(vulkan_device, &semaphore_create_info, nullptr, &vulkan_rendering_finished_semaphore) != VK_SUCCESS)) {
+	if ((vkCreateSemaphore(vulkan_device, &semaphore_create_info, nullptr, &vulkan_image_available_semaphore) != VK_SUCCESS) ||
+		(vkCreateSemaphore(vulkan_device, &semaphore_create_info, nullptr, &vulkan_rendering_finished_semaphore) != VK_SUCCESS)) {
 
 		std::cout << "ERROR: VULKAN: Could not create semaphores!" << std::endl;
 		return nullptr;
@@ -1431,7 +1298,7 @@ void* vulkan_setup(HWND wHandle, HINSTANCE wInstance, char* shader_file_data, in
 
 	VkPhysicalDeviceMemoryProperties properties;
 
-	vulkanapi::vkGetPhysicalDeviceMemoryProperties(vulkan_physicalDevice, &properties);
+	vkGetPhysicalDeviceMemoryProperties(vulkan_physicalDevice, &properties);
 
 	
 	VkImageCreateInfo vulkan_image_info =
@@ -1467,13 +1334,13 @@ void* vulkan_setup(HWND wHandle, HINSTANCE wInstance, char* shader_file_data, in
 
 
 	//VkImage vulkan_image;
-	if (vulkanapi::vkCreateImage(vulkan_device, &vulkan_image_info, nullptr, &vulkan_image) != VK_SUCCESS)
+	if (vkCreateImage(vulkan_device, &vulkan_image_info, nullptr, &vulkan_image) != VK_SUCCESS)
 	{
 		cout << "\nERROR: VULKAN: problem creating image.";
 	}
 
 	VkMemoryRequirements image_memReqs;
-	vulkanapi::vkGetImageMemoryRequirements(vulkan_device, vulkan_image, &image_memReqs);
+	vkGetImageMemoryRequirements(vulkan_device, vulkan_image, &image_memReqs);
 	
 
 
@@ -1570,7 +1437,7 @@ void* vulkan_setup(HWND wHandle, HINSTANCE wInstance, char* shader_file_data, in
 	};
 
 	//VkDeviceMemory vulkan_memory;
-	if (vulkanapi::vkAllocateMemory(vulkan_device, &memoryAllocateInfo, 0, &vulkan_memory) != VK_SUCCESS)
+	if (vkAllocateMemory(vulkan_device, &memoryAllocateInfo, 0, &vulkan_memory) != VK_SUCCESS)
 	{
 		std::cout << "\nVULKAN ERROR: Problem allocating memory for device.\n";
 		return nullptr;
@@ -1586,7 +1453,7 @@ void* vulkan_setup(HWND wHandle, HINSTANCE wInstance, char* shader_file_data, in
 	};
 
 	//VkDeviceMemory vulkan_memory;
-	if (vulkanapi::vkAllocateMemory(vulkan_device, &memoryAllocateInfo_local, 0, &vulkan_memory_local) != VK_SUCCESS)
+	if (vkAllocateMemory(vulkan_device, &memoryAllocateInfo_local, 0, &vulkan_memory_local) != VK_SUCCESS)
 	{
 		std::cout << "\nVULKAN ERROR: Problem allocating local memory for device.\n";
 		return nullptr;
@@ -1602,14 +1469,14 @@ void* vulkan_setup(HWND wHandle, HINSTANCE wInstance, char* shader_file_data, in
 	};
 
 	//VkDeviceMemory vulkan_memory;
-	if (vulkanapi::vkAllocateMemory(vulkan_device, &memoryAllocateInfo_image, 0, &vulkan_memory_image) != VK_SUCCESS)
+	if (vkAllocateMemory(vulkan_device, &memoryAllocateInfo_image, 0, &vulkan_memory_image) != VK_SUCCESS)
 	{
 		std::cout << "\nVULKAN ERROR: Problem allocating local image memory for device.\n";
 		return nullptr;
 
 	}
 
-	vulkanapi::vkBindImageMemory(vulkan_device, vulkan_image, vulkan_memory_image, 0);
+	vkBindImageMemory(vulkan_device, vulkan_image, vulkan_memory_image, 0);
 
 
 	int current_offset = 0;
@@ -1636,15 +1503,15 @@ void* vulkan_setup(HWND wHandle, HINSTANCE wInstance, char* shader_file_data, in
 		  &vulkan_queueFamilyIndex
 		};
 
-		if (vulkanapi::vkCreateBuffer(vulkan_device, &vulkan_bufferCreateInfos[i], 0, &vulkan_buffers[i]) != VK_SUCCESS)
+		if (vkCreateBuffer(vulkan_device, &vulkan_bufferCreateInfos[i], 0, &vulkan_buffers[i]) != VK_SUCCESS)
 		{
 			std::cout << "\nVULKAN ERROR: Problem creating input buffer.\n";
 			return nullptr;
 
 		}
 
-		//if (vulkanapi::vkBindBufferMemory(vulkan_device, vulkan_buffers[i], vulkan_memory, 0) != VK_SUCCESS)
-		if (vulkanapi::vkBindBufferMemory(vulkan_device, vulkan_buffers[i], vulkan_memory, current_offset) != VK_SUCCESS)
+		//if (vkBindBufferMemory(vulkan_device, vulkan_buffers[i], vulkan_memory, 0) != VK_SUCCESS)
+		if (vkBindBufferMemory(vulkan_device, vulkan_buffers[i], vulkan_memory, current_offset) != VK_SUCCESS)
 		{
 			std::cout << "\nVULKAN ERROR: Problem binding internal vram buffer.\n";
 			return nullptr;
@@ -1674,15 +1541,15 @@ void* vulkan_setup(HWND wHandle, HINSTANCE wInstance, char* shader_file_data, in
 		  &vulkan_queueFamilyIndex
 		};
 
-		if (vulkanapi::vkCreateBuffer(vulkan_device, &vulkan_bufferCreateInfos[i], 0, &vulkan_buffers[i]) != VK_SUCCESS)
+		if (vkCreateBuffer(vulkan_device, &vulkan_bufferCreateInfos[i], 0, &vulkan_buffers[i]) != VK_SUCCESS)
 		{
 			std::cout << "\nVULKAN ERROR: Problem creating input buffer.\n";
 			return nullptr;
 
 		}
 
-		//if (vulkanapi::vkBindBufferMemory(vulkan_device, vulkan_buffers[i], vulkan_memory, 0) != VK_SUCCESS)
-		if (vulkanapi::vkBindBufferMemory(vulkan_device, vulkan_buffers[i], vulkan_memory_local, current_offset) != VK_SUCCESS)
+		//if (vkBindBufferMemory(vulkan_device, vulkan_buffers[i], vulkan_memory, 0) != VK_SUCCESS)
+		if (vkBindBufferMemory(vulkan_device, vulkan_buffers[i], vulkan_memory_local, current_offset) != VK_SUCCESS)
 		{
 			std::cout << "\nVULKAN ERROR: Problem binding internal vram buffer.\n";
 			return nullptr;
@@ -1742,7 +1609,7 @@ void* vulkan_setup(HWND wHandle, HINSTANCE wInstance, char* shader_file_data, in
 
 	//VkShaderModule vulkan_shader_module;
 
-	if (vulkanapi::vkCreateShaderModule(vulkan_device, &shaderModuleCreateInfo, 0, &vulkan_shader_module) != VK_SUCCESS)
+	if (vkCreateShaderModule(vulkan_device, &shaderModuleCreateInfo, 0, &vulkan_shader_module) != VK_SUCCESS)
 	{
 		std::cout << "\nVULKAN ERROR: Problem creating shader module.\n";
 		return nullptr;
@@ -1774,7 +1641,7 @@ void* vulkan_setup(HWND wHandle, HINSTANCE wInstance, char* shader_file_data, in
 
 
 	//VkDescriptorSetLayout vulkan_descriptorSetLayout;
-	if (vulkanapi::vkCreateDescriptorSetLayout(vulkan_device, &descriptorSetLayoutCreateInfo, 0, &vulkan_descriptorSetLayout) != VK_SUCCESS)
+	if (vkCreateDescriptorSetLayout(vulkan_device, &descriptorSetLayoutCreateInfo, 0, &vulkan_descriptorSetLayout) != VK_SUCCESS)
 	{
 		std::cout << "\nVULKAN ERROR: Problem creating descriptor set layout.\n";
 		return nullptr;
@@ -1793,7 +1660,7 @@ void* vulkan_setup(HWND wHandle, HINSTANCE wInstance, char* shader_file_data, in
 	};
 
 	//VkPipelineLayout vulkan_pipelineLayout;
-	if (vulkanapi::vkCreatePipelineLayout(vulkan_device, &pipelineLayoutCreateInfo, 0, &vulkan_pipelineLayout) != VK_SUCCESS)
+	if (vkCreatePipelineLayout(vulkan_device, &pipelineLayoutCreateInfo, 0, &vulkan_pipelineLayout) != VK_SUCCESS)
 	{
 		std::cout << "\nVULKAN ERROR: Problem creating pipeline layout.\n";
 		return nullptr;
@@ -1812,7 +1679,7 @@ void* vulkan_setup(HWND wHandle, HINSTANCE wInstance, char* shader_file_data, in
 
 	//VkPipeline vulkan_pipeline;
 	VkResult vkres;
-	vkres = vulkanapi::vkCreateComputePipelines(vulkan_device, VK_NULL_HANDLE, 1, &computePipelineCreateInfo, 0, &vulkan_pipeline);
+	vkres = vkCreateComputePipelines(vulkan_device, VK_NULL_HANDLE, 1, &computePipelineCreateInfo, 0, &vulkan_pipeline);
 	//if (vkCreateComputePipelines(vulkan_device, 0, 1, &computePipelineCreateInfo, 0, &vulkan_pipeline) != VK_SUCCESS)
 	if (vkres != VK_SUCCESS)
 	{
@@ -1846,7 +1713,7 @@ void* vulkan_setup(HWND wHandle, HINSTANCE wInstance, char* shader_file_data, in
 	};
 
 	//VkDescriptorPool vulkan_descriptorPool;
-	if (vulkanapi::vkCreateDescriptorPool(vulkan_device, &descriptorPoolCreateInfo, 0, &vulkan_descriptorPool) != VK_SUCCESS)
+	if (vkCreateDescriptorPool(vulkan_device, &descriptorPoolCreateInfo, 0, &vulkan_descriptorPool) != VK_SUCCESS)
 	{
 		std::cout << "\nVULKAN ERROR: Problem creating descriptor pool.\n";
 		return nullptr;
@@ -1862,7 +1729,7 @@ void* vulkan_setup(HWND wHandle, HINSTANCE wInstance, char* shader_file_data, in
 	};
 
 	//VkDescriptorSet vulkan_descriptorSet;
-	if (vulkanapi::vkAllocateDescriptorSets(vulkan_device, &descriptorSetAllocateInfo, &vulkan_descriptorSet) != VK_SUCCESS)
+	if (vkAllocateDescriptorSets(vulkan_device, &descriptorSetAllocateInfo, &vulkan_descriptorSet) != VK_SUCCESS)
 	{
 		std::cout << "\nVULKAN ERROR: Problem allocating descriptor sets.\n";
 		return nullptr;
@@ -2036,8 +1903,8 @@ void* vulkan_setup(HWND wHandle, HINSTANCE wInstance, char* shader_file_data, in
 	*/
 
 
-	//vulkanapi::vkUpdateDescriptorSets(vulkan_device, 7, writeDescriptorSet, 0, 0);
-	vulkanapi::vkUpdateDescriptorSets(vulkan_device, total_vars_count, writeDescriptorSet.data(), 0, 0);
+	//vkUpdateDescriptorSets(vulkan_device, 7, writeDescriptorSet, 0, 0);
+	vkUpdateDescriptorSets(vulkan_device, total_vars_count, writeDescriptorSet.data(), 0, 0);
 
 
 	std::cout << "\nVULKAN: INFO: creating swap chain.\n";
@@ -2067,14 +1934,14 @@ void* vulkan_setup(HWND wHandle, HINSTANCE wInstance, char* shader_file_data, in
 
 
 	//VkQueue queue;
-	vulkanapi::vkGetDeviceQueue(vulkan_device, vulkan_queueFamilyIndex, 0, &vulkan_queue);
+	vkGetDeviceQueue(vulkan_device, vulkan_queueFamilyIndex, 0, &vulkan_queue);
 
 	// create fence
 	VkFenceCreateInfo fenceInfo{};
 	fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
 	fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-	if (vulkanapi::vkCreateFence(vulkan_device, &fenceInfo, nullptr, &vulkan_fence) != VK_SUCCESS) {
+	if (vkCreateFence(vulkan_device, &fenceInfo, nullptr, &vulkan_fence) != VK_SUCCESS) {
 		std::cout << "\nVULKAN: ERROR: failed to create fence!";
 		return nullptr;
 	}
@@ -2083,7 +1950,7 @@ void* vulkan_setup(HWND wHandle, HINSTANCE wInstance, char* shader_file_data, in
 	std::cout << "\nVULKAN: INFO: mapping memory for compute shader\n";
 
 	//if (vkMapMemory(vulkan_device, vulkan_memory, 0, memorySize - work_buffer_size_bytes - image_memReqs.size, 0, (void**)&payload) != VK_SUCCESS)
-	if (vulkanapi::vkMapMemory(vulkan_device, vulkan_memory, 0, memorySize, 0, (void**)&payload) != VK_SUCCESS)
+	if (vkMapMemory(vulkan_device, vulkan_memory, 0, memorySize, 0, (void**)&payload) != VK_SUCCESS)
 	{
 		std::cout << "\nVULKAN ERROR: Problem mapping memory for device.\n";
 		return nullptr;

@@ -237,12 +237,12 @@ using namespace std;
 		
 		
 		void KillGLWindow();
-		BOOL CreateGLWindow(char* title, int width, int height, bool has_menu, bool fullscreenflag);
+		BOOL CreateGLWindow(const char* title, int width, int height, bool has_menu, bool fullscreenflag);
 		void ToggleGLFullScreen ();
 		
 		bool Redraw ();
 		
-		static HFONT CreateFontObject ( int fontSize, char* fontName = "Times New Roman", bool Bold = false, bool Underline = false, bool Italic = false, bool StrikeOut = false );
+		static HFONT CreateFontObject ( int fontSize, const char* fontName = "Times New Roman", bool Bold = false, bool Underline = false, bool Italic = false, bool StrikeOut = false );
 		
 
 		// when done with the window this will destroy it
@@ -442,8 +442,8 @@ using namespace std;
 		
 		///////////// Create Font ///////////////////
 		// creates a font
-		struct _CreateFontObject_Params { int fontSize; char* fontName; bool Bold; bool Underline; bool Italic; bool StrikeOut;
-		_CreateFontObject_Params ( int _fontSize, char* _fontName, bool _Bold, bool _Underline, bool _Italic, bool _StrikeOut )
+		struct _CreateFontObject_Params { int fontSize; const char* fontName; bool Bold; bool Underline; bool Italic; bool StrikeOut;
+		_CreateFontObject_Params ( int _fontSize, const char* _fontName, bool _Bold, bool _Underline, bool _Italic, bool _StrikeOut )
 		{ fontSize = _fontSize; fontName = _fontName; Bold = _Bold; Underline = _Underline; Italic = _Italic; StrikeOut = _StrikeOut; } };
 		
 		static HFONT _CreateFontObject ( _CreateFontObject_Params* p );
@@ -881,7 +881,7 @@ using namespace std;
 			return &lvi;
 		}
 		
-		inline int InsertRow ( int row ) { return ListView_InsertItem( hWnd, (const LPLVITEM) CreateItem ( row, 0, "" ) ); }
+		inline int InsertRow ( int row ) { return ListView_InsertItem( hWnd, (const LPLVITEM) CreateItem ( row, 0, (char*)"" ) ); }
 
 
 		// *note* must call this first

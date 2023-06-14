@@ -83,7 +83,7 @@ Log::~Log()
 #endif
 }
 
-bool Log::Create ( char* LogFileName )
+bool Log::Create ( const char* LogFileName )
 {
 	OutputFileName = LogFileName;
 
@@ -114,7 +114,7 @@ bool Log::Create ( char* LogFileName )
 }
 
 // this function is the pure C version (C++ libraries not playing well with recompiler)
-bool Log::CreateDebugFile ( char* LogFileName )
+bool Log::CreateDebugFile (const char* LogFileName )
 {
 #ifdef VERBOSE_DEBUG
 	printf ( "\nStart->Log::CreateDebugFile iInstanceC= %i", iInstanceC );

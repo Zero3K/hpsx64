@@ -1064,7 +1064,7 @@ void hps1x64::Update_CheckMarksOnMenu ()
 
 int hps1x64::InitializeProgram ()
 {
-	static constexpr char* ProgramWindow_Caption = "hps1x64";
+	const char* ProgramWindow_Caption = "hps1x64";
 
 	u32 xsize, ysize;
 

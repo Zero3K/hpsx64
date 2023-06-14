@@ -20,13 +20,13 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
-    <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -50,17 +50,25 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>$(SolutionDir)hps1x64\src\r3000a\src;$(SolutionDir)common\config\src;$(SolutionDir)hps1x64\src\spu\src\spu2;$(SolutionDir)hps1x64\src\spu\src;$(SolutionDir)hps1x64\src\timer\src;$(SolutionDir)hps1x64\src\system\src;$(SolutionDir)hps1x64\src\sio\src;$(SolutionDir)hps1x64\src\r3000a\src\recompile;$(SolutionDir)hps1x64\src\r3000a\src\print;$(SolutionDir)hps1x64\src\r3000a\src\lookup;$(SolutionDir)hps1x64\src\r3000a\src\execute;$(SolutionDir)hps1x64\src\r3000a\src\COP2;$(SolutionDir)hps1x64\src\r3000a\src\cache;$(SolutionDir)hps1x64\src\pio\src;$(SolutionDir)hps1x64\src\mdec\src;$(SolutionDir)hps1x64\src\intc\src;$(SolutionDir)hps1x64\src\hps1x64\src;$(SolutionDir)hps1x64\src\gpu\src;$(SolutionDir)hps1x64\src\dma\src;$(SolutionDir)hps1x64\src\databus\src;$(SolutionDir)hps1x64\src\cdvd\src;$(SolutionDir)hps1x64\src\cd\src;$(SolutionDir)common\StringUtilities;$(SolutionDir)common\WindowsAPI\WinFile\src;$(SolutionDir)common\WindowsAPI\Joystick\src;$(SolutionDir)common\WindowsAPI\InputBox\src;$(SolutionDir)common\WindowsAPI\InfiniteListView\src;$(SolutionDir)common\WindowsAPI\GUIHandler\src;$(SolutionDir)common\WindowsAPI\DisassemblyViewer\src;$(SolutionDir)common\WindowsAPI\DebugValueList\src;$(SolutionDir)common\WindowsAPI\DebugMemoryViewer\src;$(SolutionDir)common\WindowsAPI\BreakpointWindow\src;$(SolutionDir)common\x64Encoder\src;$(SolutionDir)common\DiskImage\dvd\src;$(SolutionDir)common\DiskImage\cd\src;$(SolutionDir)common\debug\src;$(SolutionDir)common;$(SolutionDir)common\breakpoint\src;C:\VulkanSDK\1.3.231.1\Include;$(SolutionDir)common\Vulkan;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\VulkanSDK\1.3.250.0\Include;$(SolutionDir)hps1x64\src\r3000a\src;$(SolutionDir)common\config\src;$(SolutionDir)hps1x64\src\spu\src\spu2;$(SolutionDir)hps1x64\src\spu\src;$(SolutionDir)hps1x64\src\timer\src;$(SolutionDir)hps1x64\src\system\src;$(SolutionDir)hps1x64\src\sio\src;$(SolutionDir)hps1x64\src\r3000a\src\recompile;$(SolutionDir)hps1x64\src\r3000a\src\print;$(SolutionDir)hps1x64\src\r3000a\src\lookup;$(SolutionDir)hps1x64\src\r3000a\src\execute;$(SolutionDir)hps1x64\src\r3000a\src\COP2;$(SolutionDir)hps1x64\src\r3000a\src\cache;$(SolutionDir)hps1x64\src\pio\src;$(SolutionDir)hps1x64\src\mdec\src;$(SolutionDir)hps1x64\src\intc\src;$(SolutionDir)hps1x64\src\hps1x64\src;$(SolutionDir)hps1x64\src\gpu\src;$(SolutionDir)hps1x64\src\dma\src;$(SolutionDir)hps1x64\src\databus\src;$(SolutionDir)hps1x64\src\cdvd\src;$(SolutionDir)hps1x64\src\cd\src;$(SolutionDir)common\StringUtilities;$(SolutionDir)common\WindowsAPI\WinFile\src;$(SolutionDir)common\WindowsAPI\Joystick\src;$(SolutionDir)common\WindowsAPI\InputBox\src;$(SolutionDir)common\WindowsAPI\InfiniteListView\src;$(SolutionDir)common\WindowsAPI\GUIHandler\src;$(SolutionDir)common\WindowsAPI\DisassemblyViewer\src;$(SolutionDir)common\WindowsAPI\DebugValueList\src;$(SolutionDir)common\WindowsAPI\DebugMemoryViewer\src;$(SolutionDir)common\WindowsAPI\BreakpointWindow\src;$(SolutionDir)common\x64Encoder\src;$(SolutionDir)common\DiskImage\dvd\src;$(SolutionDir)common\DiskImage\cd\src;$(SolutionDir)common\debug\src;$(SolutionDir)common;$(SolutionDir)common\breakpoint\src;C:\VulkanSDK\1.3.231.1\Include;$(SolutionDir)common\Vulkan;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ExceptionHandling>Async</ExceptionHandling>
-      <Optimization>Disabled</Optimization>
+      <Optimization>MaxSpeed</Optimization>
       <PreprocessorDefinitions>USE_PS1_GPU_TEMPLATES;NOMINMAX;GLEW_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <LanguageStandard_C>stdc17</LanguageStandard_C>
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
+      <SDLCheck>false</SDLCheck>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <AdditionalOptions>/MP16 /Zm2000 %(AdditionalOptions)</AdditionalOptions>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <LargeAddressAware>false</LargeAddressAware>
-      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>C:\VulkanSDK\1.3.250.0\Lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>vulkan-1.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -68,20 +76,26 @@
       <PreprocessorDefinitions>USE_PS1_GPU_TEMPLATES;NOMINMAX;GLEW_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Async</ExceptionHandling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <AdditionalIncludeDirectories>$(SolutionDir)hps1x64\src\r3000a\src;$(SolutionDir)common\config\src;$(SolutionDir)hps1x64\src\spu\src\spu2;$(SolutionDir)hps1x64\src\spu\src;$(SolutionDir)hps1x64\src\timer\src;$(SolutionDir)hps1x64\src\system\src;$(SolutionDir)hps1x64\src\sio\src;$(SolutionDir)hps1x64\src\r3000a\src\recompile;$(SolutionDir)hps1x64\src\r3000a\src\print;$(SolutionDir)hps1x64\src\r3000a\src\lookup;$(SolutionDir)hps1x64\src\r3000a\src\execute;$(SolutionDir)hps1x64\src\r3000a\src\COP2;$(SolutionDir)hps1x64\src\r3000a\src\cache;$(SolutionDir)hps1x64\src\pio\src;$(SolutionDir)hps1x64\src\mdec\src;$(SolutionDir)hps1x64\src\intc\src;$(SolutionDir)hps1x64\src\hps1x64\src;$(SolutionDir)hps1x64\src\gpu\src;$(SolutionDir)hps1x64\src\dma\src;$(SolutionDir)hps1x64\src\databus\src;$(SolutionDir)hps1x64\src\cdvd\src;$(SolutionDir)hps1x64\src\cd\src;$(SolutionDir)common\StringUtilities;$(SolutionDir)common\WindowsAPI\WinFile\src;$(SolutionDir)common\WindowsAPI\Joystick\src;$(SolutionDir)common\WindowsAPI\InputBox\src;$(SolutionDir)common\WindowsAPI\InfiniteListView\src;$(SolutionDir)common\WindowsAPI\GUIHandler\src;$(SolutionDir)common\WindowsAPI\DisassemblyViewer\src;$(SolutionDir)common\WindowsAPI\DebugValueList\src;$(SolutionDir)common\WindowsAPI\DebugMemoryViewer\src;$(SolutionDir)common\WindowsAPI\BreakpointWindow\src;$(SolutionDir)common\x64Encoder\src;$(SolutionDir)common\DiskImage\dvd\src;$(SolutionDir)common\DiskImage\cd\src;$(SolutionDir)common\debug\src;$(SolutionDir)common;$(SolutionDir)common\breakpoint\src;$(SolutionDir)common\Vulkan;C:\VulkanSDK\1.3.231.1\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\VulkanSDK\1.3.250.0\Include;$(SolutionDir)hps1x64\src\r3000a\src;$(SolutionDir)common\config\src;$(SolutionDir)hps1x64\src\spu\src\spu2;$(SolutionDir)hps1x64\src\spu\src;$(SolutionDir)hps1x64\src\timer\src;$(SolutionDir)hps1x64\src\system\src;$(SolutionDir)hps1x64\src\sio\src;$(SolutionDir)hps1x64\src\r3000a\src\recompile;$(SolutionDir)hps1x64\src\r3000a\src\print;$(SolutionDir)hps1x64\src\r3000a\src\lookup;$(SolutionDir)hps1x64\src\r3000a\src\execute;$(SolutionDir)hps1x64\src\r3000a\src\COP2;$(SolutionDir)hps1x64\src\r3000a\src\cache;$(SolutionDir)hps1x64\src\pio\src;$(SolutionDir)hps1x64\src\mdec\src;$(SolutionDir)hps1x64\src\intc\src;$(SolutionDir)hps1x64\src\hps1x64\src;$(SolutionDir)hps1x64\src\gpu\src;$(SolutionDir)hps1x64\src\dma\src;$(SolutionDir)hps1x64\src\databus\src;$(SolutionDir)hps1x64\src\cdvd\src;$(SolutionDir)hps1x64\src\cd\src;$(SolutionDir)common\StringUtilities;$(SolutionDir)common\WindowsAPI\WinFile\src;$(SolutionDir)common\WindowsAPI\Joystick\src;$(SolutionDir)common\WindowsAPI\InputBox\src;$(SolutionDir)common\WindowsAPI\InfiniteListView\src;$(SolutionDir)common\WindowsAPI\GUIHandler\src;$(SolutionDir)common\WindowsAPI\DisassemblyViewer\src;$(SolutionDir)common\WindowsAPI\DebugValueList\src;$(SolutionDir)common\WindowsAPI\DebugMemoryViewer\src;$(SolutionDir)common\WindowsAPI\BreakpointWindow\src;$(SolutionDir)common\x64Encoder\src;$(SolutionDir)common\DiskImage\dvd\src;$(SolutionDir)common\DiskImage\cd\src;$(SolutionDir)common\debug\src;$(SolutionDir)common;$(SolutionDir)common\breakpoint\src;$(SolutionDir)common\Vulkan;C:\VulkanSDK\1.3.231.1\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <OmitFramePointers>true</OmitFramePointers>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <LanguageStandard_C>stdc17</LanguageStandard_C>
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
+      <SDLCheck>false</SDLCheck>
+      <AdditionalOptions>/MP16 /Zm2000 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
     </Link>
     <Link>
       <LargeAddressAware>false</LargeAddressAware>
-      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>C:\VulkanSDK\1.3.250.0\Lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>vulkan-1.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -180,9 +194,6 @@
     <ClInclude Include="hps1x64\src\spu\src\PS1_SPU.h" />
     <ClInclude Include="hps1x64\src\system\src\ps1_system.h" />
     <ClInclude Include="hps1x64\src\timer\src\PS1_Timer.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <Text Include="common\Vulkan\vulkan_list_of_functions.inl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

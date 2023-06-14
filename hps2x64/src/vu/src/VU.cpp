@@ -7132,17 +7132,17 @@ void VU::DebugWindow_Enable ( int Number )
 
 #ifndef _CONSOLE_DEBUG_ONLY_
 
-	static constexpr char* COP0_Names [] = { "Index", "Random", "EntryLo0", "EntryLo1", "Context", "PageMask", "Wired", "Reserved",
+	const char* COP0_Names [] = { "Index", "Random", "EntryLo0", "EntryLo1", "Context", "PageMask", "Wired", "Reserved",
 								"BadVAddr", "Count", "EntryHi", "Compare", "Status", "Cause", "EPC", "PRId",
 								"Config", "Reserved", "Reserved", "Reserved", "Reserved", "Reserved", "Reserved", "BadPAddr",
 								"Debug", "Perf", "Reserved", "Reserved", "TagLo", "TagHi", "ErrorEPC", "Reserved" };
 								
-	static constexpr char* DisAsm_Window_ColumnHeadings [] = { "Address", "@", ">", "Instruction", "Inst (hex)" };
+	const char* DisAsm_Window_ColumnHeadings [] = { "Address", "@", ">", "Instruction", "Inst (hex)" };
 								
-	static constexpr char* FontName = "Courier New";
+	const char* FontName = "Courier New";
 	static constexpr int FontSize = 6;
 	
-	static constexpr char* DebugWindow_Caption = "VU Debug Window";
+	const char* DebugWindow_Caption = "VU Debug Window";
 	static constexpr int DebugWindow_X = 10;
 	static constexpr int DebugWindow_Y = 10;
 	static constexpr int DebugWindow_Width = 995;

@@ -2012,7 +2012,7 @@ void WindowClass::Window::KillGLWindow()								// Properly Kill The Window
  *	bits			- Number Of Bits To Use For Color (8/16/24/32)			*
  *	fullscreenflag	- Use Fullscreen Mode (TRUE) Or Windowed Mode (FALSE)	*/
  
-BOOL WindowClass::Window::CreateGLWindow(char* title, int width, int height, bool has_menu, bool fullscreenflag)
+BOOL WindowClass::Window::CreateGLWindow(const char* title, int width, int height, bool has_menu, bool fullscreenflag)
 {
 	GLuint		PixelFormat;			// Holds The Results After Searching For A Match
 	WNDCLASS	wc;						// Windows Class Structure
@@ -2777,7 +2777,7 @@ HWND WindowClass::ListView::Create_Dynamic_wHeader ( Window* ParentWindow, int x
 
 ///////////////////////////// Create Font Object //////////////////////////////////////
 
-HFONT WindowClass::Window::CreateFontObject ( int fontSize, char* fontName, bool Bold, bool Underline, bool Italic, bool StrikeOut )
+HFONT WindowClass::Window::CreateFontObject ( int fontSize, const char* fontName, bool Bold, bool Underline, bool Italic, bool StrikeOut )
 {
 	HFONT hF;
 	

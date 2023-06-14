@@ -41,7 +41,7 @@ namespace Vu
 		public:
 		
 			// this is the name of the instruction
-			char* Name;
+			const char* Name;
 
 			// this says how instruction is defined
 			u8 Opcode;

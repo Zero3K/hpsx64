@@ -7330,7 +7330,7 @@ void SPUCore::DebugWindow_Enable ( int Number )
 	static constexpr int SPUList_Width = SPUMasterList_Width;
 	static constexpr int SPUList_Height = SPUMasterList_Height;
 	
-	static constexpr char* DebugWindow_Caption = "SPU1 Debug Window";
+	const char* DebugWindow_Caption = "SPU1 Debug Window";
 	static constexpr int DebugWindow_X = 10;
 	static constexpr int DebugWindow_Y = 10;
 	static constexpr int DebugWindow_Width = ( SPUList_Width * SPUList_CountX ) + 10;

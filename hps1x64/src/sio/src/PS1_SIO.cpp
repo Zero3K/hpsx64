@@ -417,8 +417,8 @@ void SIO::Reset ()
 
 #ifdef PS2_COMPILE
 
-static constexpr char* c_sMagic = "Sony PS2 Memory Card Format ";
-static constexpr char* c_sVersion = "1.2.0.0";
+const char* c_sMagic = "Sony PS2 Memory Card Format ";
+const char* c_sVersion = "1.2.0.0";
 void SIO::PS2_FormatMemCard ( PS2_MC* mc )
 {
 	int i;

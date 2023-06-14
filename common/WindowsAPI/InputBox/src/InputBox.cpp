@@ -85,17 +85,17 @@ void InputBox::KillDialog ()
 
 
 
-void InputBox::ShowDialog ( WindowClass::Window* ParentWindow, string WindowCaption, string Prompt, InputBoxCallback _OnClick_Ok, InputBoxCallback _OnClick_Cancel, char* InitialValue )
+void InputBox::ShowDialog ( WindowClass::Window* ParentWindow, string WindowCaption, string Prompt, InputBoxCallback _OnClick_Ok, InputBoxCallback _OnClick_Cancel, const char* InitialValue )
 {
 	
-	static constexpr char* Dialog1_Caption = "Modify";
+	const char* Dialog1_Caption = "Modify";
 	static constexpr int Dialog1_Id = 5000;
 	static constexpr int Dialog1_X = 10;
 	static constexpr int Dialog1_Y = 10;
 	static constexpr int Dialog1_Width = 200;
 	static constexpr int Dialog1_Height = 150;
 
-	static constexpr char* Label1_Text = "Enter new value:";
+	const char* Label1_Text = "Enter new value:";
 	static constexpr int Label1_Id = 5001;
 	static constexpr int Label1_X = 10;
 	static constexpr int Label1_Y = 10;
@@ -108,14 +108,14 @@ void InputBox::ShowDialog ( WindowClass::Window* ParentWindow, string WindowCapt
 	static constexpr int Edit1_Width = 100;
 	static constexpr int Edit1_Height = 20;
 	
-	static constexpr char* CmdButton1_Caption = "OK";
+	const char* CmdButton1_Caption = "OK";
 	static constexpr int CmdButton1_Id = 5003;
 	static constexpr int CmdButton1_X = 10;
 	static constexpr int CmdButton1_Y = 90;
 	static constexpr int CmdButton1_Width = 50;
 	static constexpr int CmdButton1_Height = 20;
 	
-	static constexpr char* CmdButton2_Caption = "Cancel";
+	const char* CmdButton2_Caption = "Cancel";
 	static constexpr int CmdButton2_Id = 5004;
 	static constexpr int CmdButton2_X = 70;
 	static constexpr int CmdButton2_Y = 90;

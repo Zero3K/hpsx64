@@ -61,7 +61,7 @@ public:
 	InputBoxCallback OnClick_Ok;
 	InputBoxCallback OnClick_Cancel;
 	
-	void ShowDialog ( WindowClass::Window* ParentWindow, string WindowCaption, string Prompt, InputBoxCallback _OnClick_Ok, InputBoxCallback _OnClick_Cancel, char* InitialValue = "" );
+	void ShowDialog ( WindowClass::Window* ParentWindow, string WindowCaption, string Prompt, InputBoxCallback _OnClick_Ok, InputBoxCallback _OnClick_Cancel, const char* InitialValue = "" );
 	void KillDialog ();
 	
 	static void Dialog1_OkClick ( HWND hCtrl, int idCtrl, unsigned int message, WPARAM wParam, LPARAM lParam );
