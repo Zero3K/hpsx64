@@ -11935,7 +11935,7 @@ void GPU::DebugWindow_Enable ()
 
 #ifndef _CONSOLE_DEBUG_ONLY_
 
-	static constexpr char* DebugWindow_Caption = "PS2 FrameBuffers Debug Window";
+	const char* DebugWindow_Caption = "PS2 FrameBuffers Debug Window";
 	static constexpr int DebugWindow_X = 10;
 	static constexpr int DebugWindow_Y = 10;
 	static constexpr int DebugWindow_Width = c_iFrameBuffer_DisplayWidth;
@@ -39434,7 +39434,7 @@ void GPU::DebugWindow_Enable2()
 
 #ifndef _CONSOLE_DEBUG_ONLY_
 
-	static constexpr char* DebugWindow_Caption = "PS2 GPU Debug Window";
+	const char* DebugWindow_Caption = "PS2 GPU Debug Window";
 	static constexpr int DebugWindow_X = 10;
 	static constexpr int DebugWindow_Y = 10;
 	static constexpr int DebugWindow_Width = 200;

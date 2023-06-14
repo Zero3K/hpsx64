@@ -86,8 +86,8 @@ namespace Debug
 		inline void SetCombine ( bool bCombine ) { bDisableCombine = !bCombine; }
 		inline void SetSplit ( bool bSplit ) { bEnableSplit = bSplit; }
 		
-		bool Create ( char* LogFileName );
-		bool CreateDebugFile ( char* LogFileName );
+		bool Create (const char* LogFileName );
+		bool CreateDebugFile (const char* LogFileName );
 		
 	/*
 		ostream& operator<< (ostream& out, char c );

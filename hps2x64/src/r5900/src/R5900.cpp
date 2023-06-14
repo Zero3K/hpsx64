@@ -2851,12 +2851,12 @@ void Cpu::DebugWindow_Enable ()
 								"Config", "Reserved", "Reserved", "Reserved", "Reserved", "Reserved", "Reserved", "BadPAddr",
 								"Debug", "Perf", "Reserved", "Reserved", "TagLo", "TagHi", "ErrorEPC", "Reserved" };
 								
-	static constexpr char* DisAsm_Window_ColumnHeadings [] = { "Address", "@", ">", "Instruction", "Inst (hex)" };
+	const char* DisAsm_Window_ColumnHeadings [] = { "Address", "@", ">", "Instruction", "Inst (hex)" };
 								
-	static constexpr char* FontName = "Courier New";
+	const char* FontName = "Courier New";
 	static constexpr int FontSize = 6;
 	
-	static constexpr char* DebugWindow_Caption = "R5900 Debug Window";
+	const char* DebugWindow_Caption = "R5900 Debug Window";
 	static constexpr int DebugWindow_X = 10;
 	static constexpr int DebugWindow_Y = 10;
 	static constexpr int DebugWindow_Width = 995;

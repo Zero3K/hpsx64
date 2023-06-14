@@ -68,7 +68,7 @@ Debug_MemoryViewer::~Debug_MemoryViewer ()
 
 void Debug_MemoryViewer::Create ( WindowClass::Window* ParentWindow, int x, int y, int width, int height, int BytesToShowPerRow )
 {
-	static constexpr char* FontName = "Courier New";
+	const char* FontName = "Courier New";
 	static constexpr int FontSize = 6;
 	
 	static constexpr int LabelColumn_Width = 50;

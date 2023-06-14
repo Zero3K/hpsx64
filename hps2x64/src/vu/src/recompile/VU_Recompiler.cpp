@@ -7677,7 +7677,7 @@ long Recompiler::Generate_Prefix_EventCheck ( u32 Address, bool bIsBranchOrJump 
 
 long Recompiler::INVALID ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "INVALID";
+	const char *c_sName = "INVALID";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::INVALID;
 	
 	int ret = 1;
@@ -7718,7 +7718,7 @@ long Recompiler::INVALID ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 
 
 long Recompiler::ABS ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "ABS";
+	const char *c_sName = "ABS";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::ABS;
 	
 	int ret = 1;
@@ -7779,7 +7779,7 @@ long Recompiler::ABS ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Addr
 
 long Recompiler::ADD ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "ADD";
+	const char *c_sName = "ADD";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::ADD;
 	
 	int ret = 1;
@@ -7838,7 +7838,7 @@ long Recompiler::ADD ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Addr
 
 long Recompiler::ADDi ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "ADDi";
+	const char *c_sName = "ADDi";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::ADDi;
 	
 	int ret = 1;
@@ -7896,7 +7896,7 @@ long Recompiler::ADDi ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Add
 
 long Recompiler::ADDq ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "ADDq";
+	const char *c_sName = "ADDq";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::ADDq;
 	
 	int ret = 1;
@@ -7958,7 +7958,7 @@ long Recompiler::ADDq ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Add
 
 long Recompiler::ADDBCX ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "ADDBCX";
+	const char *c_sName = "ADDBCX";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::ADDBCX;
 	
 	int ret = 1;
@@ -8017,7 +8017,7 @@ long Recompiler::ADDBCX ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 A
 
 long Recompiler::ADDBCY ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "ADDBCY";
+	const char *c_sName = "ADDBCY";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::ADDBCY;
 	
 	int ret = 1;
@@ -8076,7 +8076,7 @@ long Recompiler::ADDBCY ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 A
 
 long Recompiler::ADDBCZ ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "ADDBCZ";
+	const char *c_sName = "ADDBCZ";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::ADDBCZ;
 	
 	int ret = 1;
@@ -8135,7 +8135,7 @@ long Recompiler::ADDBCZ ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 A
 
 long Recompiler::ADDBCW ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "ADDBCW";
+	const char *c_sName = "ADDBCW";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::ADDBCW;
 	
 	int ret = 1;
@@ -8194,7 +8194,7 @@ long Recompiler::ADDBCW ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 A
 
 long Recompiler::ADDA ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "ADDA";
+	const char *c_sName = "ADDA";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::ADDA;
 	
 	int ret = 1;
@@ -8251,7 +8251,7 @@ long Recompiler::ADDA ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Add
 
 long Recompiler::ADDAi ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "ADDAi";
+	const char *c_sName = "ADDAi";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::ADDAi;
 	
 	int ret = 1;
@@ -8307,7 +8307,7 @@ long Recompiler::ADDAi ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Ad
 
 long Recompiler::ADDAq ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "ADDAq";
+	const char *c_sName = "ADDAq";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::ADDAq;
 	
 	int ret = 1;
@@ -8367,7 +8367,7 @@ long Recompiler::ADDAq ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Ad
 
 long Recompiler::ADDABCX ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "ADDABCX";
+	const char *c_sName = "ADDABCX";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::ADDABCX;
 	
 	int ret = 1;
@@ -8424,7 +8424,7 @@ long Recompiler::ADDABCX ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 
 
 long Recompiler::ADDABCY ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "ADDABCY";
+	const char *c_sName = "ADDABCY";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::ADDABCY;
 	
 	int ret = 1;
@@ -8481,7 +8481,7 @@ long Recompiler::ADDABCY ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 
 
 long Recompiler::ADDABCZ ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "ADDABCZ";
+	const char *c_sName = "ADDABCZ";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::ADDABCZ;
 	
 	int ret = 1;
@@ -8538,7 +8538,7 @@ long Recompiler::ADDABCZ ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 
 
 long Recompiler::ADDABCW ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "ADDABCW";
+	const char *c_sName = "ADDABCW";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::ADDABCW;
 	
 	int ret = 1;
@@ -8602,7 +8602,7 @@ long Recompiler::ADDABCW ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 
 
 long Recompiler::SUB ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "SUB";
+	const char *c_sName = "SUB";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::SUB;
 	
 	int ret = 1;
@@ -8661,7 +8661,7 @@ long Recompiler::SUB ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Addr
 
 long Recompiler::SUBi ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "SUBi";
+	const char *c_sName = "SUBi";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::SUBi;
 	
 	int ret = 1;
@@ -8719,7 +8719,7 @@ long Recompiler::SUBi ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Add
 
 long Recompiler::SUBq ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "SUBq";
+	const char *c_sName = "SUBq";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::SUBq;
 	
 	int ret = 1;
@@ -8781,7 +8781,7 @@ long Recompiler::SUBq ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Add
 
 long Recompiler::SUBBCX ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "SUBBCX";
+	const char *c_sName = "SUBBCX";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::SUBBCX;
 	
 	int ret = 1;
@@ -8840,7 +8840,7 @@ long Recompiler::SUBBCX ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 A
 
 long Recompiler::SUBBCY ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "SUBBCY";
+	const char *c_sName = "SUBBCY";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::SUBBCY;
 	
 	int ret = 1;
@@ -8899,7 +8899,7 @@ long Recompiler::SUBBCY ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 A
 
 long Recompiler::SUBBCZ ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "SUBBCZ";
+	const char *c_sName = "SUBBCZ";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::SUBBCZ;
 	
 	int ret = 1;
@@ -8958,7 +8958,7 @@ long Recompiler::SUBBCZ ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 A
 
 long Recompiler::SUBBCW ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "SUBBCW";
+	const char *c_sName = "SUBBCW";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::SUBBCW;
 	
 	int ret = 1;
@@ -9017,7 +9017,7 @@ long Recompiler::SUBBCW ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 A
 
 long Recompiler::SUBA ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "SUBA";
+	const char *c_sName = "SUBA";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::SUBA;
 	
 	int ret = 1;
@@ -9074,7 +9074,7 @@ long Recompiler::SUBA ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Add
 
 long Recompiler::SUBAi ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "SUBAi";
+	const char *c_sName = "SUBAi";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::SUBAi;
 	
 	int ret = 1;
@@ -9130,7 +9130,7 @@ long Recompiler::SUBAi ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Ad
 
 long Recompiler::SUBAq ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "SUBAq";
+	const char *c_sName = "SUBAq";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::SUBAq;
 	
 	int ret = 1;
@@ -9190,7 +9190,7 @@ long Recompiler::SUBAq ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Ad
 
 long Recompiler::SUBABCX ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "SUBABCX";
+	const char *c_sName = "SUBABCX";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::SUBABCX;
 	
 	int ret = 1;
@@ -9247,7 +9247,7 @@ long Recompiler::SUBABCX ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 
 
 long Recompiler::SUBABCY ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "SUBABCY";
+	const char *c_sName = "SUBABCY";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::SUBABCY;
 	
 	int ret = 1;
@@ -9304,7 +9304,7 @@ long Recompiler::SUBABCY ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 
 
 long Recompiler::SUBABCZ ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "SUBABCZ";
+	const char *c_sName = "SUBABCZ";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::SUBABCZ;
 	
 	int ret = 1;
@@ -9361,7 +9361,7 @@ long Recompiler::SUBABCZ ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 
 
 long Recompiler::SUBABCW ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "SUBABCW";
+	const char *c_sName = "SUBABCW";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::SUBABCW;
 	
 	int ret = 1;
@@ -9421,7 +9421,7 @@ long Recompiler::SUBABCW ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 
 
 long Recompiler::MUL ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "MUL";
+	const char *c_sName = "MUL";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::MUL;
 	
 	int ret = 1;
@@ -9480,7 +9480,7 @@ long Recompiler::MUL ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Addr
 
 long Recompiler::MULi ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "MULi";
+	const char *c_sName = "MULi";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::MULi;
 	
 	int ret = 1;
@@ -9538,7 +9538,7 @@ long Recompiler::MULi ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Add
 
 long Recompiler::MULq ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "MULq";
+	const char *c_sName = "MULq";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::MULq;
 	
 	int ret = 1;
@@ -9632,7 +9632,7 @@ long Recompiler::MULq ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Add
 
 long Recompiler::MULBCX ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "MULBCX";
+	const char *c_sName = "MULBCX";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::MULBCX;
 	
 	int ret = 1;
@@ -9691,7 +9691,7 @@ long Recompiler::MULBCX ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 A
 
 long Recompiler::MULBCY ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "MULBCY";
+	const char *c_sName = "MULBCY";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::MULBCY;
 	
 	int ret = 1;
@@ -9750,7 +9750,7 @@ long Recompiler::MULBCY ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 A
 
 long Recompiler::MULBCZ ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "MULBCZ";
+	const char *c_sName = "MULBCZ";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::MULBCZ;
 	
 	int ret = 1;
@@ -9809,7 +9809,7 @@ long Recompiler::MULBCZ ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 A
 
 long Recompiler::MULBCW ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "MULBCW";
+	const char *c_sName = "MULBCW";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::MULBCW;
 	
 	int ret = 1;
@@ -9868,7 +9868,7 @@ long Recompiler::MULBCW ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 A
 
 long Recompiler::MULA ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "MULA";
+	const char *c_sName = "MULA";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::MULA;
 	
 	int ret = 1;
@@ -9925,7 +9925,7 @@ long Recompiler::MULA ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Add
 
 long Recompiler::MULAi ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "MULAi";
+	const char *c_sName = "MULAi";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::MULAi;
 	
 	int ret = 1;
@@ -9981,7 +9981,7 @@ long Recompiler::MULAi ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Ad
 
 long Recompiler::MULAq ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "MULAq";
+	const char *c_sName = "MULAq";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::MULAq;
 	
 	int ret = 1;
@@ -10041,7 +10041,7 @@ long Recompiler::MULAq ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Ad
 
 long Recompiler::MULABCX ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "MULABCX";
+	const char *c_sName = "MULABCX";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::MULABCX;
 	
 	int ret = 1;
@@ -10099,7 +10099,7 @@ long Recompiler::MULABCX ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 
 
 long Recompiler::MULABCY ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "MULABCY";
+	const char *c_sName = "MULABCY";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::MULABCY;
 	
 	int ret = 1;
@@ -10156,7 +10156,7 @@ long Recompiler::MULABCY ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 
 
 long Recompiler::MULABCZ ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "MULABCZ";
+	const char *c_sName = "MULABCZ";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::MULABCZ;
 	
 	int ret = 1;
@@ -10213,7 +10213,7 @@ long Recompiler::MULABCZ ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 
 
 long Recompiler::MULABCW ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "MULABCW";
+	const char *c_sName = "MULABCW";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::MULABCW;
 	
 	int ret = 1;
@@ -10275,7 +10275,7 @@ long Recompiler::MULABCW ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 
 
 long Recompiler::MADD ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "MADD";
+	const char *c_sName = "MADD";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::MADD;
 	
 	int ret = 1;
@@ -10334,7 +10334,7 @@ long Recompiler::MADD ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Add
 
 long Recompiler::MADDi ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "MADDi";
+	const char *c_sName = "MADDi";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::MADDi;
 	
 	int ret = 1;
@@ -10392,7 +10392,7 @@ long Recompiler::MADDi ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Ad
 
 long Recompiler::MADDq ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "MADDq";
+	const char *c_sName = "MADDq";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::MADDq;
 	
 	int ret = 1;
@@ -10454,7 +10454,7 @@ long Recompiler::MADDq ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Ad
 
 long Recompiler::MADDBCX ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "MADDBCX";
+	const char *c_sName = "MADDBCX";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::MADDBCX;
 	
 	int ret = 1;
@@ -10513,7 +10513,7 @@ long Recompiler::MADDBCX ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 
 
 long Recompiler::MADDBCY ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "MADDBCY";
+	const char *c_sName = "MADDBCY";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::MADDBCY;
 	
 	int ret = 1;
@@ -10572,7 +10572,7 @@ long Recompiler::MADDBCY ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 
 
 long Recompiler::MADDBCZ ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "MADDBCZ";
+	const char *c_sName = "MADDBCZ";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::MADDBCZ;
 	
 	int ret = 1;
@@ -10631,7 +10631,7 @@ long Recompiler::MADDBCZ ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 
 
 long Recompiler::MADDBCW ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "MADDBCW";
+	const char *c_sName = "MADDBCW";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::MADDBCW;
 	
 	int ret = 1;
@@ -10697,7 +10697,7 @@ long Recompiler::MADDBCW ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 
 
 long Recompiler::MADDA ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "MADDA";
+	const char *c_sName = "MADDA";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::MADDA;
 	
 	int ret = 1;
@@ -10754,7 +10754,7 @@ long Recompiler::MADDA ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Ad
 
 long Recompiler::MADDAi ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "MADDAi";
+	const char *c_sName = "MADDAi";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::MADDAi;
 	
 	int ret = 1;
@@ -10810,7 +10810,7 @@ long Recompiler::MADDAi ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 A
 
 long Recompiler::MADDAq ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "MADDAq";
+	const char *c_sName = "MADDAq";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::MADDAq;
 	
 	int ret = 1;
@@ -10870,7 +10870,7 @@ long Recompiler::MADDAq ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 A
 
 long Recompiler::MADDABCX ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "MADDABCX";
+	const char *c_sName = "MADDABCX";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::MADDABCX;
 	
 	int ret = 1;
@@ -10927,7 +10927,7 @@ long Recompiler::MADDABCX ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32
 
 long Recompiler::MADDABCY ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "MADDABCY";
+	const char *c_sName = "MADDABCY";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::MADDABCY;
 	
 	int ret = 1;
@@ -10984,7 +10984,7 @@ long Recompiler::MADDABCY ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32
 
 long Recompiler::MADDABCZ ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "MADDABCZ";
+	const char *c_sName = "MADDABCZ";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::MADDABCZ;
 	
 	int ret = 1;
@@ -11041,7 +11041,7 @@ long Recompiler::MADDABCZ ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32
 
 long Recompiler::MADDABCW ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "MADDABCW";
+	const char *c_sName = "MADDABCW";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::MADDABCW;
 	
 	int ret = 1;
@@ -11101,7 +11101,7 @@ long Recompiler::MADDABCW ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32
 
 long Recompiler::MSUB ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "MSUB";
+	const char *c_sName = "MSUB";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::MSUB;
 	
 	int ret = 1;
@@ -11160,7 +11160,7 @@ long Recompiler::MSUB ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Add
 
 long Recompiler::MSUBi ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "MSUBi";
+	const char *c_sName = "MSUBi";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::MSUBi;
 	
 	int ret = 1;
@@ -11218,7 +11218,7 @@ long Recompiler::MSUBi ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Ad
 
 long Recompiler::MSUBq ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "MSUBq";
+	const char *c_sName = "MSUBq";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::MSUBq;
 	
 	int ret = 1;
@@ -11280,7 +11280,7 @@ long Recompiler::MSUBq ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Ad
 
 long Recompiler::MSUBBCX ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "MSUBBCX";
+	const char *c_sName = "MSUBBCX";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::MSUBBCX;
 	
 	int ret = 1;
@@ -11339,7 +11339,7 @@ long Recompiler::MSUBBCX ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 
 
 long Recompiler::MSUBBCY ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "MSUBBCY";
+	const char *c_sName = "MSUBBCY";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::MSUBBCY;
 	
 	int ret = 1;
@@ -11398,7 +11398,7 @@ long Recompiler::MSUBBCY ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 
 
 long Recompiler::MSUBBCZ ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "MSUBBCZ";
+	const char *c_sName = "MSUBBCZ";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::MSUBBCZ;
 	
 	int ret = 1;
@@ -11457,7 +11457,7 @@ long Recompiler::MSUBBCZ ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 
 
 long Recompiler::MSUBBCW ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "MSUBBCW";
+	const char *c_sName = "MSUBBCW";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::MSUBBCW;
 	
 	int ret = 1;
@@ -11516,7 +11516,7 @@ long Recompiler::MSUBBCW ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 
 
 long Recompiler::MSUBA ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "MSUBA";
+	const char *c_sName = "MSUBA";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::MSUBA;
 	
 	int ret = 1;
@@ -11573,7 +11573,7 @@ long Recompiler::MSUBA ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Ad
 
 long Recompiler::MSUBAi ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "MSUBAi";
+	const char *c_sName = "MSUBAi";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::MSUBAi;
 	
 	int ret = 1;
@@ -11629,7 +11629,7 @@ long Recompiler::MSUBAi ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 A
 
 long Recompiler::MSUBAq ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "MSUBAq";
+	const char *c_sName = "MSUBAq";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::MSUBAq;
 	
 	int ret = 1;
@@ -11689,7 +11689,7 @@ long Recompiler::MSUBAq ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 A
 
 long Recompiler::MSUBABCX ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "MSUBABCX";
+	const char *c_sName = "MSUBABCX";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::MSUBABCX;
 	
 	int ret = 1;
@@ -11746,7 +11746,7 @@ long Recompiler::MSUBABCX ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32
 
 long Recompiler::MSUBABCY ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "MSUBABCY";
+	const char *c_sName = "MSUBABCY";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::MSUBABCY;
 	
 	int ret = 1;
@@ -11803,7 +11803,7 @@ long Recompiler::MSUBABCY ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32
 
 long Recompiler::MSUBABCZ ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "MSUBABCZ";
+	const char *c_sName = "MSUBABCZ";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::MSUBABCZ;
 	
 	int ret = 1;
@@ -11860,7 +11860,7 @@ long Recompiler::MSUBABCZ ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32
 
 long Recompiler::MSUBABCW ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "MSUBABCW";
+	const char *c_sName = "MSUBABCW";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::MSUBABCW;
 	
 	int ret = 1;
@@ -11918,7 +11918,7 @@ long Recompiler::MSUBABCW ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32
 
 long Recompiler::MAX ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "MAX";
+	const char *c_sName = "MAX";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::MAX;
 	
 	int ret = 1;
@@ -11977,7 +11977,7 @@ long Recompiler::MAX ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Addr
 
 long Recompiler::MAXi ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "MAXi";
+	const char *c_sName = "MAXi";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::MAXi;
 	
 	int ret = 1;
@@ -12038,7 +12038,7 @@ long Recompiler::MAXi ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Add
 
 long Recompiler::MAXBCX ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "MAXBCX";
+	const char *c_sName = "MAXBCX";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::MAXBCX;
 	
 	int ret = 1;
@@ -12097,7 +12097,7 @@ long Recompiler::MAXBCX ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 A
 
 long Recompiler::MAXBCY ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "MAXBCY";
+	const char *c_sName = "MAXBCY";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::MAXBCY;
 	
 	int ret = 1;
@@ -12156,7 +12156,7 @@ long Recompiler::MAXBCY ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 A
 
 long Recompiler::MAXBCZ ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "MAXBCZ";
+	const char *c_sName = "MAXBCZ";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::MAXBCZ;
 	
 	int ret = 1;
@@ -12215,7 +12215,7 @@ long Recompiler::MAXBCZ ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 A
 
 long Recompiler::MAXBCW ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "MAXBCW";
+	const char *c_sName = "MAXBCW";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::MAXBCW;
 	
 	int ret = 1;
@@ -12276,7 +12276,7 @@ long Recompiler::MAXBCW ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 A
 
 long Recompiler::MINI ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "MINI";
+	const char *c_sName = "MINI";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::MINI;
 	
 	int ret = 1;
@@ -12335,7 +12335,7 @@ long Recompiler::MINI ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Add
 
 long Recompiler::MINIi ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "MINIi";
+	const char *c_sName = "MINIi";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::MINIi;
 	
 	int ret = 1;
@@ -12396,7 +12396,7 @@ long Recompiler::MINIi ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Ad
 
 long Recompiler::MINIBCX ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "MINIBCX";
+	const char *c_sName = "MINIBCX";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::MINIBCX;
 	
 	int ret = 1;
@@ -12455,7 +12455,7 @@ long Recompiler::MINIBCX ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 
 
 long Recompiler::MINIBCY ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "MINIBCY";
+	const char *c_sName = "MINIBCY";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::MINIBCY;
 	
 	int ret = 1;
@@ -12514,7 +12514,7 @@ long Recompiler::MINIBCY ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 
 
 long Recompiler::MINIBCZ ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "MINIBCZ";
+	const char *c_sName = "MINIBCZ";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::MINIBCZ;
 	
 	int ret = 1;
@@ -12573,7 +12573,7 @@ long Recompiler::MINIBCZ ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 
 
 long Recompiler::MINIBCW ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "MINIBCW";
+	const char *c_sName = "MINIBCW";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::MINIBCW;
 	
 	int ret = 1;
@@ -12636,7 +12636,7 @@ long Recompiler::MINIBCW ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 
 
 long Recompiler::FTOI0 ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "FTOI0";
+	const char *c_sName = "FTOI0";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::FTOI0;
 	
 	int ret = 1;
@@ -12695,7 +12695,7 @@ long Recompiler::FTOI0 ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Ad
 
 long Recompiler::FTOI4 ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "FTOI4";
+	const char *c_sName = "FTOI4";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::FTOI4;
 	
 	int ret = 1;
@@ -12760,7 +12760,7 @@ long Recompiler::FTOI4 ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Ad
 
 long Recompiler::FTOI12 ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "FTOI12";
+	const char *c_sName = "FTOI12";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::FTOI12;
 	
 	int ret = 1;
@@ -12818,7 +12818,7 @@ long Recompiler::FTOI12 ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 A
 
 long Recompiler::FTOI15 ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "FTOI15";
+	const char *c_sName = "FTOI15";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::FTOI15;
 	
 	int ret = 1;
@@ -12876,7 +12876,7 @@ long Recompiler::FTOI15 ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 A
 
 long Recompiler::ITOF0 ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "ITOF0";
+	const char *c_sName = "ITOF0";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::ITOF0;
 	
 	int ret = 1;
@@ -12934,7 +12934,7 @@ long Recompiler::ITOF0 ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Ad
 
 long Recompiler::ITOF4 ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "ITOF4";
+	const char *c_sName = "ITOF4";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::ITOF4;
 	
 	int ret = 1;
@@ -12992,7 +12992,7 @@ long Recompiler::ITOF4 ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Ad
 
 long Recompiler::ITOF12 ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "ITOF12";
+	const char *c_sName = "ITOF12";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::ITOF12;
 	
 	int ret = 1;
@@ -13050,7 +13050,7 @@ long Recompiler::ITOF12 ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 A
 
 long Recompiler::ITOF15 ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "ITOF15";
+	const char *c_sName = "ITOF15";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::ITOF15;
 	
 	int ret = 1;
@@ -13108,7 +13108,7 @@ long Recompiler::ITOF15 ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 A
 
 long Recompiler::NOP ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "NOP";
+	const char *c_sName = "NOP";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::NOP;
 	
 	int ret = 1;
@@ -13154,7 +13154,7 @@ long Recompiler::NOP ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Addr
 
 long Recompiler::OPMULA ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "OPMULA";
+	const char *c_sName = "OPMULA";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::OPMULA;
 	
 	int ret = 1;
@@ -13211,7 +13211,7 @@ long Recompiler::OPMULA ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 A
 
 long Recompiler::OPMSUB ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "OPMSUB";
+	const char *c_sName = "OPMSUB";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::OPMSUB;
 	
 	int ret = 1;
@@ -13271,7 +13271,7 @@ long Recompiler::OPMSUB ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 A
 
 long Recompiler::CLIP ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "CLIP";
+	const char *c_sName = "CLIP";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::CLIP;
 	
 	int ret = 1;
@@ -13424,7 +13424,7 @@ long Recompiler::CLIP ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Add
 
 long Recompiler::DIV ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "DIV";
+	const char *c_sName = "DIV";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::DIV;
 	
 	static const u64 c_CycleTime = 7;
@@ -13606,7 +13606,7 @@ long Recompiler::DIV ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Addr
 
 long Recompiler::IADD ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "IADD";
+	const char *c_sName = "IADD";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::IADD;
 	
 	int ret = 1;
@@ -13734,7 +13734,7 @@ long Recompiler::IADD ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Add
 
 long Recompiler::IADDI ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "IADDI";
+	const char *c_sName = "IADDI";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::IADDI;
 	
 	int ret = 1;
@@ -13841,7 +13841,7 @@ long Recompiler::IADDI ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Ad
 
 long Recompiler::IADDIU ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "IADDIU";
+	const char *c_sName = "IADDIU";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::IADDIU;
 	
 	int ret = 1;
@@ -13949,7 +13949,7 @@ long Recompiler::IADDIU ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 A
 
 long Recompiler::IAND ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "IAND";
+	const char *c_sName = "IAND";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::IAND;
 	
 	int ret = 1;
@@ -14072,7 +14072,7 @@ long Recompiler::IAND ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Add
 
 long Recompiler::IOR ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "IOR";
+	const char *c_sName = "IOR";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::IOR;
 	
 	int ret = 1;
@@ -14197,7 +14197,7 @@ long Recompiler::IOR ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Addr
 
 long Recompiler::ISUB ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "ISUB";
+	const char *c_sName = "ISUB";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::ISUB;
 	
 	int ret = 1;
@@ -14323,7 +14323,7 @@ long Recompiler::ISUB ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Add
 
 long Recompiler::ISUBIU ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "ISUBIU";
+	const char *c_sName = "ISUBIU";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::ISUBIU;
 	
 	int ret = 1;
@@ -14433,7 +14433,7 @@ long Recompiler::ISUBIU ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 A
 
 long Recompiler::ILWR ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "ILWR";
+	const char *c_sName = "ILWR";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::ILWR;
 	
 	int ret = 1;
@@ -14592,7 +14592,7 @@ long Recompiler::ILWR ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Add
 
 long Recompiler::ISWR ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "ISWR";
+	const char *c_sName = "ISWR";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::ISWR;
 	
 	int ret = 1;
@@ -14749,7 +14749,7 @@ long Recompiler::ISWR ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Add
 
 long Recompiler::LQD ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "LQD";
+	const char *c_sName = "LQD";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::LQD;
 	
 	int ret = 1;
@@ -14954,7 +14954,7 @@ long Recompiler::LQD ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Addr
 
 long Recompiler::LQI ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "LQI";
+	const char *c_sName = "LQI";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::LQI;
 	
 	int ret = 1;
@@ -15163,7 +15163,7 @@ long Recompiler::LQI ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Addr
 
 long Recompiler::MFIR ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "MFIR";
+	const char *c_sName = "MFIR";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::MFIR;
 	
 	int ret = 1;
@@ -15253,7 +15253,7 @@ long Recompiler::MFIR ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Add
 
 long Recompiler::MTIR ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "MTIR";
+	const char *c_sName = "MTIR";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::MTIR;
 	
 	int ret = 1;
@@ -15382,7 +15382,7 @@ long Recompiler::MTIR ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Add
 
 long Recompiler::MOVE ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "MOVE";
+	const char *c_sName = "MOVE";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::MOVE;
 	
 	int ret = 1;
@@ -15493,7 +15493,7 @@ long Recompiler::MOVE ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Add
 
 long Recompiler::MR32 ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "MR32";
+	const char *c_sName = "MR32";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::MR32;
 	
 	int ret = 1;
@@ -15612,7 +15612,7 @@ long Recompiler::MR32 ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Add
 
 long Recompiler::RGET ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "RGET";
+	const char *c_sName = "RGET";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::RGET;
 	
 	int ret = 1;
@@ -15732,7 +15732,7 @@ long Recompiler::RGET ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Add
 
 long Recompiler::RINIT ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "RINIT";
+	const char *c_sName = "RINIT";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::RINIT;
 	
 	int ret = 1;
@@ -15795,7 +15795,7 @@ long Recompiler::RINIT ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Ad
 
 long Recompiler::RNEXT ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "RNEXT";
+	const char *c_sName = "RNEXT";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::RNEXT;
 	
 	static const unsigned long c_ulRandMask = 0x7ffb18;
@@ -15927,7 +15927,7 @@ long Recompiler::RNEXT ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Ad
 
 long Recompiler::RXOR ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "RXOR";
+	const char *c_sName = "RXOR";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::RXOR;
 	
 	int ret = 1;
@@ -15993,7 +15993,7 @@ long Recompiler::RXOR ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Add
 
 long Recompiler::RSQRT ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "RSQRT";
+	const char *c_sName = "RSQRT";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::RSQRT;
 	
 	static const u64 c_CycleTime = 13;
@@ -16195,7 +16195,7 @@ long Recompiler::RSQRT ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Ad
 
 long Recompiler::SQRT ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "SQRT";
+	const char *c_sName = "SQRT";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::SQRT;
 	
 	static const u64 c_CycleTime = 7;
@@ -16346,7 +16346,7 @@ long Recompiler::SQRT ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Add
 
 long Recompiler::SQD ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "SQD";
+	const char *c_sName = "SQD";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::SQD;
 	
 	int ret = 1;
@@ -16536,7 +16536,7 @@ long Recompiler::SQD ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Addr
 
 long Recompiler::SQI ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "SQI";
+	const char *c_sName = "SQI";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::SQI;
 	
 	int ret = 1;
@@ -16721,7 +16721,7 @@ long Recompiler::SQI ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Addr
 
 long Recompiler::WAITQ ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "WAITQ";
+	const char *c_sName = "WAITQ";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::WAITQ;
 	
 	int ret = 1;
@@ -16798,7 +16798,7 @@ long Recompiler::WAITQ ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Ad
 
 long Recompiler::B ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "B";
+	const char *c_sName = "B";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::B;
 	
 	int ret = 1;
@@ -16891,7 +16891,7 @@ long Recompiler::B ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Addres
 
 long Recompiler::BAL ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "BAL";
+	const char *c_sName = "BAL";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::BAL;
 	
 	int ret = 1;
@@ -16990,7 +16990,7 @@ long Recompiler::BAL ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Addr
 
 long Recompiler::JALR ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "JALR";
+	const char *c_sName = "JALR";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::JALR;
 	
 	int ret = 1;
@@ -17092,7 +17092,7 @@ long Recompiler::JALR ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Add
 
 long Recompiler::JR ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "JR";
+	const char *c_sName = "JR";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::JR;
 	
 	int ret = 1;
@@ -17191,7 +17191,7 @@ long Recompiler::JR ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Addre
 
 long Recompiler::IBEQ ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "IBEQ";
+	const char *c_sName = "IBEQ";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::IBEQ;
 	
 	int ret = 1;
@@ -17292,7 +17292,7 @@ long Recompiler::IBEQ ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Add
 
 long Recompiler::IBGEZ ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "IBGEZ";
+	const char *c_sName = "IBGEZ";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::IBGEZ;
 	
 	int ret = 1;
@@ -17391,7 +17391,7 @@ long Recompiler::IBGEZ ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Ad
 
 long Recompiler::IBGTZ ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "IBGTZ";
+	const char *c_sName = "IBGTZ";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::IBGTZ;
 	
 	int ret = 1;
@@ -17490,7 +17490,7 @@ long Recompiler::IBGTZ ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Ad
 
 long Recompiler::IBLEZ ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "IBLEZ";
+	const char *c_sName = "IBLEZ";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::IBLEZ;
 	
 	int ret = 1;
@@ -17589,7 +17589,7 @@ long Recompiler::IBLEZ ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Ad
 
 long Recompiler::IBLTZ ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "IBLTZ";
+	const char *c_sName = "IBLTZ";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::IBLTZ;
 	
 	int ret = 1;
@@ -17688,7 +17688,7 @@ long Recompiler::IBLTZ ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Ad
 
 long Recompiler::IBNE ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "IBNE";
+	const char *c_sName = "IBNE";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::IBNE;
 	
 	int ret = 1;
@@ -17789,7 +17789,7 @@ long Recompiler::IBNE ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Add
 
 long Recompiler::FCAND ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "FCAND";
+	const char *c_sName = "FCAND";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::FCAND;
 	
 	int ret = 1;
@@ -17852,7 +17852,7 @@ long Recompiler::FCAND ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Ad
 
 long Recompiler::FCEQ ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "FCEQ";
+	const char *c_sName = "FCEQ";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::FCEQ;
 	
 	int ret = 1;
@@ -17915,7 +17915,7 @@ long Recompiler::FCEQ ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Add
 
 long Recompiler::FCGET ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "FCGET";
+	const char *c_sName = "FCGET";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::FCGET;
 	
 	int ret = 1;
@@ -17976,7 +17976,7 @@ long Recompiler::FCGET ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Ad
 
 long Recompiler::FCOR ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "FCOR";
+	const char *c_sName = "FCOR";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::FCOR;
 	
 	int ret = 1;
@@ -18041,7 +18041,7 @@ long Recompiler::FCOR ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Add
 
 long Recompiler::FCSET ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "FCSET";
+	const char *c_sName = "FCSET";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::FCSET;
 	
 	int ret = 1;
@@ -18092,7 +18092,7 @@ long Recompiler::FCSET ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Ad
 
 long Recompiler::FMAND ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "FMAND";
+	const char *c_sName = "FMAND";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::FMAND;
 	
 	int ret = 1;
@@ -18166,7 +18166,7 @@ long Recompiler::FMAND ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Ad
 
 long Recompiler::FMEQ ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "FMEQ";
+	const char *c_sName = "FMEQ";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::FMEQ;
 	
 	int ret = 1;
@@ -18241,7 +18241,7 @@ long Recompiler::FMEQ ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Add
 
 long Recompiler::FMOR ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "FMOR";
+	const char *c_sName = "FMOR";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::FMOR;
 	
 	int ret = 1;
@@ -18312,7 +18312,7 @@ long Recompiler::FMOR ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Add
 
 long Recompiler::FSAND ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "FSAND";
+	const char *c_sName = "FSAND";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::FSAND;
 	
 	int ret = 1;
@@ -18373,7 +18373,7 @@ long Recompiler::FSAND ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Ad
 
 long Recompiler::FSEQ ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "FSEQ";
+	const char *c_sName = "FSEQ";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::FSEQ;
 	
 	int ret = 1;
@@ -18438,7 +18438,7 @@ long Recompiler::FSEQ ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Add
 
 long Recompiler::FSOR ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "FSOR";
+	const char *c_sName = "FSOR";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::FSOR;
 	
 	int ret = 1;
@@ -18504,7 +18504,7 @@ long Recompiler::FSOR ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Add
 
 long Recompiler::FSSET ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "FSSET";
+	const char *c_sName = "FSSET";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::FSSET;
 	
 	int ret = 1;
@@ -18564,7 +18564,7 @@ long Recompiler::FSSET ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Ad
 
 long Recompiler::ILW ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "ILW";
+	const char *c_sName = "ILW";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::ILW;
 	
 	int ret = 1;
@@ -18724,7 +18724,7 @@ long Recompiler::ILW ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Addr
 
 long Recompiler::ISW ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "ISW";
+	const char *c_sName = "ISW";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::ISW;
 	
 	int ret = 1;
@@ -18886,7 +18886,7 @@ long Recompiler::ISW ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Addr
 
 long Recompiler::LQ ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "LQ";
+	const char *c_sName = "LQ";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::LQ;
 	
 	int ret = 1;
@@ -19036,7 +19036,7 @@ long Recompiler::LQ ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Addre
 
 long Recompiler::SQ ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "SQ";
+	const char *c_sName = "SQ";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::SQ;
 	
 	int ret = 1;
@@ -19183,7 +19183,7 @@ long Recompiler::SQ ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Addre
 
 long Recompiler::MFP ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "MFP";
+	const char *c_sName = "MFP";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::MFP;
 	
 	int ret = 1;
@@ -19323,7 +19323,7 @@ long Recompiler::MFP ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Addr
 
 long Recompiler::WAITP ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "WAITP";
+	const char *c_sName = "WAITP";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::WAITP;
 	
 	int ret = 1;
@@ -19375,7 +19375,7 @@ long Recompiler::WAITP ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Ad
 
 long Recompiler::XGKICK ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "XGKICK";
+	const char *c_sName = "XGKICK";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::XGKICK;
 	
 	int ret = 1;
@@ -19428,7 +19428,7 @@ long Recompiler::XGKICK ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 A
 
 long Recompiler::XITOP ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "XITOP";
+	const char *c_sName = "XITOP";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::XITOP;
 	
 	int ret = 1;
@@ -19494,7 +19494,7 @@ long Recompiler::XITOP ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Ad
 
 long Recompiler::XTOP ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "XTOP";
+	const char *c_sName = "XTOP";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::XTOP;
 	
 	int ret = 1;
@@ -19558,7 +19558,7 @@ long Recompiler::XTOP ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Add
 
 long Recompiler::EATAN ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "EATAN";
+	const char *c_sName = "EATAN";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::EATAN;
 	
 	int ret = 1;
@@ -19608,7 +19608,7 @@ long Recompiler::EATAN ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Ad
 
 long Recompiler::EATANxy ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "EATANxy";
+	const char *c_sName = "EATANxy";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::EATANxy;
 	
 	int ret = 1;
@@ -19658,7 +19658,7 @@ long Recompiler::EATANxy ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 
 
 long Recompiler::EATANxz ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "EATANxz";
+	const char *c_sName = "EATANxz";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::EATANxz;
 	
 	int ret = 1;
@@ -19708,7 +19708,7 @@ long Recompiler::EATANxz ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 
 
 long Recompiler::EEXP ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "EEXP";
+	const char *c_sName = "EEXP";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::EEXP;
 	
 	int ret = 1;
@@ -19758,7 +19758,7 @@ long Recompiler::EEXP ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Add
 
 long Recompiler::ELENG ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "ELENG";
+	const char *c_sName = "ELENG";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::ELENG;
 	
 	int ret = 1;
@@ -19808,7 +19808,7 @@ long Recompiler::ELENG ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Ad
 
 long Recompiler::ERCPR ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "ERCPR";
+	const char *c_sName = "ERCPR";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::ERCPR;
 	
 	int ret = 1;
@@ -19858,7 +19858,7 @@ long Recompiler::ERCPR ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Ad
 
 long Recompiler::ERLENG ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "ERLENG";
+	const char *c_sName = "ERLENG";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::ERLENG;
 	
 	int ret = 1;
@@ -19908,7 +19908,7 @@ long Recompiler::ERLENG ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 A
 
 long Recompiler::ERSADD ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "ERSADD";
+	const char *c_sName = "ERSADD";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::ERSADD;
 	
 	int ret = 1;
@@ -19961,7 +19961,7 @@ long Recompiler::ERSADD ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 A
 
 long Recompiler::ERSQRT ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "ERSQRT";
+	const char *c_sName = "ERSQRT";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::ERSQRT;
 	
 	int ret = 1;
@@ -20011,7 +20011,7 @@ long Recompiler::ERSQRT ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 A
 
 long Recompiler::ESADD ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "ESADD";
+	const char *c_sName = "ESADD";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::ESADD;
 	
 	int ret = 1;
@@ -20061,7 +20061,7 @@ long Recompiler::ESADD ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Ad
 
 long Recompiler::ESIN ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "ESIN";
+	const char *c_sName = "ESIN";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::ESIN;
 	
 	int ret = 1;
@@ -20111,7 +20111,7 @@ long Recompiler::ESIN ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Add
 
 long Recompiler::ESQRT ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "ESQRT";
+	const char *c_sName = "ESQRT";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::ESQRT;
 	
 	int ret = 1;
@@ -20161,7 +20161,7 @@ long Recompiler::ESQRT ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Ad
 
 long Recompiler::ESUM ( x64Encoder *e, VU *v, Vu::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "ESUM";
+	const char *c_sName = "ESUM";
 	static const void *c_vFunction = (const void*) Vu::Instruction::Execute::ESUM;
 	
 	int ret = 1;

@@ -425,7 +425,7 @@ void Intc::DebugWindow_Enable ()
 
 #ifndef _CONSOLE_DEBUG_ONLY_
 
-	static constexpr char* DebugWindow_Caption = "PS1 INTC Debug Window";
+	const char* DebugWindow_Caption = "PS1 INTC Debug Window";
 	static constexpr int DebugWindow_X = 10;
 	static constexpr int DebugWindow_Y = 10;
 	static constexpr int DebugWindow_Width = 200;

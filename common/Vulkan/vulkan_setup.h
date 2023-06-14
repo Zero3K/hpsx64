@@ -5,24 +5,6 @@
 
 #include "WinApiHandler.h"
 
-
-/// <summary>
-/// loads vulkan library
-/// returns false when there was a problem
-/// return true when successful
-/// </summary>
-/// <returns>bool</returns>
-bool vulkan_load_library();
-
-namespace vulkanapi {
-
-	bool vulkan_load_exported_entry_points();
-	bool vulkan_load_global_level_entry_points();
-	bool vulkan_load_instance_level_entry_points();
-	bool vulkan_load_device_level_entry_points();
-
-}
-
 // must do this before setup - sets size of window to output to
 void vulkan_set_screen_size(int screen_size_x, int screen_size_y);
 

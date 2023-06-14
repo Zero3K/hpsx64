@@ -9197,7 +9197,7 @@ long Recompiler::Generate_Normal_Trap ( R5900::Instruction::Format i, u32 Addres
 // *** todo *** no need to save LastModifiedRegister unless instruction is KNOWN to be in a delay slot on run
 long Recompiler::ADDU ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "ADDU";
+	const char *c_sName = "ADDU";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::ADDU;
 	
 	//r->GPR [ i.Rd ].u = r->GPR [ i.Rs ].s + r->GPR [ i.Rt ].u;
@@ -9454,7 +9454,7 @@ long Recompiler::ADDU ( R5900::Instruction::Format i, u32 Address )
 
 long Recompiler::SUBU ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "SUBU";
+	const char *c_sName = "SUBU";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::SUBU;
 	
 	//r->GPR [ i.Rd ].u = r->GPR [ i.Rs ].s - r->GPR [ i.Rt ].u;
@@ -9773,7 +9773,7 @@ long Recompiler::SUBU ( R5900::Instruction::Format i, u32 Address )
 
 long Recompiler::AND ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "AND";
+	const char *c_sName = "AND";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::AND;
 	
 	int Rd, Rs, Rt;
@@ -10031,7 +10031,7 @@ long Recompiler::AND ( R5900::Instruction::Format i, u32 Address )
 
 long Recompiler::OR ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "OR";
+	const char *c_sName = "OR";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::OR;
 	
 	int Rd, Rs, Rt;
@@ -10283,7 +10283,7 @@ long Recompiler::OR ( R5900::Instruction::Format i, u32 Address )
 
 long Recompiler::XOR ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "XOR";
+	const char *c_sName = "XOR";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::XOR;
 	
 	int Rd, Rs, Rt;
@@ -10533,7 +10533,7 @@ long Recompiler::XOR ( R5900::Instruction::Format i, u32 Address )
 
 long Recompiler::NOR ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "NOR";
+	const char *c_sName = "NOR";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::NOR;
 	
 	int Rd, Rs, Rt;
@@ -10778,7 +10778,7 @@ long Recompiler::NOR ( R5900::Instruction::Format i, u32 Address )
 
 long Recompiler::SLT ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "SLT";
+	const char *c_sName = "SLT";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::SLT;
 	
 	//r->GPR [ i.Rd ].s = r->GPR [ i.Rs ].s < r->GPR [ i.Rt ].s ? 1 : 0;
@@ -11086,7 +11086,7 @@ long Recompiler::SLT ( R5900::Instruction::Format i, u32 Address )
 
 long Recompiler::SLTU ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "SLTU";
+	const char *c_sName = "SLTU";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::SLTU;
 	
 	//r->GPR [ i.Rd ].u = r->GPR [ i.Rs ].s < r->GPR [ i.Rt ].s ? 1 : 0;
@@ -11385,7 +11385,7 @@ long Recompiler::SLTU ( R5900::Instruction::Format i, u32 Address )
 
 long Recompiler::ADDIU ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "ADDIU";
+	const char *c_sName = "ADDIU";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::ADDIU;
 	
 	//r->GPR [ i.Rt ].s = r->GPR [ i.Rs ].s + i.sImmediate;
@@ -11555,7 +11555,7 @@ long Recompiler::ADDIU ( R5900::Instruction::Format i, u32 Address )
 
 long Recompiler::ANDI ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "ANDI";
+	const char *c_sName = "ANDI";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::ANDI;
 	
 	//r->GPR [ i.Rt ].s = r->GPR [ i.Rs ].s & i.uImmediate;
@@ -11707,7 +11707,7 @@ long Recompiler::ANDI ( R5900::Instruction::Format i, u32 Address )
 
 long Recompiler::ORI ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "ORI";
+	const char *c_sName = "ORI";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::ORI;
 	
 	//r->GPR [ i.Rt ].s = r->GPR [ i.Rs ].s | i.uImmediate;
@@ -11858,7 +11858,7 @@ long Recompiler::ORI ( R5900::Instruction::Format i, u32 Address )
 
 long Recompiler::XORI ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "XORI";
+	const char *c_sName = "XORI";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::XORI;
 	
 	//r->GPR [ i.Rt ].s = r->GPR [ i.Rs ].s ^ i.uImmediate;
@@ -12008,7 +12008,7 @@ long Recompiler::XORI ( R5900::Instruction::Format i, u32 Address )
 
 long Recompiler::SLTI ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "SLTI";
+	const char *c_sName = "SLTI";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::SLTI;
 	
 	//r->GPR [ i.Rt ].s = r->GPR [ i.Rs ].s < i.sImmediate ? 1 : 0;
@@ -12160,7 +12160,7 @@ long Recompiler::SLTI ( R5900::Instruction::Format i, u32 Address )
 
 long Recompiler::SLTIU ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "SLTIU";
+	const char *c_sName = "SLTIU";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::SLTIU;
 	
 	//r->GPR [ i.Rt ].s = r->GPR [ i.Rs ].s < ((u32) ((s32) i.sImmediate)) ? 1 : 0;
@@ -12304,7 +12304,7 @@ long Recompiler::SLTIU ( R5900::Instruction::Format i, u32 Address )
 
 long Recompiler::LUI ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "LUI";
+	const char *c_sName = "LUI";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::LUI;
 	
 	//r->GPR [ i.Rt ].s = ( i.uImmediate << 16 );
@@ -12388,7 +12388,7 @@ long Recompiler::LUI ( R5900::Instruction::Format i, u32 Address )
 
 long Recompiler::SLL ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "SLL";
+	const char *c_sName = "SLL";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::SLL;
 	
 	//r->GPR [ i.Rd ].u = ( r->GPR [ i.Rt ].s << i.Shift );
@@ -12535,7 +12535,7 @@ long Recompiler::SLL ( R5900::Instruction::Format i, u32 Address )
 
 long Recompiler::SRL ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "SRL";
+	const char *c_sName = "SRL";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::SRL;
 	
 	int Rd, Rs, Rt;
@@ -12700,7 +12700,7 @@ long Recompiler::SRL ( R5900::Instruction::Format i, u32 Address )
 
 long Recompiler::SRA ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "SRA";
+	const char *c_sName = "SRA";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::SRA;
 	
 	int Rd, Rs, Rt;
@@ -12844,7 +12844,7 @@ long Recompiler::SRA ( R5900::Instruction::Format i, u32 Address )
 
 long Recompiler::SLLV ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "SLLV";
+	const char *c_sName = "SLLV";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::SLLV;
 	
 	//r->GPR [ i.Rd ].u = ( r->GPR [ i.Rt ].s << ( r->GPR [ i.Rs ].s & 0x1f ) );
@@ -13154,7 +13154,7 @@ long Recompiler::SLLV ( R5900::Instruction::Format i, u32 Address )
 
 long Recompiler::SRLV ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "SRLV";
+	const char *c_sName = "SRLV";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::SRLV;
 	
 	int Rd, Rs, Rt;
@@ -13456,7 +13456,7 @@ long Recompiler::SRLV ( R5900::Instruction::Format i, u32 Address )
 
 long Recompiler::SRAV ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "SRAV";
+	const char *c_sName = "SRAV";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::SRAV;
 	
 	int Rd, Rs, Rt;
@@ -13772,7 +13772,7 @@ long Recompiler::SRAV ( R5900::Instruction::Format i, u32 Address )
 
 long Recompiler::J ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "J";
+	const char *c_sName = "J";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::J;
 	
 	//r->DelaySlot0.Instruction = i;
@@ -13828,7 +13828,7 @@ long Recompiler::J ( R5900::Instruction::Format i, u32 Address )
 
 long Recompiler::JR ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "JR";
+	const char *c_sName = "JR";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::JR;
 	
 	//r->DelaySlot0.Instruction = i;
@@ -13889,7 +13889,7 @@ long Recompiler::JR ( R5900::Instruction::Format i, u32 Address )
 
 long Recompiler::JAL ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "JAL";
+	const char *c_sName = "JAL";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::JAL;
 	
 	//r->DelaySlot0.Instruction = i;
@@ -13950,7 +13950,7 @@ long Recompiler::JAL ( R5900::Instruction::Format i, u32 Address )
 
 long Recompiler::JALR ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "JALR";
+	const char *c_sName = "JALR";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::JALR;
 	
 	//r->DelaySlot0.Instruction = i;
@@ -14025,7 +14025,7 @@ long Recompiler::JALR ( R5900::Instruction::Format i, u32 Address )
 
 long Recompiler::BEQ ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "BEQ";
+	const char *c_sName = "BEQ";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::BEQ;
 	
 	//if ( r->GPR [ i.Rs ].s == r->GPR [ i.Rt ].s )
@@ -14087,7 +14087,7 @@ long Recompiler::BEQ ( R5900::Instruction::Format i, u32 Address )
 
 long Recompiler::BNE ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "BNE";
+	const char *c_sName = "BNE";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::BNE;
 	
 	int ret = 1;
@@ -14142,7 +14142,7 @@ long Recompiler::BNE ( R5900::Instruction::Format i, u32 Address )
 
 long Recompiler::BLEZ ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "BLEZ";
+	const char *c_sName = "BLEZ";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::BLEZ;
 	
 	//if ( r->GPR [ i.Rs ].s <= 0 )
@@ -14204,7 +14204,7 @@ long Recompiler::BLEZ ( R5900::Instruction::Format i, u32 Address )
 
 long Recompiler::BGTZ ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "BGTZ";
+	const char *c_sName = "BGTZ";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::BGTZ;
 	
 	int ret = 1;
@@ -14258,7 +14258,7 @@ long Recompiler::BGTZ ( R5900::Instruction::Format i, u32 Address )
 
 long Recompiler::BLTZ ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "BLTZ";
+	const char *c_sName = "BLTZ";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::BLTZ;
 	
 	int ret = 1;
@@ -14318,7 +14318,7 @@ long Recompiler::BLTZ ( R5900::Instruction::Format i, u32 Address )
 
 long Recompiler::BGEZ ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "BGEZ";
+	const char *c_sName = "BGEZ";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::BGEZ;
 	
 	int ret = 1;
@@ -14372,7 +14372,7 @@ long Recompiler::BGEZ ( R5900::Instruction::Format i, u32 Address )
 
 long Recompiler::BLTZAL ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "BLTZAL";
+	const char *c_sName = "BLTZAL";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::BLTZAL;
 	
 	//if ( r->GPR [ i.Rs ].s < 0 )
@@ -14436,7 +14436,7 @@ long Recompiler::BLTZAL ( R5900::Instruction::Format i, u32 Address )
 
 long Recompiler::BGEZAL ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "BGEZAL";
+	const char *c_sName = "BGEZAL";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::BGEZAL;
 	
 	int ret = 1;
@@ -14495,7 +14495,7 @@ long Recompiler::BGEZAL ( R5900::Instruction::Format i, u32 Address )
 
 long Recompiler::MULT ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "MULT";
+	const char *c_sName = "MULT";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::MULT;
 	
 	/*
@@ -14655,7 +14655,7 @@ long Recompiler::MULT ( R5900::Instruction::Format i, u32 Address )
 
 long Recompiler::MULTU ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "MULTU";
+	const char *c_sName = "MULTU";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::MULTU;
 	
 	// if rs is between 0 and 0x7ff, then multiply takes 6 cycles
@@ -14791,7 +14791,7 @@ long Recompiler::MULTU ( R5900::Instruction::Format i, u32 Address )
 
 long Recompiler::DIV ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "DIV";
+	const char *c_sName = "DIV";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::DIV;
 	
 	static const int c_iDivideCycles = 36 / 2;
@@ -14942,7 +14942,7 @@ long Recompiler::DIV ( R5900::Instruction::Format i, u32 Address )
 
 long Recompiler::DIVU ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "DIVU";
+	const char *c_sName = "DIVU";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::DIVU;
 	
 	static const int c_iDivideCycles = 36 / 2;
@@ -15072,7 +15072,7 @@ long Recompiler::DIVU ( R5900::Instruction::Format i, u32 Address )
 
 long Recompiler::MFHI ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "MFHI";
+	const char *c_sName = "MFHI";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::MFHI;
 	
 	//if ( r->MulDiv_BusyUntil_Cycle > r->CycleCount )
@@ -15178,7 +15178,7 @@ long Recompiler::MFHI ( R5900::Instruction::Format i, u32 Address )
 
 long Recompiler::MFLO ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "MFLO";
+	const char *c_sName = "MFLO";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::MFLO;
 	
 	int ret = 1;
@@ -15279,7 +15279,7 @@ long Recompiler::MFLO ( R5900::Instruction::Format i, u32 Address )
 
 long Recompiler::MTHI ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "MTHI";
+	const char *c_sName = "MTHI";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::MTHI;
 	
 	//r->HiLo.uHi = r->GPR [ i.Rs ].u;
@@ -15324,7 +15324,7 @@ long Recompiler::MTHI ( R5900::Instruction::Format i, u32 Address )
 
 long Recompiler::MTLO ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "MTLO";
+	const char *c_sName = "MTLO";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::MTLO;
 	
 	//r->HiLo.uLo = r->GPR [ i.Rs ].u;
@@ -15381,7 +15381,7 @@ long Recompiler::MTLO ( R5900::Instruction::Format i, u32 Address )
 
 long Recompiler::ADD ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "ADD";
+	const char *c_sName = "ADD";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::ADD;
 	
 	int ret = 1;
@@ -15474,7 +15474,7 @@ long Recompiler::ADD ( R5900::Instruction::Format i, u32 Address )
 
 long Recompiler::ADDI ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "ADDI";
+	const char *c_sName = "ADDI";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::ADDI;
 	
 	int ret = 1;
@@ -15568,7 +15568,7 @@ long Recompiler::ADDI ( R5900::Instruction::Format i, u32 Address )
 
 long Recompiler::SUB ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "SUB";
+	const char *c_sName = "SUB";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::SUB;
 	
 	int ret = 1;
@@ -15663,7 +15663,7 @@ long Recompiler::SUB ( R5900::Instruction::Format i, u32 Address )
 
 long Recompiler::SYSCALL ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "SYSCALL";
+	const char *c_sName = "SYSCALL";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::SYSCALL;
 	
 	int ret = 1;
@@ -15735,7 +15735,7 @@ long Recompiler::SYSCALL ( R5900::Instruction::Format i, u32 Address )
 
 long Recompiler::BREAK ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "BREAK";
+	const char *c_sName = "BREAK";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::BREAK;
 	
 	int ret = 1;
@@ -15783,7 +15783,7 @@ long Recompiler::BREAK ( R5900::Instruction::Format i, u32 Address )
 
 long Recompiler::Invalid ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "Invalid";
+	const char *c_sName = "Invalid";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::Invalid;
 	
 	int ret = 1;
@@ -15835,7 +15835,7 @@ long Recompiler::Invalid ( R5900::Instruction::Format i, u32 Address )
 
 long Recompiler::MFC0 ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "MFC0";
+	const char *c_sName = "MFC0";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::MFC0;
 	
 	int ret = 1;
@@ -15896,7 +15896,7 @@ long Recompiler::MFC0 ( R5900::Instruction::Format i, u32 Address )
 
 long Recompiler::MTC0 ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "MTC0";
+	const char *c_sName = "MTC0";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::MTC0;
 	
 	int ret = 1;
@@ -15960,7 +15960,7 @@ long Recompiler::MTC0 ( R5900::Instruction::Format i, u32 Address )
 
 long Recompiler::CFC2_I ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "CFC2_I";
+	const char *c_sName = "CFC2_I";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::CFC2_I;
 	
 	int ret = 1;
@@ -16015,7 +16015,7 @@ long Recompiler::CFC2_I ( R5900::Instruction::Format i, u32 Address )
 
 long Recompiler::CTC2_I ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "CTC2_I";
+	const char *c_sName = "CTC2_I";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::CTC2_I;
 	
 	int ret = 1;
@@ -16070,7 +16070,7 @@ long Recompiler::CTC2_I ( R5900::Instruction::Format i, u32 Address )
 
 long Recompiler::CFC2_NI ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "CFC2_NI";
+	const char *c_sName = "CFC2_NI";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::CFC2_NI;
 	
 	int ret = 1;
@@ -16142,7 +16142,7 @@ long Recompiler::CFC2_NI ( R5900::Instruction::Format i, u32 Address )
 
 long Recompiler::CTC2_NI ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "CTC2_NI";
+	const char *c_sName = "CTC2_NI";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::CTC2_NI;
 	
 	int ret = 1;
@@ -16238,7 +16238,7 @@ long Recompiler::CTC2_NI ( R5900::Instruction::Format i, u32 Address )
 // store instructions
 long Recompiler::SB ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "SB";
+	const char *c_sName = "SB";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::SB;
 	
 	int ret = 1;
@@ -16353,7 +16353,7 @@ long Recompiler::SB ( R5900::Instruction::Format i, u32 Address )
 
 long Recompiler::SH ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "SH";
+	const char *c_sName = "SH";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::SH;
 	
 	int ret = 1;
@@ -16464,7 +16464,7 @@ long Recompiler::SH ( R5900::Instruction::Format i, u32 Address )
 
 long Recompiler::SW ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "SW";
+	const char *c_sName = "SW";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::SW;
 	
 	int ret = 1;
@@ -16579,7 +16579,7 @@ long Recompiler::SW ( R5900::Instruction::Format i, u32 Address )
 
 long Recompiler::SWL ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "SWL";
+	const char *c_sName = "SWL";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::SWL;
 	
 	int ret = 1;
@@ -16666,7 +16666,7 @@ long Recompiler::SWL ( R5900::Instruction::Format i, u32 Address )
 
 long Recompiler::SWR ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "SWR";
+	const char *c_sName = "SWR";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::SWR;
 	
 	int ret = 1;
@@ -16761,7 +16761,7 @@ long Recompiler::SWR ( R5900::Instruction::Format i, u32 Address )
 // *** todo *** could also skip delay slot zero and put straight into delay slot 1 after next instruction, or just process load delay slot after next instruction
 long Recompiler::LB ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "LB";
+	const char *c_sName = "LB";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::LB;
 	
 	//LoadAddress = r->GPR [ i.Base ].s + i.sOffset;
@@ -16894,7 +16894,7 @@ long Recompiler::LB ( R5900::Instruction::Format i, u32 Address )
 
 long Recompiler::LH ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "LH";
+	const char *c_sName = "LH";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::LH;
 	
 	int ret = 1;
@@ -17020,7 +17020,7 @@ long Recompiler::LH ( R5900::Instruction::Format i, u32 Address )
 
 long Recompiler::LW ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "LW";
+	const char *c_sName = "LW";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::LW;
 	
 	int ret = 1;
@@ -17138,7 +17138,7 @@ long Recompiler::LW ( R5900::Instruction::Format i, u32 Address )
 
 long Recompiler::LBU ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "LBU";
+	const char *c_sName = "LBU";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::LBU;
 	
 	int ret = 1;
@@ -17256,7 +17256,7 @@ long Recompiler::LBU ( R5900::Instruction::Format i, u32 Address )
 
 long Recompiler::LHU ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "LHU";
+	const char *c_sName = "LHU";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::LHU;
 	
 	int ret = 1;
@@ -17379,7 +17379,7 @@ long Recompiler::LHU ( R5900::Instruction::Format i, u32 Address )
 // load instructions without load-delay slot
 long Recompiler::LWL ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "LWL";
+	const char *c_sName = "LWL";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::LWL;
 	
 	int ret = 1;
@@ -17498,7 +17498,7 @@ long Recompiler::LWL ( R5900::Instruction::Format i, u32 Address )
 
 long Recompiler::LWR ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "LWR";
+	const char *c_sName = "LWR";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::LWR;
 	
 	int ret = 1;
@@ -18585,7 +18585,7 @@ long Recompiler::NCCT ( R5900::Instruction::Format i, u32 Address )
 
 long Recompiler::COP2 ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "COP2";
+	const char *c_sName = "COP2";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::COP2;
 	
 	int ret = 1;
@@ -18630,7 +18630,7 @@ long Recompiler::COP2 ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::DADD ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "DADD";
+	const char *c_sName = "DADD";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::DADD;
 	
 	int ret = 1;
@@ -18713,7 +18713,7 @@ long R5900::Recompiler::DADD ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::DADDI ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "DADDI";
+	const char *c_sName = "DADDI";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::DADDI;
 	
 	int ret = 1;
@@ -18796,7 +18796,7 @@ long R5900::Recompiler::DADDI ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::DADDU ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "DADDU";
+	const char *c_sName = "DADDU";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::DADDU;
 	
 	int Rd, Rs, Rt;
@@ -19041,7 +19041,7 @@ long R5900::Recompiler::DADDU ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::DADDIU ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "DADDIU";
+	const char *c_sName = "DADDIU";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::DADDIU;
 	
 	int Rd, Rs, Rt;
@@ -19192,7 +19192,7 @@ long R5900::Recompiler::DADDIU ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::DSUB ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "DSUB";
+	const char *c_sName = "DSUB";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::DSUB;
 	
 	int ret = 1;
@@ -19271,7 +19271,7 @@ long R5900::Recompiler::DSUB ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::DSUBU ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "DSUBU";
+	const char *c_sName = "DSUBU";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::DSUBU;
 	
 	int Rd, Rs, Rt;
@@ -19585,7 +19585,7 @@ long R5900::Recompiler::DSUBU ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::DSLL ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "DSLL";
+	const char *c_sName = "DSLL";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::DSLL;
 	
 	int Rd, Rs, Rt;
@@ -19727,7 +19727,7 @@ long R5900::Recompiler::DSLL ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::DSLL32 ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "DSLL32";
+	const char *c_sName = "DSLL32";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::DSLL32;
 	
 	int Rd, Rs, Rt;
@@ -19872,7 +19872,7 @@ long R5900::Recompiler::DSLL32 ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::DSLLV ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "DSLLV";
+	const char *c_sName = "DSLLV";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::DSLLV;
 	
 	int Rd, Rs, Rt;
@@ -20167,7 +20167,7 @@ long R5900::Recompiler::DSLLV ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::DSRA ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "DSRA";
+	const char *c_sName = "DSRA";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::DSRA;
 	
 	int Rd, Rs, Rt;
@@ -20304,7 +20304,7 @@ long R5900::Recompiler::DSRA ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::DSRA32 ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "DSRA32";
+	const char *c_sName = "DSRA32";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::DSRA32;
 	
 	int Rd, Rs, Rt;
@@ -20432,7 +20432,7 @@ long R5900::Recompiler::DSRA32 ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::DSRAV ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "DSRAV";
+	const char *c_sName = "DSRAV";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::DSRAV;
 	
 	int Rd, Rs, Rt;
@@ -20726,7 +20726,7 @@ long R5900::Recompiler::DSRAV ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::DSRL ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "DSRL";
+	const char *c_sName = "DSRL";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::DSRL;
 	
 	int Rd, Rs, Rt;
@@ -20863,7 +20863,7 @@ long R5900::Recompiler::DSRL ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::DSRL32 ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "DSRL32";
+	const char *c_sName = "DSRL32";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::DSRL32;
 	
 	int Rd, Rs, Rt;
@@ -20991,7 +20991,7 @@ long R5900::Recompiler::DSRL32 ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::DSRLV ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "DSRLV";
+	const char *c_sName = "DSRLV";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::DSRLV;
 	
 	int Rd, Rs, Rt;
@@ -21284,7 +21284,7 @@ long R5900::Recompiler::DSRLV ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::MULT1 ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "MULT1";
+	const char *c_sName = "MULT1";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::MULT1;
 	
 	// if rs is between -0x800 and 0x7ff, then multiply takes 6 cycles
@@ -21424,7 +21424,7 @@ long R5900::Recompiler::MULT1 ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::MULTU1 ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "MULTU1";
+	const char *c_sName = "MULTU1";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::MULTU1;
 	
 	// if rs is between -0x800 and 0x7ff, then multiply takes 6 cycles
@@ -21559,7 +21559,7 @@ long R5900::Recompiler::MULTU1 ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::DIV1 ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "DIV1";
+	const char *c_sName = "DIV1";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::DIV1;
 	
 	static const int c_iDivideCycles = 36 / 2;
@@ -21727,7 +21727,7 @@ long R5900::Recompiler::DIV1 ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::DIVU1 ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "DIVU1";
+	const char *c_sName = "DIVU1";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::DIVU1;
 	
 	static const int c_iDivideCycles = 36 / 2;
@@ -21865,7 +21865,7 @@ long R5900::Recompiler::DIVU1 ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::MADD ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "MADD";
+	const char *c_sName = "MADD";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::MADD;
 	
 	// if rs is between -0x800 and 0x7ff, then multiply takes 6 cycles
@@ -22010,7 +22010,7 @@ long R5900::Recompiler::MADD ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::MADD1 ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "MADD1";
+	const char *c_sName = "MADD1";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::MADD1;
 	
 	// if rs is between -0x800 and 0x7ff, then multiply takes 6 cycles
@@ -22155,7 +22155,7 @@ long R5900::Recompiler::MADD1 ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::MADDU ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "MADDU";
+	const char *c_sName = "MADDU";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::MADDU;
 	
 	// if rs is between -0x800 and 0x7ff, then multiply takes 6 cycles
@@ -22295,7 +22295,7 @@ long R5900::Recompiler::MADDU ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::MADDU1 ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "MADDU1";
+	const char *c_sName = "MADDU1";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::MADDU1;
 	
 	// if rs is between -0x800 and 0x7ff, then multiply takes 6 cycles
@@ -22438,7 +22438,7 @@ long R5900::Recompiler::MADDU1 ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::SD ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "SD";
+	const char *c_sName = "SD";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::SD;
 	
 	int ret = 1;
@@ -22536,7 +22536,7 @@ long R5900::Recompiler::SD ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::LD ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "LD";
+	const char *c_sName = "LD";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::LD;
 	
 	int ret = 1;
@@ -22648,7 +22648,7 @@ long R5900::Recompiler::LD ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::LWU ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "LWU";
+	const char *c_sName = "LWU";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::LWU;
 	
 	int ret = 1;
@@ -22749,7 +22749,7 @@ long R5900::Recompiler::LWU ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::SDL ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "SDL";
+	const char *c_sName = "SDL";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::SDL;
 	
 	int ret = 1;
@@ -22827,7 +22827,7 @@ long R5900::Recompiler::SDL ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::SDR ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "SDR";
+	const char *c_sName = "SDR";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::SDR;
 	
 	int ret = 1;
@@ -22905,7 +22905,7 @@ long R5900::Recompiler::SDR ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::LDL ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "LDL";
+	const char *c_sName = "LDL";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::LDL;
 	
 	int ret = 1;
@@ -23019,7 +23019,7 @@ long R5900::Recompiler::LDL ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::LDR ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "LDR";
+	const char *c_sName = "LDR";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::LDR;
 	
 	int ret = 1;
@@ -23134,7 +23134,7 @@ long R5900::Recompiler::LDR ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::LQ ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "LQ";
+	const char *c_sName = "LQ";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::LQ;
 	
 	int ret = 1;
@@ -23221,7 +23221,7 @@ long R5900::Recompiler::LQ ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::SQ ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "SQ";
+	const char *c_sName = "SQ";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::SQ;
 	
 	int ret = 1;
@@ -23298,7 +23298,7 @@ long R5900::Recompiler::SQ ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::MOVZ ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "MOVZ";
+	const char *c_sName = "MOVZ";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::MOVZ;
 	
 	int Rd, Rs, Rt;
@@ -23557,7 +23557,7 @@ long R5900::Recompiler::MOVZ ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::MOVN ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "MOVN";
+	const char *c_sName = "MOVN";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::MOVN;
 	
 	int Rd, Rs, Rt;
@@ -23812,7 +23812,7 @@ long R5900::Recompiler::MOVN ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::MFHI1 ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "MFHI1";
+	const char *c_sName = "MFHI1";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::MFHI1;
 	
 	int ret = 1;
@@ -23902,7 +23902,7 @@ long R5900::Recompiler::MFHI1 ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::MTHI1 ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "MTHI1";
+	const char *c_sName = "MTHI1";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::MTHI1;
 	
 	int ret = 1;
@@ -23948,7 +23948,7 @@ long R5900::Recompiler::MTHI1 ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::MFLO1 ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "MFLO1";
+	const char *c_sName = "MFLO1";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::MFLO1;
 	
 	int ret = 1;
@@ -24038,7 +24038,7 @@ long R5900::Recompiler::MFLO1 ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::MTLO1 ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "MTLO1";
+	const char *c_sName = "MTLO1";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::MTLO1;
 	
 	int ret = 1;
@@ -24086,7 +24086,7 @@ long R5900::Recompiler::MTLO1 ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::MFSA ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "MFSA";
+	const char *c_sName = "MFSA";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::MFSA;
 	
 	int ret = 1;
@@ -24130,7 +24130,7 @@ long R5900::Recompiler::MFSA ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::MTSA ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "MTSA";
+	const char *c_sName = "MTSA";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::MTSA;
 	
 	int ret = 1;
@@ -24175,7 +24175,7 @@ long R5900::Recompiler::MTSA ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::MTSAB ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "MTSAB";
+	const char *c_sName = "MTSAB";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::MTSAB;
 	
 	int ret = 1;
@@ -24221,7 +24221,7 @@ long R5900::Recompiler::MTSAB ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::MTSAH ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "MTSAH";
+	const char *c_sName = "MTSAH";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::MTSAH;
 	
 	int ret = 1;
@@ -24273,7 +24273,7 @@ long R5900::Recompiler::MTSAH ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::BEQL ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "BEQL";
+	const char *c_sName = "BEQL";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::BEQL;
 	
 	int ret = 1;
@@ -24324,7 +24324,7 @@ long R5900::Recompiler::BEQL ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::BNEL ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "BNEL";
+	const char *c_sName = "BNEL";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::BNEL;
 	
 	int ret = 1;
@@ -24375,7 +24375,7 @@ long R5900::Recompiler::BNEL ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::BGEZL ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "BGEZL";
+	const char *c_sName = "BGEZL";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::BGEZL;
 	
 	int ret = 1;
@@ -24426,7 +24426,7 @@ long R5900::Recompiler::BGEZL ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::BLEZL ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "BLEZL";
+	const char *c_sName = "BLEZL";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::BLEZL;
 	
 	int ret = 1;
@@ -24477,7 +24477,7 @@ long R5900::Recompiler::BLEZL ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::BGTZL ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "BGTZL";
+	const char *c_sName = "BGTZL";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::BGTZL;
 	
 	int ret = 1;
@@ -24528,7 +24528,7 @@ long R5900::Recompiler::BGTZL ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::BLTZL ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "BLTZL";
+	const char *c_sName = "BLTZL";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::BLTZL;
 	
 	int ret = 1;
@@ -24581,7 +24581,7 @@ long R5900::Recompiler::BLTZL ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::BLTZALL ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "BLTZALL";
+	const char *c_sName = "BLTZALL";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::BLTZALL;
 	
 	int ret = 1;
@@ -24636,7 +24636,7 @@ long R5900::Recompiler::BLTZALL ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::BGEZALL ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "BGEZALL";
+	const char *c_sName = "BGEZALL";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::BGEZALL;
 	
 	int ret = 1;
@@ -24693,7 +24693,7 @@ long R5900::Recompiler::BGEZALL ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::BC0T ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "BC0T";
+	const char *c_sName = "BC0T";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::BC0T;
 	
 	int ret = 1;
@@ -24733,7 +24733,7 @@ long R5900::Recompiler::BC0T ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::BC0TL ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "BC0TL";
+	const char *c_sName = "BC0TL";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::BC0TL;
 	
 	int ret = 1;
@@ -24779,7 +24779,7 @@ long R5900::Recompiler::BC0TL ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::BC0F ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "BC0F";
+	const char *c_sName = "BC0F";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::BC0F;
 	
 	int ret = 1;
@@ -24819,7 +24819,7 @@ long R5900::Recompiler::BC0F ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::BC0FL ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "BC0FL";
+	const char *c_sName = "BC0FL";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::BC0FL;
 	
 	int ret = 1;
@@ -24865,7 +24865,7 @@ long R5900::Recompiler::BC0FL ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::BC1T ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "BC1T";
+	const char *c_sName = "BC1T";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::BC1T;
 	
 	int ret = 1;
@@ -24905,7 +24905,7 @@ long R5900::Recompiler::BC1T ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::BC1TL ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "BC1TL";
+	const char *c_sName = "BC1TL";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::BC1TL;
 	
 	int ret = 1;
@@ -24951,7 +24951,7 @@ long R5900::Recompiler::BC1TL ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::BC1F ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "BC1F";
+	const char *c_sName = "BC1F";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::BC1F;
 	
 	int ret = 1;
@@ -24991,7 +24991,7 @@ long R5900::Recompiler::BC1F ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::BC1FL ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "BC1FL";
+	const char *c_sName = "BC1FL";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::BC1FL;
 	
 	int ret = 1;
@@ -25037,7 +25037,7 @@ long R5900::Recompiler::BC1FL ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::BC2T ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "BC2T";
+	const char *c_sName = "BC2T";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::BC2T;
 	
 	int ret = 1;
@@ -25077,7 +25077,7 @@ long R5900::Recompiler::BC2T ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::BC2TL ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "BC2TL";
+	const char *c_sName = "BC2TL";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::BC2TL;
 	
 	int ret = 1;
@@ -25123,7 +25123,7 @@ long R5900::Recompiler::BC2TL ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::BC2F ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "BC2F";
+	const char *c_sName = "BC2F";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::BC2F;
 	
 	int ret = 1;
@@ -25163,7 +25163,7 @@ long R5900::Recompiler::BC2F ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::BC2FL ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "BC2FL";
+	const char *c_sName = "BC2FL";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::BC2FL;
 	
 	int ret = 1;
@@ -25214,7 +25214,7 @@ long R5900::Recompiler::BC2FL ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::TGEI ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "TGEI";
+	const char *c_sName = "TGEI";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::TGEI;
 	
 	int ret = 1;
@@ -25261,7 +25261,7 @@ long R5900::Recompiler::TGEI ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::TGEIU ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "TGEIU";
+	const char *c_sName = "TGEIU";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::TGEIU;
 	
 	int ret = 1;
@@ -25308,7 +25308,7 @@ long R5900::Recompiler::TGEIU ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::TLTI ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "TLTI";
+	const char *c_sName = "TLTI";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::TLTI;
 	
 	int ret = 1;
@@ -25355,7 +25355,7 @@ long R5900::Recompiler::TLTI ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::TLTIU ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "TLTIU";
+	const char *c_sName = "TLTIU";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::TLTIU;
 	
 	int ret = 1;
@@ -25402,7 +25402,7 @@ long R5900::Recompiler::TLTIU ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::TEQI ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "TEQI";
+	const char *c_sName = "TEQI";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::TEQI;
 	
 	int ret = 1;
@@ -25449,7 +25449,7 @@ long R5900::Recompiler::TEQI ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::TNEI ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "TNEI";
+	const char *c_sName = "TNEI";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::TNEI;
 	
 	int ret = 1;
@@ -25497,7 +25497,7 @@ long R5900::Recompiler::TNEI ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::TGE ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "TGE";
+	const char *c_sName = "TGE";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::TGE;
 	
 	int ret = 1;
@@ -25544,7 +25544,7 @@ long R5900::Recompiler::TGE ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::TGEU ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "TGEU";
+	const char *c_sName = "TGEU";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::TGEU;
 	
 	int ret = 1;
@@ -25591,7 +25591,7 @@ long R5900::Recompiler::TGEU ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::TLT ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "TLT";
+	const char *c_sName = "TLT";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::TLT;
 	
 	int ret = 1;
@@ -25638,7 +25638,7 @@ long R5900::Recompiler::TLT ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::TLTU ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "TLTU";
+	const char *c_sName = "TLTU";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::TLTU;
 	
 	int ret = 1;
@@ -25685,7 +25685,7 @@ long R5900::Recompiler::TLTU ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::TEQ ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "TEQ";
+	const char *c_sName = "TEQ";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::TEQ;
 	
 	int ret = 1;
@@ -25732,7 +25732,7 @@ long R5900::Recompiler::TEQ ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::TNE ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "TNE";
+	const char *c_sName = "TNE";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::TNE;
 	
 	int ret = 1;
@@ -25799,7 +25799,7 @@ long R5900::Recompiler::TNE ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::PADSBH ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "PADSBH";
+	const char *c_sName = "PADSBH";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::PADSBH;
 	
 	int ret = 1;
@@ -25871,7 +25871,7 @@ long R5900::Recompiler::PADSBH ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::PABSH ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "PABSH";
+	const char *c_sName = "PABSH";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::PABSH;
 	
 	int ret = 1;
@@ -25933,7 +25933,7 @@ long R5900::Recompiler::PABSH ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::PABSW ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "PABSW";
+	const char *c_sName = "PABSW";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::PABSW;
 	
 	int ret = 1;
@@ -25995,7 +25995,7 @@ long R5900::Recompiler::PABSW ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::PAND ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "PAND";
+	const char *c_sName = "PAND";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::PAND;
 	
 	int ret = 1;
@@ -26071,7 +26071,7 @@ long R5900::Recompiler::PAND ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::PXOR ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "PXOR";
+	const char *c_sName = "PXOR";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::PXOR;
 	
 	int ret = 1;
@@ -26144,7 +26144,7 @@ long R5900::Recompiler::PXOR ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::POR ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "POR";
+	const char *c_sName = "POR";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::POR;
 	
 	int ret = 1;
@@ -26231,7 +26231,7 @@ long R5900::Recompiler::POR ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::PNOR ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "PNOR";
+	const char *c_sName = "PNOR";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::PNOR;
 	
 	int ret = 1;
@@ -26321,7 +26321,7 @@ long R5900::Recompiler::PNOR ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::PLZCW ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "PLZCW";
+	const char *c_sName = "PLZCW";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::PLZCW;
 	
 	int ret = 1;
@@ -26392,7 +26392,7 @@ long R5900::Recompiler::PLZCW ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::PMFHL_LH ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "PMFHL_LH";
+	const char *c_sName = "PMFHL_LH";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::PMFHL_LH;
 	
 	int ret = 1;
@@ -26484,7 +26484,7 @@ long R5900::Recompiler::PMFHL_LH ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::PMFHL_LW ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "PMFHL_LW";
+	const char *c_sName = "PMFHL_LW";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::PMFHL_LW;
 	
 	int ret = 1;
@@ -26574,7 +26574,7 @@ long R5900::Recompiler::PMFHL_LW ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::PMFHL_UW ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "PMFHL_UW";
+	const char *c_sName = "PMFHL_UW";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::PMFHL_UW;
 	
 	int ret = 1;
@@ -26664,7 +26664,7 @@ long R5900::Recompiler::PMFHL_UW ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::PMTHL_LW ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "PMTHL_LW";
+	const char *c_sName = "PMTHL_LW";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::PMTHL_LW;
 	
 	int ret = 1;
@@ -26722,7 +26722,7 @@ long R5900::Recompiler::PMTHL_LW ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::PMFHL_SH ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "PMFHL_SH";
+	const char *c_sName = "PMFHL_SH";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::PMFHL_SH;
 	
 	int ret = 1;
@@ -26817,7 +26817,7 @@ long R5900::Recompiler::PMFHL_SH ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::PMFHL_SLW ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "PMFHL_SLW";
+	const char *c_sName = "PMFHL_SLW";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::PMFHL_SLW;
 	
 	int ret = 1;
@@ -26933,7 +26933,7 @@ long R5900::Recompiler::PMFHL_SLW ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::PSLLH ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "PSLLH";
+	const char *c_sName = "PSLLH";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::PSLLH;
 	
 	int ret = 1;
@@ -27004,7 +27004,7 @@ long R5900::Recompiler::PSLLH ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::PSLLW ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "PSLLW";
+	const char *c_sName = "PSLLW";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::PSLLW;
 	
 	int ret = 1;
@@ -27075,7 +27075,7 @@ long R5900::Recompiler::PSLLW ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::PSRLH ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "PSRLH";
+	const char *c_sName = "PSRLH";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::PSRLH;
 	
 	int ret = 1;
@@ -27146,7 +27146,7 @@ long R5900::Recompiler::PSRLH ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::PSRLW ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "PSRLW";
+	const char *c_sName = "PSRLW";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::PSRLW;
 	
 	int ret = 1;
@@ -27218,7 +27218,7 @@ long R5900::Recompiler::PSRLW ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::PSRAH ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "PSRAH";
+	const char *c_sName = "PSRAH";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::PSRAH;
 	
 	int ret = 1;
@@ -27289,7 +27289,7 @@ long R5900::Recompiler::PSRAH ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::PSRAW ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "PSRAW";
+	const char *c_sName = "PSRAW";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::PSRAW;
 	
 	int ret = 1;
@@ -27360,7 +27360,7 @@ long R5900::Recompiler::PSRAW ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::PSLLVW ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "PSLLVW";
+	const char *c_sName = "PSLLVW";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::PSLLVW;
 	
 	int ret = 1;
@@ -27422,7 +27422,7 @@ long R5900::Recompiler::PSLLVW ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::PSRLVW ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "PSRLVW";
+	const char *c_sName = "PSRLVW";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::PSRLVW;
 	
 	int ret = 1;
@@ -27484,7 +27484,7 @@ long R5900::Recompiler::PSRLVW ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::PSRAVW ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "PSRAVW";
+	const char *c_sName = "PSRAVW";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::PSRAVW;
 	
 	int ret = 1;
@@ -27547,7 +27547,7 @@ long R5900::Recompiler::PSRAVW ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::PADDB ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "PADDB";
+	const char *c_sName = "PADDB";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::PADDB;
 	
 	int ret = 1;
@@ -27632,7 +27632,7 @@ long R5900::Recompiler::PADDB ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::PADDH ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "PADDH";
+	const char *c_sName = "PADDH";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::PADDH;
 	
 	int ret = 1;
@@ -27717,7 +27717,7 @@ long R5900::Recompiler::PADDH ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::PADDW ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "PADDW";
+	const char *c_sName = "PADDW";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::PADDW;
 	
 	int ret = 1;
@@ -27802,7 +27802,7 @@ long R5900::Recompiler::PADDW ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::PSUBB ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "PSUBB";
+	const char *c_sName = "PSUBB";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::PSUBB;
 	
 	int ret = 1;
@@ -27888,7 +27888,7 @@ long R5900::Recompiler::PSUBB ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::PSUBH ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "PSUBH";
+	const char *c_sName = "PSUBH";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::PSUBH;
 	
 	int ret = 1;
@@ -27974,7 +27974,7 @@ long R5900::Recompiler::PSUBH ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::PSUBW ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "PSUBW";
+	const char *c_sName = "PSUBW";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::PSUBW;
 	
 	int ret = 1;
@@ -28061,7 +28061,7 @@ long R5900::Recompiler::PSUBW ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::PADDSB ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "PADDSB";
+	const char *c_sName = "PADDSB";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::PADDSB;
 	
 	int ret = 1;
@@ -28146,7 +28146,7 @@ long R5900::Recompiler::PADDSB ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::PADDSH ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "PADDSH";
+	const char *c_sName = "PADDSH";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::PADDSH;
 	
 	int ret = 1;
@@ -28231,7 +28231,7 @@ long R5900::Recompiler::PADDSH ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::PADDSW ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "PADDSW";
+	const char *c_sName = "PADDSW";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::PADDSW;
 	
 	int ret = 1;
@@ -28420,7 +28420,7 @@ long R5900::Recompiler::PADDSW ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::PSUBSB ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "PSUBSB";
+	const char *c_sName = "PSUBSB";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::PSUBSB;
 	
 	int ret = 1;
@@ -28507,7 +28507,7 @@ long R5900::Recompiler::PSUBSB ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::PSUBSH ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "PSUBSH";
+	const char *c_sName = "PSUBSH";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::PSUBSH;
 	
 	int ret = 1;
@@ -28594,7 +28594,7 @@ long R5900::Recompiler::PSUBSH ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::PSUBSW ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "PSUBSW";
+	const char *c_sName = "PSUBSW";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::PSUBSW;
 	
 	int ret = 1;
@@ -28726,7 +28726,7 @@ long R5900::Recompiler::PSUBSW ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::PADDUB ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "PADDUB";
+	const char *c_sName = "PADDUB";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::PADDUB;
 	
 	int ret = 1;
@@ -28811,7 +28811,7 @@ long R5900::Recompiler::PADDUB ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::PADDUH ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "PADDUH";
+	const char *c_sName = "PADDUH";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::PADDUH;
 	
 	int ret = 1;
@@ -28896,7 +28896,7 @@ long R5900::Recompiler::PADDUH ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::PADDUW ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "PADDUW";
+	const char *c_sName = "PADDUW";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::PADDUW;
 	
 	int ret = 1;
@@ -29006,7 +29006,7 @@ long R5900::Recompiler::PADDUW ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::PSUBUB ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "PSUBUB";
+	const char *c_sName = "PSUBUB";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::PSUBUB;
 	
 	int ret = 1;
@@ -29082,7 +29082,7 @@ long R5900::Recompiler::PSUBUB ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::PSUBUH ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "PSUBUH";
+	const char *c_sName = "PSUBUH";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::PSUBUH;
 	
 	int ret = 1;
@@ -29158,7 +29158,7 @@ long R5900::Recompiler::PSUBUH ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::PSUBUW ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "PSUBUW";
+	const char *c_sName = "PSUBUW";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::PSUBUW;
 	
 	int ret = 1;
@@ -29255,7 +29255,7 @@ long R5900::Recompiler::PSUBUW ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::PMAXH ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "PMAXH";
+	const char *c_sName = "PMAXH";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::PMAXH;
 	
 	int ret = 1;
@@ -29332,7 +29332,7 @@ long R5900::Recompiler::PMAXH ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::PMAXW ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "PMAXW";
+	const char *c_sName = "PMAXW";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::PMAXW;
 	
 	int ret = 1;
@@ -29409,7 +29409,7 @@ long R5900::Recompiler::PMAXW ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::PMINH ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "PMINH";
+	const char *c_sName = "PMINH";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::PMINH;
 	
 	int ret = 1;
@@ -29486,7 +29486,7 @@ long R5900::Recompiler::PMINH ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::PMINW ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "PMINW";
+	const char *c_sName = "PMINW";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::PMINW;
 	
 	int ret = 1;
@@ -29566,7 +29566,7 @@ long R5900::Recompiler::PMINW ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::PPACB ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "PPACB";
+	const char *c_sName = "PPACB";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::PPACB;
 	
 	int ret = 1;
@@ -29659,7 +29659,7 @@ long R5900::Recompiler::PPACB ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::PPACH ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "PPACH";
+	const char *c_sName = "PPACH";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::PPACH;
 	
 	int ret = 1;
@@ -29750,7 +29750,7 @@ long R5900::Recompiler::PPACH ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::PPACW ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "PPACW";
+	const char *c_sName = "PPACW";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::PPACW;
 	
 	int ret = 1;
@@ -29835,7 +29835,7 @@ long R5900::Recompiler::PPACW ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::PEXT5 ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "PEXT5";
+	const char *c_sName = "PEXT5";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::PEXT5;
 	
 	int ret = 1;
@@ -29916,7 +29916,7 @@ long R5900::Recompiler::PEXT5 ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::PPAC5 ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "PPAC5";
+	const char *c_sName = "PPAC5";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::PPAC5;
 	
 	int ret = 1;
@@ -29998,7 +29998,7 @@ long R5900::Recompiler::PPAC5 ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::PCGTB ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "PCGTB";
+	const char *c_sName = "PCGTB";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::PCGTB;
 	
 	int ret = 1;
@@ -30061,7 +30061,7 @@ long R5900::Recompiler::PCGTB ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::PCGTH ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "PCGTH";
+	const char *c_sName = "PCGTH";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::PCGTH;
 	
 	int ret = 1;
@@ -30124,7 +30124,7 @@ long R5900::Recompiler::PCGTH ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::PCGTW ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "PCGTW";
+	const char *c_sName = "PCGTW";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::PCGTW;
 	
 	int ret = 1;
@@ -30188,7 +30188,7 @@ long R5900::Recompiler::PCGTW ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::PCEQB ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "PCEQB";
+	const char *c_sName = "PCEQB";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::PCEQB;
 	
 	int ret = 1;
@@ -30251,7 +30251,7 @@ long R5900::Recompiler::PCEQB ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::PCEQH ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "PCEQH";
+	const char *c_sName = "PCEQH";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::PCEQH;
 	
 	int ret = 1;
@@ -30315,7 +30315,7 @@ long R5900::Recompiler::PCEQH ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::PCEQW ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "PCEQW";
+	const char *c_sName = "PCEQW";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::PCEQW;
 	
 	int ret = 1;
@@ -30381,7 +30381,7 @@ long R5900::Recompiler::PCEQW ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::PEXTLB ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "PEXTLB";
+	const char *c_sName = "PEXTLB";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::PEXTLB;
 	
 	int ret = 1;
@@ -30436,7 +30436,7 @@ long R5900::Recompiler::PEXTLB ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::PEXTLH ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "PEXTLH";
+	const char *c_sName = "PEXTLH";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::PEXTLH;
 	
 	int ret = 1;
@@ -30491,7 +30491,7 @@ long R5900::Recompiler::PEXTLH ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::PEXTLW ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "PEXTLW";
+	const char *c_sName = "PEXTLW";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::PEXTLW;
 	
 	int ret = 1;
@@ -30546,7 +30546,7 @@ long R5900::Recompiler::PEXTLW ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::PEXTUB ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "PEXTUB";
+	const char *c_sName = "PEXTUB";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::PEXTUB;
 	
 	int ret = 1;
@@ -30601,7 +30601,7 @@ long R5900::Recompiler::PEXTUB ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::PEXTUH ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "PEXTUH";
+	const char *c_sName = "PEXTUH";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::PEXTUH;
 	
 	int ret = 1;
@@ -30656,7 +30656,7 @@ long R5900::Recompiler::PEXTUH ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::PEXTUW ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "PEXTUW";
+	const char *c_sName = "PEXTUW";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::PEXTUW;
 	
 	int ret = 1;
@@ -30718,7 +30718,7 @@ long R5900::Recompiler::PEXTUW ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::PMFLO ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "PMFLO";
+	const char *c_sName = "PMFLO";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::PMFLO;
 	
 	int ret = 1;
@@ -30803,7 +30803,7 @@ long R5900::Recompiler::PMFLO ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::PMFHI ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "PMFHI";
+	const char *c_sName = "PMFHI";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::PMFHI;
 	
 	int ret = 1;
@@ -30889,7 +30889,7 @@ long R5900::Recompiler::PMFHI ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::PINTH ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "PINTH";
+	const char *c_sName = "PINTH";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::PINTH;
 	
 	int ret = 1;
@@ -30946,7 +30946,7 @@ long R5900::Recompiler::PINTH ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::PINTEH ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "PINTEH";
+	const char *c_sName = "PINTEH";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::PINTEH;
 	
 	int ret = 1;
@@ -31008,7 +31008,7 @@ long R5900::Recompiler::PINTEH ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::PMADDH ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "PMADDH";
+	const char *c_sName = "PMADDH";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::PMADDH;
 	
 	static const int c_iMultiplyCycles = 4 / 2;
@@ -31138,7 +31138,7 @@ long R5900::Recompiler::PMADDH ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::PMADDW ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "PMADDW";
+	const char *c_sName = "PMADDW";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::PMADDW;
 	
 	static const int c_iMultiplyCycles = 4 / 2;
@@ -31250,7 +31250,7 @@ long R5900::Recompiler::PMADDW ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::PMADDUW ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "PMADDUW";
+	const char *c_sName = "PMADDUW";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::PMADDUW;
 	
 	static const int c_iMultiplyCycles = 4 / 2;
@@ -31363,7 +31363,7 @@ long R5900::Recompiler::PMADDUW ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::PMSUBH ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "PMSUBH";
+	const char *c_sName = "PMSUBH";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::PMSUBH;
 	
 	static const int c_iMultiplyCycles = 4 / 2;
@@ -31497,7 +31497,7 @@ long R5900::Recompiler::PMSUBH ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::PMSUBW ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "PMSUBW";
+	const char *c_sName = "PMSUBW";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::PMSUBW;
 	
 	static const int c_iMultiplyCycles = 4 / 2;
@@ -31609,7 +31609,7 @@ long R5900::Recompiler::PMSUBW ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::PMULTH ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "PMULTH";
+	const char *c_sName = "PMULTH";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::PMULTH;
 	
 	static const int c_iMultiplyCycles = 4 / 2;
@@ -31715,7 +31715,7 @@ long R5900::Recompiler::PMULTH ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::PMULTW ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "PMULTW";
+	const char *c_sName = "PMULTW";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::PMULTW;
 	
 	static const int c_iMultiplyCycles = 4 / 2;
@@ -31815,7 +31815,7 @@ long R5900::Recompiler::PMULTW ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::PMULTUW ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "PMULTUW";
+	const char *c_sName = "PMULTUW";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::PMULTUW;
 	
 	static const int c_iMultiplyCycles = 4 / 2;
@@ -31920,7 +31920,7 @@ long R5900::Recompiler::PMULTUW ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::PHMADH ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "PHMADH";
+	const char *c_sName = "PHMADH";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::PHMADH;
 	
 	static const int c_iMultiplyCycles = 4 / 2;
@@ -32019,7 +32019,7 @@ long R5900::Recompiler::PHMADH ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::PHMSBH ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "PHMSBH";
+	const char *c_sName = "PHMSBH";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::PHMSBH;
 	
 	static const int c_iMultiplyCycles = 4 / 2;
@@ -32125,7 +32125,7 @@ long R5900::Recompiler::PHMSBH ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::PDIVW ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "PDIVW";
+	const char *c_sName = "PDIVW";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::PDIVW;
 	
 	// 37 cycles
@@ -32259,7 +32259,7 @@ long R5900::Recompiler::PDIVW ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::PDIVUW ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "PDIVUW";
+	const char *c_sName = "PDIVUW";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::PDIVUW;
 	
 	// 37 cycles
@@ -32390,7 +32390,7 @@ long R5900::Recompiler::PDIVUW ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::PDIVBW ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "PDIVBW";
+	const char *c_sName = "PDIVBW";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::PDIVBW;
 	
 	// 37 cycles
@@ -32550,7 +32550,7 @@ long R5900::Recompiler::PDIVBW ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::PREVH ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "PREVH";
+	const char *c_sName = "PREVH";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::PREVH;
 	
 	int ret = 1;
@@ -32610,7 +32610,7 @@ long R5900::Recompiler::PREVH ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::PEXEH ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "PEXEH";
+	const char *c_sName = "PEXEH";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::PEXEH;
 	
 	int ret = 1;
@@ -32667,7 +32667,7 @@ long R5900::Recompiler::PEXEH ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::PEXEW ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "PEXEW";
+	const char *c_sName = "PEXEW";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::PEXEW;
 	
 	int ret = 1;
@@ -32723,7 +32723,7 @@ long R5900::Recompiler::PEXEW ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::PROT3W ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "PROT3W";
+	const char *c_sName = "PROT3W";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::PROT3W;
 	
 	int ret = 1;
@@ -32781,7 +32781,7 @@ long R5900::Recompiler::PROT3W ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::PMTHI ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "PMTHI";
+	const char *c_sName = "PMTHI";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::PMTHI;
 	
 	int ret = 1;
@@ -32837,7 +32837,7 @@ long R5900::Recompiler::PMTHI ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::PMTLO ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "PMTLO";
+	const char *c_sName = "PMTLO";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::PMTLO;
 	
 	int ret = 1;
@@ -32895,7 +32895,7 @@ long R5900::Recompiler::PMTLO ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::PCPYLD ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "PCPYLD";
+	const char *c_sName = "PCPYLD";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::PCPYLD;
 	
 	int ret = 1;
@@ -32950,7 +32950,7 @@ long R5900::Recompiler::PCPYLD ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::PCPYUD ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "PCPYUD";
+	const char *c_sName = "PCPYUD";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::PCPYUD;
 	
 	int ret = 1;
@@ -33005,7 +33005,7 @@ long R5900::Recompiler::PCPYUD ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::PCPYH ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "PCPYH";
+	const char *c_sName = "PCPYH";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::PCPYH;
 	
 	int ret = 1;
@@ -33063,7 +33063,7 @@ long R5900::Recompiler::PCPYH ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::PEXCH ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "PEXCH";
+	const char *c_sName = "PEXCH";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::PEXCH;
 	
 	int ret = 1;
@@ -33120,7 +33120,7 @@ long R5900::Recompiler::PEXCH ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::PEXCW ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "PEXCW";
+	const char *c_sName = "PEXCW";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::PEXCW;
 	
 	int ret = 1;
@@ -33176,7 +33176,7 @@ long R5900::Recompiler::PEXCW ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::QFSRV ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "QFSRV";
+	const char *c_sName = "QFSRV";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::QFSRV;
 	
 	int ret = 1;
@@ -33299,7 +33299,7 @@ long R5900::Recompiler::QFSRV ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::EI ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "EI";
+	const char *c_sName = "EI";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::EI;
 	
 	int ret = 1;
@@ -33338,7 +33338,7 @@ long R5900::Recompiler::EI ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::DI ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "DI";
+	const char *c_sName = "DI";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::DI;
 	
 	int ret = 1;
@@ -33377,7 +33377,7 @@ long R5900::Recompiler::DI ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::CFC0 ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "CFC0";
+	const char *c_sName = "CFC0";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::CFC0;
 	
 	int ret = 1;
@@ -33416,7 +33416,7 @@ long R5900::Recompiler::CFC0 ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::CTC0 ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "CTC0";
+	const char *c_sName = "CTC0";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::CTC0;
 	
 	int ret = 1;
@@ -33458,7 +33458,7 @@ long R5900::Recompiler::CTC0 ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::SYNC ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "SYNC";
+	const char *c_sName = "SYNC";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::SYNC;
 	
 	int ret = 1;
@@ -33502,7 +33502,7 @@ long R5900::Recompiler::SYNC ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::CACHE ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "CACHE";
+	const char *c_sName = "CACHE";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::CACHE;
 	
 	int ret = 1;
@@ -33541,7 +33541,7 @@ long R5900::Recompiler::CACHE ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::PREF ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "PREF";
+	const char *c_sName = "PREF";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::PREF;
 	
 	int ret = 1;
@@ -33584,7 +33584,7 @@ long R5900::Recompiler::PREF ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::TLBR ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "TLBR";
+	const char *c_sName = "TLBR";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::TLBR;
 	
 	int ret = 1;
@@ -33627,7 +33627,7 @@ long R5900::Recompiler::TLBR ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::TLBWI ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "TLBWI";
+	const char *c_sName = "TLBWI";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::TLBWI;
 	
 	int ret = 1;
@@ -33670,7 +33670,7 @@ long R5900::Recompiler::TLBWI ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::TLBWR ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "TLBWR";
+	const char *c_sName = "TLBWR";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::TLBWR;
 	
 	int ret = 1;
@@ -33713,7 +33713,7 @@ long R5900::Recompiler::TLBWR ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::TLBP ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "TLBP";
+	const char *c_sName = "TLBP";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::TLBP;
 	
 	int ret = 1;
@@ -33756,7 +33756,7 @@ long R5900::Recompiler::TLBP ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::ERET ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "ERET";
+	const char *c_sName = "ERET";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::ERET;
 	
 	int ret = 1;
@@ -33800,7 +33800,7 @@ long R5900::Recompiler::ERET ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::DERET ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "DERET";
+	const char *c_sName = "DERET";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::DERET;
 	
 	int ret = 1;
@@ -33843,7 +33843,7 @@ long R5900::Recompiler::DERET ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::WAIT ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "WAIT";
+	const char *c_sName = "WAIT";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::WAIT;
 	
 	int ret = 1;
@@ -33893,7 +33893,7 @@ long R5900::Recompiler::WAIT ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::MFC1 ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "MFC1";
+	const char *c_sName = "MFC1";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::MFC1;
 	
 	int ret = 1;
@@ -33932,7 +33932,7 @@ long R5900::Recompiler::MFC1 ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::MTC1 ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "MTC1";
+	const char *c_sName = "MTC1";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::MTC1;
 	
 	int ret = 1;
@@ -33971,7 +33971,7 @@ long R5900::Recompiler::MTC1 ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::CFC1 ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "CFC1";
+	const char *c_sName = "CFC1";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::CFC1;
 	
 	int ret = 1;
@@ -34010,7 +34010,7 @@ long R5900::Recompiler::CFC1 ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::CTC1 ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "CTC1";
+	const char *c_sName = "CTC1";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::CTC1;
 	
 	int ret = 1;
@@ -34050,7 +34050,7 @@ long R5900::Recompiler::CTC1 ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::LWC1 ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "LWC1";
+	const char *c_sName = "LWC1";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::LWC1;
 	
 	int ret = 1;
@@ -34130,7 +34130,7 @@ long R5900::Recompiler::LWC1 ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::SWC1 ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "SWC1";
+	const char *c_sName = "SWC1";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::SWC1;
 	
 	int ret = 1;
@@ -34208,7 +34208,7 @@ long R5900::Recompiler::SWC1 ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::ABS_S ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "ABS_S";
+	const char *c_sName = "ABS_S";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::ABS_S;
 	
 	
@@ -34283,7 +34283,7 @@ long R5900::Recompiler::ABS_S ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::ADD_S ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "ADD_S";
+	const char *c_sName = "ADD_S";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::ADD_S;
 	
 	int ret = 1;
@@ -34422,7 +34422,7 @@ long R5900::Recompiler::ADD_S ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::ADDA_S ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "ADDA_S";
+	const char *c_sName = "ADDA_S";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::ADDA_S;
 	
 	int ret = 1;
@@ -34550,7 +34550,7 @@ long R5900::Recompiler::ADDA_S ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::CVT_S_W ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "CVT_S_W";
+	const char *c_sName = "CVT_S_W";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::CVT_S_W;
 	
 	int ret = 1;
@@ -34627,7 +34627,7 @@ long R5900::Recompiler::CVT_S_W ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::SUB_S ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "SUB_S";
+	const char *c_sName = "SUB_S";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::SUB_S;
 	
 	int ret = 1;
@@ -34764,7 +34764,7 @@ long R5900::Recompiler::SUB_S ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::MUL_S ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "MUL_S";
+	const char *c_sName = "MUL_S";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::MUL_S;
 	
 	int ret = 1;
@@ -35266,7 +35266,7 @@ long R5900::Recompiler::MUL_S ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::MULA_S ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "MULA_S";
+	const char *c_sName = "MULA_S";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::MULA_S;
 	
 	int ret = 1;
@@ -35586,7 +35586,7 @@ long R5900::Recompiler::MULA_S ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::DIV_S ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "DIV_S";
+	const char *c_sName = "DIV_S";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::DIV_S;
 	
 	int ret = 1;
@@ -35717,7 +35717,7 @@ long R5900::Recompiler::DIV_S ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::SQRT_S ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "SQRT_S";
+	const char *c_sName = "SQRT_S";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::SQRT_S;
 	
 	int ret = 1;
@@ -35823,7 +35823,7 @@ long R5900::Recompiler::SQRT_S ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::RSQRT_S ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "RSQRT_S";
+	const char *c_sName = "RSQRT_S";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::RSQRT_S;
 	
 	int ret = 1;
@@ -35983,7 +35983,7 @@ long R5900::Recompiler::RSQRT_S ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::MOV_S ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "MOV_S";
+	const char *c_sName = "MOV_S";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::MOV_S;
 	
 	int ret = 1;
@@ -36045,7 +36045,7 @@ long R5900::Recompiler::MOV_S ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::NEG_S ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "NEG_S";
+	const char *c_sName = "NEG_S";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::NEG_S;
 	
 	int ret = 1;
@@ -36118,7 +36118,7 @@ long R5900::Recompiler::NEG_S ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::SUBA_S ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "SUBA_S";
+	const char *c_sName = "SUBA_S";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::SUBA_S;
 	
 	int ret = 1;
@@ -36243,7 +36243,7 @@ long R5900::Recompiler::SUBA_S ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::MADD_S ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "MADD_S";
+	const char *c_sName = "MADD_S";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::MADD_S;
 	
 	int ret = 1;
@@ -36713,7 +36713,7 @@ long R5900::Recompiler::MADD_S ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::MSUB_S ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "MSUB_S";
+	const char *c_sName = "MSUB_S";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::MSUB_S;
 	
 	int ret = 1;
@@ -36989,7 +36989,7 @@ long R5900::Recompiler::MSUB_S ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::MSUBA_S ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "MSUBA_S";
+	const char *c_sName = "MSUBA_S";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::MSUBA_S;
 	
 	int ret = 1;
@@ -37253,7 +37253,7 @@ long R5900::Recompiler::MSUBA_S ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::MADDA_S ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "MADDA_S";
+	const char *c_sName = "MADDA_S";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::MADDA_S;
 	
 	int ret = 1;
@@ -37712,7 +37712,7 @@ long R5900::Recompiler::MADDA_S ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::CVT_W_S ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "CVT_W_S";
+	const char *c_sName = "CVT_W_S";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::CVT_W_S;
 	
 	int ret = 1;
@@ -37798,7 +37798,7 @@ long R5900::Recompiler::CVT_W_S ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::MAX_S ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "MAX_S";
+	const char *c_sName = "MAX_S";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::MAX_S;
 	
 	int ret = 1;
@@ -37873,7 +37873,7 @@ long R5900::Recompiler::MAX_S ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::MIN_S ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "MIN_S";
+	const char *c_sName = "MIN_S";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::MIN_S;
 	
 	int ret = 1;
@@ -37948,7 +37948,7 @@ long R5900::Recompiler::MIN_S ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::C_F_S ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "C_F_S";
+	const char *c_sName = "C_F_S";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::C_F_S;
 	
 	int ret = 1;
@@ -37995,7 +37995,7 @@ long R5900::Recompiler::C_F_S ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::C_EQ_S ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "C_EQ_S";
+	const char *c_sName = "C_EQ_S";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::C_EQ_S;
 	
 	int ret = 1;
@@ -38082,7 +38082,7 @@ long R5900::Recompiler::C_EQ_S ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::C_LT_S ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "C_LT_S";
+	const char *c_sName = "C_LT_S";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::C_LT_S;
 	
 	int ret = 1;
@@ -38171,7 +38171,7 @@ long R5900::Recompiler::C_LT_S ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::C_LE_S ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "C_LE_S";
+	const char *c_sName = "C_LE_S";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::C_LE_S;
 	
 	int ret = 1;
@@ -38260,7 +38260,7 @@ long R5900::Recompiler::C_LE_S ( R5900::Instruction::Format i, u32 Address )
 // PS2 has LQC2/SQC2 instead of LWC2/SWC2 //
 long R5900::Recompiler::LQC2 ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "LQC2";
+	const char *c_sName = "LQC2";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::LQC2;
 	
 	int ret = 1;
@@ -38325,7 +38325,7 @@ long R5900::Recompiler::LQC2 ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::SQC2 ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "SQC2";
+	const char *c_sName = "SQC2";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::SQC2;
 	
 	int ret = 1;
@@ -38380,7 +38380,7 @@ long R5900::Recompiler::SQC2 ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::QMFC2_NI ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "QMFC2_NI";
+	const char *c_sName = "QMFC2_NI";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::QMFC2_NI;
 	
 	int ret = 1;
@@ -38444,7 +38444,7 @@ long R5900::Recompiler::QMFC2_NI ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::QMFC2_I ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "QMFC2_I";
+	const char *c_sName = "QMFC2_I";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::QMFC2_I;
 	
 	int ret = 1;
@@ -38490,7 +38490,7 @@ long R5900::Recompiler::QMFC2_I ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::QMTC2_NI ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "QMTC2_NI";
+	const char *c_sName = "QMTC2_NI";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::QMTC2_NI;
 	
 	int ret = 1;
@@ -38553,7 +38553,7 @@ long R5900::Recompiler::QMTC2_NI ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::QMTC2_I ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "QMTC2_I";
+	const char *c_sName = "QMTC2_I";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::QMTC2_I;
 	
 	int ret = 1;
@@ -42968,7 +42968,7 @@ long R5900::Recompiler::Generate_VMADD ( R5900::Instruction::Format i, u32 Addre
 
 long R5900::Recompiler::VABS ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VABS";
+	const char *c_sName = "VABS";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VABS;
 	
 	int ret = 1;
@@ -43031,7 +43031,7 @@ long R5900::Recompiler::VABS ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VADD ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VADD";
+	const char *c_sName = "VADD";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VADD;
 	
 	int ret = 1;
@@ -43084,7 +43084,7 @@ long R5900::Recompiler::VADD ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VADDi ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VADDi";
+	const char *c_sName = "VADDi";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VADDi;
 	
 	int ret = 1;
@@ -43137,7 +43137,7 @@ long R5900::Recompiler::VADDi ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VADDq ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VADDq";
+	const char *c_sName = "VADDq";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VADDq;
 	
 	int ret = 1;
@@ -43190,7 +43190,7 @@ long R5900::Recompiler::VADDq ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VADDBCX ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VADDBCX";
+	const char *c_sName = "VADDBCX";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VADDBCX;
 	
 	int ret = 1;
@@ -43243,7 +43243,7 @@ long R5900::Recompiler::VADDBCX ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VADDBCY ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VADDBCY";
+	const char *c_sName = "VADDBCY";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VADDBCY;
 	
 	int ret = 1;
@@ -43296,7 +43296,7 @@ long R5900::Recompiler::VADDBCY ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VADDBCZ ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VADDBCZ";
+	const char *c_sName = "VADDBCZ";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VADDBCZ;
 	
 	int ret = 1;
@@ -43349,7 +43349,7 @@ long R5900::Recompiler::VADDBCZ ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VADDBCW ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VADDBCW";
+	const char *c_sName = "VADDBCW";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VADDBCW;
 	
 	int ret = 1;
@@ -43405,7 +43405,7 @@ long R5900::Recompiler::VADDBCW ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VADDA ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VADDA";
+	const char *c_sName = "VADDA";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VADDA;
 	
 	int ret = 1;
@@ -43458,7 +43458,7 @@ long R5900::Recompiler::VADDA ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VADDAi ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VADDAi";
+	const char *c_sName = "VADDAi";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VADDAi;
 	
 	int ret = 1;
@@ -43511,7 +43511,7 @@ long R5900::Recompiler::VADDAi ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VADDAq ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VADDAq";
+	const char *c_sName = "VADDAq";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VADDAq;
 	
 	int ret = 1;
@@ -43564,7 +43564,7 @@ long R5900::Recompiler::VADDAq ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VADDABCX ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VADDABCX";
+	const char *c_sName = "VADDABCX";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VADDABCX;
 	
 	int ret = 1;
@@ -43617,7 +43617,7 @@ long R5900::Recompiler::VADDABCX ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VADDABCY ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VADDABCY";
+	const char *c_sName = "VADDABCY";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VADDABCY;
 	
 	int ret = 1;
@@ -43670,7 +43670,7 @@ long R5900::Recompiler::VADDABCY ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VADDABCZ ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VADDABCZ";
+	const char *c_sName = "VADDABCZ";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VADDABCZ;
 	
 	int ret = 1;
@@ -43723,7 +43723,7 @@ long R5900::Recompiler::VADDABCZ ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VADDABCW ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VADDABCW";
+	const char *c_sName = "VADDABCW";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VADDABCW;
 	
 	int ret = 1;
@@ -43782,7 +43782,7 @@ long R5900::Recompiler::VADDABCW ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VSUB ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VSUB";
+	const char *c_sName = "VSUB";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VSUB;
 	
 	int ret = 1;
@@ -43835,7 +43835,7 @@ long R5900::Recompiler::VSUB ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VSUBi ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VSUBi";
+	const char *c_sName = "VSUBi";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VSUBi;
 	
 	int ret = 1;
@@ -43888,7 +43888,7 @@ long R5900::Recompiler::VSUBi ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VSUBq ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VSUBq";
+	const char *c_sName = "VSUBq";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VSUBq;
 	
 	int ret = 1;
@@ -43941,7 +43941,7 @@ long R5900::Recompiler::VSUBq ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VSUBBCX ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VSUBBCX";
+	const char *c_sName = "VSUBBCX";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VSUBBCX;
 	
 	int ret = 1;
@@ -43994,7 +43994,7 @@ long R5900::Recompiler::VSUBBCX ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VSUBBCY ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VSUBBCY";
+	const char *c_sName = "VSUBBCY";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VSUBBCY;
 	
 	int ret = 1;
@@ -44047,7 +44047,7 @@ long R5900::Recompiler::VSUBBCY ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VSUBBCZ ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VSUBBCZ";
+	const char *c_sName = "VSUBBCZ";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VSUBBCZ;
 	
 	int ret = 1;
@@ -44100,7 +44100,7 @@ long R5900::Recompiler::VSUBBCZ ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VSUBBCW ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VSUBBCW";
+	const char *c_sName = "VSUBBCW";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VSUBBCW;
 	
 	int ret = 1;
@@ -44158,7 +44158,7 @@ long R5900::Recompiler::VSUBBCW ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VMADD ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VMADD";
+	const char *c_sName = "VMADD";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VMADD;
 	
 	int ret = 1;
@@ -44211,7 +44211,7 @@ long R5900::Recompiler::VMADD ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VMADDi ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VMADDi";
+	const char *c_sName = "VMADDi";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VMADDi;
 	
 	int ret = 1;
@@ -44264,7 +44264,7 @@ long R5900::Recompiler::VMADDi ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VMADDq ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VMADDq";
+	const char *c_sName = "VMADDq";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VMADDq;
 	
 	int ret = 1;
@@ -44317,7 +44317,7 @@ long R5900::Recompiler::VMADDq ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VMADDBCX ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VMADDBCX";
+	const char *c_sName = "VMADDBCX";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VMADDBCX;
 	
 	int ret = 1;
@@ -44370,7 +44370,7 @@ long R5900::Recompiler::VMADDBCX ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VMADDBCY ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VMADDBCY";
+	const char *c_sName = "VMADDBCY";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VMADDBCY;
 	
 	int ret = 1;
@@ -44423,7 +44423,7 @@ long R5900::Recompiler::VMADDBCY ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VMADDBCZ ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VMADDBCZ";
+	const char *c_sName = "VMADDBCZ";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VMADDBCZ;
 	
 	int ret = 1;
@@ -44476,7 +44476,7 @@ long R5900::Recompiler::VMADDBCZ ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VMADDBCW ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VMADDBCW";
+	const char *c_sName = "VMADDBCW";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VMADDBCW;
 	
 	int ret = 1;
@@ -44534,7 +44534,7 @@ long R5900::Recompiler::VMADDBCW ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VMSUB ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VMSUB";
+	const char *c_sName = "VMSUB";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VMSUB;
 	
 	int ret = 1;
@@ -44587,7 +44587,7 @@ long R5900::Recompiler::VMSUB ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VMSUBi ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VMSUBi";
+	const char *c_sName = "VMSUBi";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VMSUBi;
 	
 	int ret = 1;
@@ -44640,7 +44640,7 @@ long R5900::Recompiler::VMSUBi ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VMSUBq ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VMSUBq";
+	const char *c_sName = "VMSUBq";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VMSUBq;
 	
 	int ret = 1;
@@ -44693,7 +44693,7 @@ long R5900::Recompiler::VMSUBq ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VMSUBBCX ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VMSUBBCX";
+	const char *c_sName = "VMSUBBCX";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VMSUBBCX;
 	
 	int ret = 1;
@@ -44746,7 +44746,7 @@ long R5900::Recompiler::VMSUBBCX ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VMSUBBCY ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VMSUBBCY";
+	const char *c_sName = "VMSUBBCY";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VMSUBBCY;
 	
 	int ret = 1;
@@ -44799,7 +44799,7 @@ long R5900::Recompiler::VMSUBBCY ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VMSUBBCZ ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VMSUBBCZ";
+	const char *c_sName = "VMSUBBCZ";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VMSUBBCZ;
 	
 	int ret = 1;
@@ -44852,7 +44852,7 @@ long R5900::Recompiler::VMSUBBCZ ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VMSUBBCW ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VMSUBBCW";
+	const char *c_sName = "VMSUBBCW";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VMSUBBCW;
 	
 	int ret = 1;
@@ -44910,7 +44910,7 @@ long R5900::Recompiler::VMSUBBCW ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VMAX ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VMAX";
+	const char *c_sName = "VMAX";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VMAX;
 	
 	int ret = 1;
@@ -44964,7 +44964,7 @@ long R5900::Recompiler::VMAX ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VMAXi ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VMAXi";
+	const char *c_sName = "VMAXi";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VMAXi;
 	
 	int ret = 1;
@@ -45019,7 +45019,7 @@ long R5900::Recompiler::VMAXi ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VMAXBCX ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VMAXBCX";
+	const char *c_sName = "VMAXBCX";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VMAXBCX;
 	
 	int ret = 1;
@@ -45074,7 +45074,7 @@ long R5900::Recompiler::VMAXBCX ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VMAXBCY ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VMAXBCY";
+	const char *c_sName = "VMAXBCY";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VMAXBCY;
 	
 	int ret = 1;
@@ -45127,7 +45127,7 @@ long R5900::Recompiler::VMAXBCY ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VMAXBCZ ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VMAXBCZ";
+	const char *c_sName = "VMAXBCZ";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VMAXBCZ;
 	
 	int ret = 1;
@@ -45180,7 +45180,7 @@ long R5900::Recompiler::VMAXBCZ ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VMAXBCW ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VMAXBCW";
+	const char *c_sName = "VMAXBCW";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VMAXBCW;
 	
 	int ret = 1;
@@ -45239,7 +45239,7 @@ long R5900::Recompiler::VMAXBCW ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VMINI ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VMINI";
+	const char *c_sName = "VMINI";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VMINI;
 	
 	int ret = 1;
@@ -45293,7 +45293,7 @@ long R5900::Recompiler::VMINI ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VMINIi ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VMINIi";
+	const char *c_sName = "VMINIi";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VMINIi;
 	
 	int ret = 1;
@@ -45346,7 +45346,7 @@ long R5900::Recompiler::VMINIi ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VMINIBCX ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VMINIBCX";
+	const char *c_sName = "VMINIBCX";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VMINIBCX;
 	
 	int ret = 1;
@@ -45399,7 +45399,7 @@ long R5900::Recompiler::VMINIBCX ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VMINIBCY ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VMINIBCY";
+	const char *c_sName = "VMINIBCY";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VMINIBCY;
 	
 	int ret = 1;
@@ -45452,7 +45452,7 @@ long R5900::Recompiler::VMINIBCY ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VMINIBCZ ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VMINIBCZ";
+	const char *c_sName = "VMINIBCZ";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VMINIBCZ;
 	
 	int ret = 1;
@@ -45505,7 +45505,7 @@ long R5900::Recompiler::VMINIBCZ ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VMINIBCW ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VMINIBCW";
+	const char *c_sName = "VMINIBCW";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VMINIBCW;
 	
 	int ret = 1;
@@ -45563,7 +45563,7 @@ long R5900::Recompiler::VMINIBCW ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VMUL ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VMUL";
+	const char *c_sName = "VMUL";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VMUL;
 	
 	int ret = 1;
@@ -45616,7 +45616,7 @@ long R5900::Recompiler::VMUL ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VMULi ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VMULi";
+	const char *c_sName = "VMULi";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VMULi;
 	
 	int ret = 1;
@@ -45669,7 +45669,7 @@ long R5900::Recompiler::VMULi ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VMULq ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VMULq";
+	const char *c_sName = "VMULq";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VMULq;
 	
 	int ret = 1;
@@ -45722,7 +45722,7 @@ long R5900::Recompiler::VMULq ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VMULBCX ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VMULBCX";
+	const char *c_sName = "VMULBCX";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VMULBCX;
 	
 	int ret = 1;
@@ -45775,7 +45775,7 @@ long R5900::Recompiler::VMULBCX ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VMULBCY ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VMULBCY";
+	const char *c_sName = "VMULBCY";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VMULBCY;
 	
 	int ret = 1;
@@ -45828,7 +45828,7 @@ long R5900::Recompiler::VMULBCY ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VMULBCZ ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VMULBCZ";
+	const char *c_sName = "VMULBCZ";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VMULBCZ;
 	
 	int ret = 1;
@@ -45881,7 +45881,7 @@ long R5900::Recompiler::VMULBCZ ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VMULBCW ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VMULBCW";
+	const char *c_sName = "VMULBCW";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VMULBCW;
 	
 	int ret = 1;
@@ -45939,7 +45939,7 @@ long R5900::Recompiler::VMULBCW ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VOPMSUB ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VOPMSUB";
+	const char *c_sName = "VOPMSUB";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VOPMSUB;
 	
 	int ret = 1;
@@ -45993,7 +45993,7 @@ long R5900::Recompiler::VOPMSUB ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VIADD ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VIADD";
+	const char *c_sName = "VIADD";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VIADD;
 	
 	int ret = 1;
@@ -46080,7 +46080,7 @@ long R5900::Recompiler::VIADD ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VISUB ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VISUB";
+	const char *c_sName = "VISUB";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VISUB;
 	
 	int ret = 1;
@@ -46166,7 +46166,7 @@ long R5900::Recompiler::VISUB ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VIADDI ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VIADDI";
+	const char *c_sName = "VIADDI";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VIADDI;
 	
 	int ret = 1;
@@ -46235,7 +46235,7 @@ long R5900::Recompiler::VIADDI ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VIAND ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VIAND";
+	const char *c_sName = "VIAND";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VIAND;
 	
 	int ret = 1;
@@ -46315,7 +46315,7 @@ long R5900::Recompiler::VIAND ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VIOR ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VIOR";
+	const char *c_sName = "VIOR";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VIOR;
 	
 	int ret = 1;
@@ -46404,7 +46404,7 @@ long R5900::Recompiler::VIOR ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VCALLMS ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VCALLMS";
+	const char *c_sName = "VCALLMS";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VCALLMS;
 	
 	int ret = 1;
@@ -46450,7 +46450,7 @@ long R5900::Recompiler::VCALLMS ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VCALLMSR ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VCALLMSR";
+	const char *c_sName = "VCALLMSR";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VCALLMSR;
 	
 	int ret = 1;
@@ -46499,7 +46499,7 @@ long R5900::Recompiler::VCALLMSR ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VFTOI0 ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VFTOI0";
+	const char *c_sName = "VFTOI0";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VFTOI0;
 	
 	int ret = 1;
@@ -46552,7 +46552,7 @@ long R5900::Recompiler::VFTOI0 ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VFTOI4 ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VFTOI4";
+	const char *c_sName = "VFTOI4";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VFTOI4;
 	
 	int ret = 1;
@@ -46605,7 +46605,7 @@ long R5900::Recompiler::VFTOI4 ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VFTOI12 ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VFTOI12";
+	const char *c_sName = "VFTOI12";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VFTOI12;
 	
 	int ret = 1;
@@ -46658,7 +46658,7 @@ long R5900::Recompiler::VFTOI12 ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VFTOI15 ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VFTOI15";
+	const char *c_sName = "VFTOI15";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VFTOI15;
 	
 	int ret = 1;
@@ -46714,7 +46714,7 @@ long R5900::Recompiler::VFTOI15 ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VITOF0 ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VITOF0";
+	const char *c_sName = "VITOF0";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VITOF0;
 	
 	int ret = 1;
@@ -46767,7 +46767,7 @@ long R5900::Recompiler::VITOF0 ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VITOF4 ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VITOF4";
+	const char *c_sName = "VITOF4";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VITOF4;
 	
 	int ret = 1;
@@ -46820,7 +46820,7 @@ long R5900::Recompiler::VITOF4 ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VITOF12 ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VITOF12";
+	const char *c_sName = "VITOF12";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VITOF12;
 	
 	int ret = 1;
@@ -46873,7 +46873,7 @@ long R5900::Recompiler::VITOF12 ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VITOF15 ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VITOF15";
+	const char *c_sName = "VITOF15";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VITOF15;
 	
 	int ret = 1;
@@ -46930,7 +46930,7 @@ long R5900::Recompiler::VITOF15 ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VMOVE ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VMOVE";
+	const char *c_sName = "VMOVE";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VMOVE;
 	
 	int ret = 1;
@@ -46983,7 +46983,7 @@ long R5900::Recompiler::VMOVE ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VLQI ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VLQI";
+	const char *c_sName = "VLQI";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VLQI;
 	
 	int ret = 1;
@@ -47095,7 +47095,7 @@ long R5900::Recompiler::VLQI ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VDIV ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VDIV";
+	const char *c_sName = "VDIV";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VDIV;
 	
 	int ret = 1;
@@ -47228,7 +47228,7 @@ long R5900::Recompiler::VDIV ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VMTIR ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VMTIR";
+	const char *c_sName = "VMTIR";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VMTIR;
 	
 	int ret = 1;
@@ -47282,7 +47282,7 @@ long R5900::Recompiler::VMTIR ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VRNEXT ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VRNEXT";
+	const char *c_sName = "VRNEXT";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VRNEXT;
 	
 	static const unsigned long c_ulRandMask = 0x7ffb18;
@@ -47366,7 +47366,7 @@ long R5900::Recompiler::VRNEXT ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VMR32 ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VMR32";
+	const char *c_sName = "VMR32";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VMR32;
 	
 	int ret = 1;
@@ -47419,7 +47419,7 @@ long R5900::Recompiler::VMR32 ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VSQI ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VSQI";
+	const char *c_sName = "VSQI";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VSQI;
 	
 	int ret = 1;
@@ -47521,7 +47521,7 @@ long R5900::Recompiler::VSQI ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VSQRT ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VSQRT";
+	const char *c_sName = "VSQRT";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VSQRT;
 	
 	int ret = 1;
@@ -47624,7 +47624,7 @@ long R5900::Recompiler::VSQRT ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VMFIR ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VMFIR";
+	const char *c_sName = "VMFIR";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VMFIR;
 	
 	int ret = 1;
@@ -47677,7 +47677,7 @@ long R5900::Recompiler::VMFIR ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VRGET ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VRGET";
+	const char *c_sName = "VRGET";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VRGET;
 	
 	int ret = 1;
@@ -47751,7 +47751,7 @@ long R5900::Recompiler::VRGET ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VSUBA ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VSUBA";
+	const char *c_sName = "VSUBA";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VSUBA;
 	
 	int ret = 1;
@@ -47804,7 +47804,7 @@ long R5900::Recompiler::VSUBA ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VSUBAi ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VSUBAi";
+	const char *c_sName = "VSUBAi";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VSUBAi;
 	
 	int ret = 1;
@@ -47857,7 +47857,7 @@ long R5900::Recompiler::VSUBAi ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VSUBAq ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VSUBAq";
+	const char *c_sName = "VSUBAq";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VSUBAq;
 	
 	int ret = 1;
@@ -47910,7 +47910,7 @@ long R5900::Recompiler::VSUBAq ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VSUBABCX ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VSUBABCX";
+	const char *c_sName = "VSUBABCX";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VSUBABCX;
 	
 	int ret = 1;
@@ -47963,7 +47963,7 @@ long R5900::Recompiler::VSUBABCX ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VSUBABCY ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VSUBABCY";
+	const char *c_sName = "VSUBABCY";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VSUBABCY;
 	
 	int ret = 1;
@@ -48016,7 +48016,7 @@ long R5900::Recompiler::VSUBABCY ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VSUBABCZ ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VSUBABCZ";
+	const char *c_sName = "VSUBABCZ";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VSUBABCZ;
 	
 	int ret = 1;
@@ -48069,7 +48069,7 @@ long R5900::Recompiler::VSUBABCZ ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VSUBABCW ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VSUBABCW";
+	const char *c_sName = "VSUBABCW";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VSUBABCW;
 	
 	int ret = 1;
@@ -48126,7 +48126,7 @@ long R5900::Recompiler::VSUBABCW ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VMADDA ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VMADDA";
+	const char *c_sName = "VMADDA";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VMADDA;
 	
 	int ret = 1;
@@ -48179,7 +48179,7 @@ long R5900::Recompiler::VMADDA ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VMADDAi ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VMADDAi";
+	const char *c_sName = "VMADDAi";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VMADDAi;
 	
 	int ret = 1;
@@ -48232,7 +48232,7 @@ long R5900::Recompiler::VMADDAi ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VMADDAq ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VMADDAq";
+	const char *c_sName = "VMADDAq";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VMADDAq;
 	
 	int ret = 1;
@@ -48285,7 +48285,7 @@ long R5900::Recompiler::VMADDAq ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VMADDABCX ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VMADDABCX";
+	const char *c_sName = "VMADDABCX";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VMADDABCX;
 	
 	int ret = 1;
@@ -48338,7 +48338,7 @@ long R5900::Recompiler::VMADDABCX ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VMADDABCY ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VMADDABCY";
+	const char *c_sName = "VMADDABCY";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VMADDABCY;
 	
 	int ret = 1;
@@ -48391,7 +48391,7 @@ long R5900::Recompiler::VMADDABCY ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VMADDABCZ ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VMADDABCZ";
+	const char *c_sName = "VMADDABCZ";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VMADDABCZ;
 	
 	int ret = 1;
@@ -48444,7 +48444,7 @@ long R5900::Recompiler::VMADDABCZ ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VMADDABCW ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VMADDABCW";
+	const char *c_sName = "VMADDABCW";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VMADDABCW;
 	
 	int ret = 1;
@@ -48502,7 +48502,7 @@ long R5900::Recompiler::VMADDABCW ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VMSUBA ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VMSUBA";
+	const char *c_sName = "VMSUBA";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VMSUBA;
 	
 	int ret = 1;
@@ -48555,7 +48555,7 @@ long R5900::Recompiler::VMSUBA ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VMSUBAi ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VMSUBAi";
+	const char *c_sName = "VMSUBAi";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VMSUBAi;
 	
 	int ret = 1;
@@ -48608,7 +48608,7 @@ long R5900::Recompiler::VMSUBAi ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VMSUBAq ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VMSUBAq";
+	const char *c_sName = "VMSUBAq";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VMSUBAq;
 	
 	int ret = 1;
@@ -48661,7 +48661,7 @@ long R5900::Recompiler::VMSUBAq ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VMSUBABCX ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VMSUBABCX";
+	const char *c_sName = "VMSUBABCX";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VMSUBABCX;
 	
 	int ret = 1;
@@ -48714,7 +48714,7 @@ long R5900::Recompiler::VMSUBABCX ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VMSUBABCY ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VMSUBABCY";
+	const char *c_sName = "VMSUBABCY";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VMSUBABCY;
 	
 	int ret = 1;
@@ -48767,7 +48767,7 @@ long R5900::Recompiler::VMSUBABCY ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VMSUBABCZ ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VMSUBABCZ";
+	const char *c_sName = "VMSUBABCZ";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VMSUBABCZ;
 	
 	int ret = 1;
@@ -48820,7 +48820,7 @@ long R5900::Recompiler::VMSUBABCZ ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VMSUBABCW ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VMSUBABCW";
+	const char *c_sName = "VMSUBABCW";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VMSUBABCW;
 	
 	int ret = 1;
@@ -48879,7 +48879,7 @@ long R5900::Recompiler::VMSUBABCW ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VMULA ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VMULA";
+	const char *c_sName = "VMULA";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VMULA;
 	
 	int ret = 1;
@@ -48932,7 +48932,7 @@ long R5900::Recompiler::VMULA ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VMULAi ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VMULAi";
+	const char *c_sName = "VMULAi";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VMULAi;
 	
 	int ret = 1;
@@ -48985,7 +48985,7 @@ long R5900::Recompiler::VMULAi ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VMULAq ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VMULAq";
+	const char *c_sName = "VMULAq";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VMULAq;
 	
 	int ret = 1;
@@ -49038,7 +49038,7 @@ long R5900::Recompiler::VMULAq ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VMULABCX ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VMULABCX";
+	const char *c_sName = "VMULABCX";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VMULABCX;
 	
 	int ret = 1;
@@ -49091,7 +49091,7 @@ long R5900::Recompiler::VMULABCX ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VMULABCY ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VMULABCY";
+	const char *c_sName = "VMULABCY";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VMULABCY;
 	
 	int ret = 1;
@@ -49144,7 +49144,7 @@ long R5900::Recompiler::VMULABCY ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VMULABCZ ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VMULABCZ";
+	const char *c_sName = "VMULABCZ";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VMULABCZ;
 	
 	int ret = 1;
@@ -49197,7 +49197,7 @@ long R5900::Recompiler::VMULABCZ ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VMULABCW ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VMULABCW";
+	const char *c_sName = "VMULABCW";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VMULABCW;
 	
 	int ret = 1;
@@ -49254,7 +49254,7 @@ long R5900::Recompiler::VMULABCW ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VOPMULA ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VOPMULA";
+	const char *c_sName = "VOPMULA";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VOPMULA;
 	
 	int ret = 1;
@@ -49307,7 +49307,7 @@ long R5900::Recompiler::VOPMULA ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VLQD ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VLQD";
+	const char *c_sName = "VLQD";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VLQD;
 	
 	int ret = 1;
@@ -49419,7 +49419,7 @@ long R5900::Recompiler::VLQD ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VRSQRT ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VRSQRT";
+	const char *c_sName = "VRSQRT";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VRSQRT;
 	
 	int ret = 1;
@@ -49573,7 +49573,7 @@ long R5900::Recompiler::VRSQRT ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VILWR ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VILWR";
+	const char *c_sName = "VILWR";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VILWR;
 	
 	int ret = 1;
@@ -49695,7 +49695,7 @@ long R5900::Recompiler::VILWR ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VRINIT ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VRINIT";
+	const char *c_sName = "VRINIT";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VRINIT;
 	
 	int ret = 1;
@@ -49751,7 +49751,7 @@ long R5900::Recompiler::VRINIT ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VCLIP ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VCLIP";
+	const char *c_sName = "VCLIP";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VCLIP;
 	
 	int ret = 1;
@@ -49893,7 +49893,7 @@ long R5900::Recompiler::VCLIP ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VNOP ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VNOP";
+	const char *c_sName = "VNOP";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VNOP;
 	
 	int ret = 1;
@@ -49945,7 +49945,7 @@ long R5900::Recompiler::VNOP ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VSQD ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VSQD";
+	const char *c_sName = "VSQD";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VSQD;
 	
 	int ret = 1;
@@ -50047,7 +50047,7 @@ long R5900::Recompiler::VSQD ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VWAITQ ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VWAITQ";
+	const char *c_sName = "VWAITQ";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VWAITQ;
 	
 	int ret = 1;
@@ -50093,7 +50093,7 @@ long R5900::Recompiler::VWAITQ ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VISWR ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VISWR";
+	const char *c_sName = "VISWR";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VISWR;
 	
 	int ret = 1;
@@ -50201,7 +50201,7 @@ long R5900::Recompiler::VISWR ( R5900::Instruction::Format i, u32 Address )
 
 long R5900::Recompiler::VRXOR ( R5900::Instruction::Format i, u32 Address )
 {
-	static constexpr char *c_sName = "VRXOR";
+	const char *c_sName = "VRXOR";
 	static const void *c_vFunction = (const void*) R5900::Instruction::Execute::VRXOR;
 	
 	int ret = 1;

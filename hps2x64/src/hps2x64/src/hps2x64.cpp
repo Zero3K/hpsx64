@@ -1366,7 +1366,7 @@ void hps2x64::Update_CheckMarksOnMenu ()
 
 void hps2x64::InitializeProgram ()
 {
-	static constexpr char* ProgramWindow_Caption = "hps2x64";
+	const char* ProgramWindow_Caption = "hps2x64";
 
 	u32 xsize, ysize;
 
@@ -4625,12 +4625,12 @@ int Dialog_KeyConfigure::bit_scan_lsb ( unsigned long v )
 
 bool Dialog_KeyConfigure::Show_ConfigureKeysDialog ( int iPadNum )
 {
-	static constexpr char* Dialog_Caption = "Configure Keys";
+	const char* Dialog_Caption = "Configure Keys";
 	static constexpr int Dialog_Id = 0x6000;
 	static constexpr int Dialog_X = 10;
 	static constexpr int Dialog_Y = 10;
 
-	static constexpr char* Label1_Caption = "Instructions: Hold down the button on the joypad, and then click the PS button you want to assign it to (while still holding the button down). For analog sticks, hold the stick in that direction (x or y) and then click on the button to assign that axis.";
+	const char* Label1_Caption = "Instructions: Hold down the button on the joypad, and then click the PS button you want to assign it to (while still holding the button down). For analog sticks, hold the stick in that direction (x or y) and then click on the button to assign that axis.";
 	static constexpr int Label1_Id = 0x6001;
 	static constexpr int Label1_X = 10;
 	static constexpr int Label1_Y = 10;
@@ -4652,14 +4652,14 @@ bool Dialog_KeyConfigure::Show_ConfigureKeysDialog ( int iPadNum )
 	static constexpr int c_iLabelArea_LabelPitch = c_iLabelArea_LabelHeight + 5;
 
 	
-	static constexpr char* CmdButtonOk_Caption = "OK";
+	const char* CmdButtonOk_Caption = "OK";
 	static constexpr int CmdButtonOk_Id = 0x6300;
 	static constexpr int CmdButtonOk_X = 10;
 	static constexpr int CmdButtonOk_Y = c_iButtonArea_StartY + ( c_iButtonArea_ButtonPitch * c_iDialog_NumberOfButtons ) + 10;
 	static constexpr int CmdButtonOk_Width = 50;
 	static constexpr int CmdButtonOk_Height = 20;
 	
-	static constexpr char* CmdButtonCancel_Caption = "Cancel";
+	const char* CmdButtonCancel_Caption = "Cancel";
 	static constexpr int CmdButtonCancel_Id = 0x6400;
 	static constexpr int CmdButtonCancel_X = CmdButtonOk_X + CmdButtonOk_Width + 10;
 	static constexpr int CmdButtonCancel_Y = CmdButtonOk_Y;
@@ -4670,8 +4670,8 @@ bool Dialog_KeyConfigure::Show_ConfigureKeysDialog ( int iPadNum )
 	static constexpr int Dialog_Width = Label1_Width + 20;	//c_iLabelArea_StartX + c_iLabelArea_LabelWidth + 10;
 	static constexpr int Dialog_Height = CmdButtonOk_Y + CmdButtonOk_Height + 30;
 		
-	static constexpr char* PS1_Keys [] = { "X", "O", "Triangle", "Square", "R1", "R2", "R3", "L1", "L2", "L3", "Start", "Select", "Left Analog X", "Left Analog Y", "Right Analog X", "Right Analog Y" };
-	static constexpr char* Axis_Labels [] = { "Axis X", "Axis Y", "Axis Z", "Axis R", "Axis U", "Axis V" };
+	const char* PS1_Keys [] = { "X", "O", "Triangle", "Square", "R1", "R2", "R3", "L1", "L2", "L3", "Start", "Select", "Left Analog X", "Left Analog Y", "Right Analog X", "Right Analog Y" };
+	const char* Axis_Labels [] = { "Axis X", "Axis Y", "Axis Z", "Axis R", "Axis U", "Axis V" };
 	
 	bool ret;
 	
