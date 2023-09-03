@@ -2970,8 +2970,7 @@ void hps1x64::LoadConfig ( string ConfigFileName )
 
 	_SYSTEM._GPU.Set_Scanline (  jsonSettings [ "GPU" ] [ "ScanlineEnable" ] );
 	_SYSTEM._GPU.ulNumberOfThreads = jsonSettings [ "GPU" ] [ "Threads" ];
-	_SYSTEM._GPU.bAllowGpuHardwareRendering = jsonSettings["GPU"]["HardwareRendering"];
-	_SYSTEM._GPU.bEnable_OpenCL = jsonSettings["GPU"]["HardwareRendering"];
+	_SYSTEM._GPU.bAllowGpuHardwareRendering = _SYSTEM._GPU.bEnable_OpenCL = jsonSettings["GPU"]["HardwareRendering"];
 
 	// Interface //
 
@@ -3064,7 +3063,6 @@ void hps1x64::SaveConfig ( string ConfigFileName )
 	jsonSettings [ "GPU" ] [ "ScanlineEnable" ] = _SYSTEM._GPU.Get_Scanline ();
 	jsonSettings [ "GPU" ] [ "Threads" ] = _SYSTEM._GPU.ulNumberOfThreads;
 	jsonSettings["GPU"]["HardwareRendering"] = _SYSTEM._GPU.bAllowGpuHardwareRendering;
-	jsonSettings["GPU"]["HardwareRendering"] = _SYSTEM._GPU.bEnable_OpenCL;
 
 	// Interface //
 
