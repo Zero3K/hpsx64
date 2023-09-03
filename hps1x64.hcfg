@@ -1,0 +1,70 @@
+{
+    "Controllers": {
+        "Pad1": {
+            "DigitalAnalog": 1,
+            "KeyX": 1,
+            "KeyO": 2,
+            "KeyTriangle": 3,
+            "KeySquare": 0,
+            "KeyR1": 5,
+            "KeyR2": 7,
+            "KeyR3": 11,
+            "KeyL1": 4,
+            "KeyL2": 6,
+            "KeyL3": 10,
+            "KeyStart": 9,
+            "KeySelect": 8,
+            "KeyLeftAnalogX": 0,
+            "KeyLeftAnalogY": 1,
+            "KeyRightAnalogX": 3,
+            "KeyRightAnalogY": 2
+        },
+        "Pad2": {
+            "DigitalAnalog": 1,
+            "KeyX": 0,
+            "KeyO": 0,
+            "KeyTriangle": 0,
+            "KeySquare": 0,
+            "KeyR1": 0,
+            "KeyR2": 0,
+            "KeyR3": 0,
+            "KeyL1": 0,
+            "KeyL2": 0,
+            "KeyL3": 0,
+            "KeyStart": 0,
+            "KeySelect": 0,
+            "KeyLeftAnalogX": 0,
+            "KeyLeftAnalogY": 0,
+            "KeyRightAnalogX": 0,
+            "KeyRightAnalogY": 0
+        },
+        "MemoryCard1": {
+            "Disconnected": 0
+        },
+        "MemoryCard2": {
+            "Disconnected": 0
+        }
+    },
+    "CD": {
+        "Region": 69
+    },
+    "SPU": {
+        "Enable_AudioOutput": 1,
+        "Enable_Filter": 1,
+        "BufferSize": 8192,
+        "GlobalVolume": 4096
+    },
+    "CPU": {
+        "R3000A": {
+            "EnableRecompiler": 1
+        }
+    },
+    "GPU": {
+        "HardwareRendering" : 1,
+        "ScanlineEnable": 0,
+        "Threads": 0
+    },
+    "Interface": {
+        "LastBiosPath": "C:\\Users\\Antique\\Downloads\\SCPH9002(7502).BIN"
+    }
+}
