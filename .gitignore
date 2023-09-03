@@ -2,5 +2,7 @@
 
 # Folders
 .vs
-build
+build/*/*/*
 x64
+
+!build/*/*/*.hcfg
